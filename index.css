@@ -1,0 +1,175 @@
+* {
+    margin: 0px;
+    padding: 0px;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: Arial, Helvetica, sans-serif;
+    height: 100%;
+}
+
+#pagina1 {
+    background-image: url(img/fotofundoinicial.jpg);
+    background-size: cover;
+    background-position: center;
+    padding-top: 5px;
+    padding-bottom: 0;
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    overflow: hidden;
+}
+
+#pagina2 {
+    background-color: aqua;
+    margin: 0;
+    padding: 5px;
+    position: relative;
+    top: -7px;
+    width: 100%;
+    min-height: 100vh;
+}
+
+#pagina3 {
+    background-color: aquamarine;
+    margin: 0;
+    position: relative;
+    top: -7px;
+    padding: 10px;
+    width: 100%;
+    min-height: 100vh;
+}
+
+.menu {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin: auto;
+    margin-top: 5px;
+    width: 80vw;
+    background-color: antiquewhite;
+    justify-content: space-between;
+    padding: 5px;
+    border-radius: 5px;
+}
+
+.entrar {
+    color: #FCC419;
+    font-weight: 200;
+    font-size: 16px;
+    text-decoration: none;
+}
+
+.img-logo .img {
+    width: 60px;
+    border-radius: 5px;
+}
+
+.links-menu {
+    display: flex;
+    gap: 15px;
+}
+
+.links-menu a {
+    text-decoration: none;
+    color: black;
+    transition: 0.3s;
+    cursor: pointer;
+}
+
+.links-menu a:hover {
+    text-decoration: underline;
+}
+
+.agendar-visita {
+    background-color: green;
+    max-width: 300px;
+    padding: 3px 0px;
+    text-align: left;
+    width: 300px;
+    position: absolute;
+    left: 0px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 50;
+}
+
+.agendar-visita a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.agendar-visita a:hover {
+    text-decoration: underline;
+}
+
+.onda-pag1 {
+    width: 100%; /* Faz a imagem ocupar toda a largura da página */
+    height: auto; /* Define a altura fixa */
+    position: absolute; /* Fixa a imagem no final da página */
+    bottom: -4.5px; /* Garante que fique no final da div #pagina1 */
+    left: 0;
+    z-index: 10;
+    margin-bottom: 0px;
+    box-shadow: none;
+}
+
+.container-pag2 {
+    max-width: 80vw;
+    margin: auto;
+}
+
+.links-pag2 {
+    display: flex;
+    justify-content: space-between;
+    gap: 5px;
+    margin: 20px;
+}
+
+.links-pag2 a {
+    text-decoration: none;
+    color: white;
+    font-weight: bold;
+    font-size: 20px;
+}
+
+.links-pag2 a:hover {
+    text-decoration: underline;
+}
+
+.img-quem-somos img {
+    width: 200px;
+    border-radius: 5px;
+}
+
+.container-atigo-pag2 {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    margin-top: 50px;
+}
+
+.titulo-pag3 {
+    display: block;
+    text-align: center;
+    margin: 5px;
+    margin-bottom: 15px;
+}
+
+.importancia {
+    background-color: aliceblue;
+    margin-bottom: 20px;
+    padding: 5px;
+    border-radius: 10px;
+}
+
+.paragrafo-parte3 {
+    margin-top: 10px;
+    font-size: 18px;
+}
