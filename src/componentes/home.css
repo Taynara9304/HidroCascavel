@@ -1,0 +1,133 @@
+header {
+    display: flex;
+    padding: 10px;
+    border-bottom: 1px solid black;
+}
+
+.logo {
+    width: 100px;
+}
+
+.barra-de-pesquisa {
+    display: flex;
+    gap: 10px;
+}
+
+.barra-de-pesquisa input {
+    width: 250px;
+    height: 30px;
+}
+
+.menu {
+    display: flex;
+    gap: 10px;
+    padding: 20px 0px;
+}
+
+.botaoMenu {
+    border: 1px solid gray;
+    padding: 5px;
+    border-radius: 5px;
+    font-weight: 500;
+}
+
+.botaoMenu:hover {
+    background-color: rgba(233, 233, 233, 0.841);
+}
+
+#generos-musicais {
+    border: 1px solid gray;
+    padding: 5px;
+    border-radius: 5px;
+    font-weight: 500;
+    background-color: white;
+}
+
+.img-musica {
+    max-width: 100vw;
+    border-radius: 10px;
+}
+
+.maisAcessados {
+    margin: 20px;
+}
+
+.musicas-mais-acessadas {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.elemento-mais-acessado {
+    display: grid;
+    grid-template-columns: 0.3fr 1fr;
+    gap: 16px;
+}
+
+.numero {
+    font-size: 40px;
+    font-weight: 600;
+    display: flex;
+    justify-content: center;
+    text-align: center;
+}
+
+.texto-mais-acessado {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+h1, h2, p {
+    margin: 0px;
+}
+
+.elemento-mais-acessado:hover {
+    background-color: rgba(255, 195, 173, 0.74);
+    color: orangered;
+}
+
+.mostrar-mais {
+    border: 1px solid gray;
+    padding: 5px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.cursos-disponiveis {
+    margin: 20px;
+}
+
+.conteiner-cursos {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.curso {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid gray;
+    width: 14em;
+    border-radius: 10px;
+    margin: 20px 0px;
+}
+
+.img-curso {
+    width: 14em;
+    height: 12em;
+    border-radius: 10px;
+}
+
+.texto-curso {
+    margin: 10px;
+}
+
+.aprender-curso {
+    border: 1px solid gray;
+    margin: 20px 10px;
+    border-radius: 5px;
+    padding: 5px;
+    text-align: center;
+}
+
