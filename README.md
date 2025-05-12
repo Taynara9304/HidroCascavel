@@ -1,2 +1,3 @@
-# AquaScience
-Projeto de robótica do sistema de monitoramento de poços do IFPR campus Cascavel
+# HidroCascavel
+O projeto HidroCascavel é um sistema voltado para o gerenciamento de poços artesianos no município de Cascavel. Ele tem como objetivo principal auxiliar no controle, monitoramento e análise da qualidade da água, além de organizar informações sobre usuários, visitas técnicas e manutenções. O sistema oferece diferentes níveis de acesso, como administradores, analistas e proprietários de poços, permitindo que cada perfil visualize e gerencie dados conforme sua função.
+A plataforma foi desenvolvida com foco em usabilidade e eficiência, integrando funcionalidades como agendamento de análises, geração de relatórios técnicos e histórico de intervenções nos poços. Com isso, o HidroCascavel contribui para uma gestão mais segura, transparente e sustentável dos recursos hídricos subterrâneos da região.
