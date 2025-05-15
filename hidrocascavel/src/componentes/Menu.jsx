@@ -11,19 +11,19 @@ function Menu() {
       </div>
 
       <nav>
-        <ul>
-            <li><a href="#Sobre">Sobre</a></li>
-            <li><a href="#Servicos">Serviços</a></li>
-            <li><a href="#Educação-ambiental">Educação Ambiental</a></li>
-            <li><a href="#Contato">Contato</a></li>
+        <ul className='links'>
+            <li className='link'><a className='link-menu' href="#Sobre">Sobre</a></li>
+            <li className='link'><a className='link-menu' href="#Servicos">Serviços</a></li>
+            <li className='link'><a className='link-menu' href="#Educação-ambiental">Educação Ambiental</a></li>
+            <li className='link'><a className='link-menu' href="#Contato">Contato</a></li>
         </ul>
       </nav>
 
       <div className="icones">
-        <ul>
-            <li><a href="#"><img className="icone-menu" src={Home} alt="Home"/></a></li>
-            <li><a href="#"><img className="icone-menu" src={Logout} alt="Logout" /></a></li>
-            <li><a href="#"><img className="icone-menu" src={Settings} alt="Logout" /></a></li>
+        <ul className='links'>
+            <li className='link'><a className='link-menu' href="#"><img className="icone-menu" src={Home} alt="Home"/></a></li>
+            <li className='link'><a className='link-menu' href="#"><img className="icone-menu" src={Logout} alt="Logout" /></a></li>
+            <li className='link'><a className='link-menu' href="#"><img className="icone-menu" src={Settings} alt="Logout" /></a></li>
         </ul>
       </div>
     </div>
