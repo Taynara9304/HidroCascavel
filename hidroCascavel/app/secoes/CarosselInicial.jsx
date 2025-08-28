@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, Image, Dimensions, StyleSheet } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 
-<<<<<<< HEAD
 // Importe as imagens corretamente
 const img1Carrossel = require('../assets/img1Carrossel.png');
 const img2Carrossel = require('../assets/img2Carrossel.png');
@@ -14,20 +13,17 @@ const CarosselInicial = () => {
   const carouselData = [
     {
       id: 1,
-      title: 'Hidro Cascavel',
-      description: 'Sua água de confiança',
+      title: 'RETROSPECTIVA HIDROCASCAVEL 2025',
       image: img1Carrossel,
     },
     {
       id: 2,
-      title: 'Qualidade Garantida',
-      description: 'Padrões rigorosos de qualidade',
+      title: 'QUEM SOMOS NÓS?',
       image: img2Carrossel,
     },
     {
       id: 3,
-      title: 'Sustentabilidade',
-      description: 'Compromisso com o meio ambiente',
+      title: 'QUERO AGENDAR UMA VISITA!',
       image: img3Carrossel,
     },
   ];
@@ -52,23 +48,12 @@ const CarosselInicial = () => {
             <View style={styles.overlay} />
             <View style={styles.textContainer}>
               <Text style={styles.title}>{item.title}</Text>
-              <Text style={styles.description}>{item.description}</Text>
             </View>
           </View>
         )}
       />
     </View>
   );
-=======
-const CarrosselInicial = () => {
-    return (
-        <View>
-            <Text>Carrossel inicial</Text>
-            <NavBar />
-            <Text>Lucas</Text>
-        </View>
-    );
->>>>>>> NavBar
 };
 
 const styles = StyleSheet.create({
@@ -93,9 +78,12 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 80,
+    alignItems: 'center',
+    padding: 20,
     left: 20,
     right: 20,
+    backgroundColor: '#3D9DD9',
   },
   title: {
     color: 'white',
