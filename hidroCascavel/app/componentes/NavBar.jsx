@@ -1,5 +1,5 @@
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Icons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 
 const NavBar = () => {    
     return(
@@ -22,7 +22,7 @@ const NavBar = () => {
             </TouchableOpacity>
 
             <TouchableOpacity>
-                <Icons> name = "login"</Icons>
+                <MaterialIcons> name = "login"</MaterialIcons>
             </TouchableOpacity>
 
         </View>

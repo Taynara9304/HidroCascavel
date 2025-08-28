@@ -4,19 +4,9 @@ import CarrosselInicial from './Secoes/CarosselInicial';
 
 export default function App() {
   return (
-    <View style={styles.container}>
+    <View>
       <CarrosselInicial />
       
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    width: '50%',
-    backgroundColor: '#ffcbdb',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
