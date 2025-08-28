@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, Dimensions, StyleSheet } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
 
+<<<<<<< HEAD
 // Importe as imagens corretamente
 const img1Carrossel = require('../assets/img1Carrossel.png');
 const img2Carrossel = require('../assets/img2Carrossel.png');
@@ -58,6 +59,16 @@ const CarosselInicial = () => {
       />
     </View>
   );
+=======
+const CarrosselInicial = () => {
+    return (
+        <View>
+            <Text>Carrossel inicial</Text>
+            <NavBar />
+            <Text>Lucas</Text>
+        </View>
+    );
+>>>>>>> NavBar
 };
 
 const styles = StyleSheet.create({
