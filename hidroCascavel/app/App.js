@@ -6,6 +6,7 @@ export default function App() {
   return (
     <View style={styles.container}>
       <CarrosselInicial />
+      
     </View>
   );
 }
@@ -13,7 +14,8 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    width: '50%',
+    backgroundColor: '#ffcbdb',
     alignItems: 'center',
     justifyContent: 'center',
   },
