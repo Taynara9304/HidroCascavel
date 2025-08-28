@@ -1,7 +1,12 @@
 import React from 'react';
 import { View, Text, Image, Dimensions, StyleSheet } from 'react-native';
 import Carousel from 'react-native-reanimated-carousel';
-import img1Carrossel from '../assets/img1Carrossel.png'
+
+// Importe as imagens corretamente
+const img1Carrossel = require('../assets/img1Carrossel.png');
+const img2Carrossel = require('../assets/img2Carrossel.png');
+const img3Carrossel = require('../assets/img3Carrossel.png');
+
 const { width } = Dimensions.get('window');
 
 const CarosselInicial = () => {
@@ -16,13 +21,13 @@ const CarosselInicial = () => {
       id: 2,
       title: 'Qualidade Garantida',
       description: 'Padrões rigorosos de qualidade',
-      image: 'https://images.unsplash.com/photo-1545147985-5a3dab3c3f54?w=400',
+      image: img2Carrossel,
     },
     {
       id: 3,
       title: 'Sustentabilidade',
       description: 'Compromisso com o meio ambiente',
-      image: 'https://images.unsplash.com/photo-1506629905877-52a5ca6d63b1?w=400',
+      image: img3Carrossel,
     },
   ];
 
@@ -31,7 +36,7 @@ const CarosselInicial = () => {
       <Carousel
         loop
         width={width}
-        height={220}
+        height={500}
         autoPlay={true}
         data={carouselData}
         scrollAnimationDuration={1300}
@@ -39,7 +44,7 @@ const CarosselInicial = () => {
         renderItem={({ item }) => (
           <View style={styles.slide}>
             <Image
-              source={{ uri: item.image }}
+              source={item.image}
               style={styles.image}
               resizeMode="cover"
             />
