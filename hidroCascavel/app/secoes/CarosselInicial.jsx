@@ -1,56 +1,70 @@
-import React from 'react';
-import { View, Text, Image, Dimensions, StyleSheet } from 'react-native';
-import Carousel from 'react-native-reanimated-carousel';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
 
-// Importe as imagens corretamente
-const img1Carrossel = require('../assets/img1Carrossel.png');
-const img2Carrossel = require('../assets/img2Carrossel.png');
-const img3Carrossel = require('../assets/img3Carrossel.png');
+const CarosselInicial = ({ containerWidth }) => {
+  const flatListRef = useRef(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-const { width } = Dimensions.get('window');
-
-const CarosselInicial = () => {
   const carouselData = [
     {
       id: 1,
       title: 'RETROSPECTIVA HIDROCASCAVEL 2025',
-      image: img1Carrossel,
+      image: require('../assets/img1Carrossel.png'),
     },
     {
       id: 2,
       title: 'QUEM SOMOS NÓS?',
-      image: img2Carrossel,
+      image: require('../assets/img2Carrossel.png'),
     },
     {
       id: 3,
       title: 'QUERO AGENDAR UMA VISITA!',
-      image: img3Carrossel,
+      image: require('../assets/img3Carrossel.png'),
     },
   ];
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const nextIndex = (currentIndex + 1) % carouselData.length;
+      flatListRef.current?.scrollToIndex({
+        index: nextIndex,
+        animated: true,
+      });
+      setCurrentIndex(nextIndex);
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [currentIndex]);
+
+  const renderItem = ({ item }) => (
+    <View style={[styles.slide, { width: containerWidth }]}>
+      <Image
+        source={item.image}
+        style={styles.image}
+        resizeMode="cover"
+      />
+      <View style={styles.overlay} />
+      <View style={styles.textContainer}>
+        <Text style={styles.title}>{item.title}</Text>
+      </View>
+    </View>
+  );
+
   return (
-    <View style={styles.container}>
-      <Carousel
-        loop
-        width={width}
-        height={500}
-        autoPlay={true}
+    <View style={[styles.container, { width: containerWidth }]}>
+      <FlatList
+        ref={flatListRef}
         data={carouselData}
-        scrollAnimationDuration={1300}
-        autoPlayInterval={3000}
-        renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <Image
-              source={item.image}
-              style={styles.image}
-              resizeMode="cover"
-            />
-            <View style={styles.overlay} />
-            <View style={styles.textContainer}>
-              <Text style={styles.title}>{item.title}</Text>
-            </View>
-          </View>
-        )}
+        renderItem={renderItem}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={item => item.id.toString()}
+        getItemLayout={(data, index) => ({
+          length: containerWidth,
+          offset: containerWidth * index,
+          index,
+        })}
       />
     </View>
   );
@@ -58,42 +72,38 @@ const CarosselInicial = () => {
 
 const styles = StyleSheet.create({
   container: {
+    height: 500,
     marginVertical: 20,
-    height: 220,
   },
   slide: {
-    flex: 1,
-    borderRadius: 15,
-    overflow: 'hidden',
-    marginHorizontal: 10,
+    height: 500,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   image: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
+    borderRadius: 12,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.4)',
+    borderRadius: 12,
   },
   textContainer: {
     position: 'absolute',
     bottom: 80,
-    alignItems: 'center',
-    padding: 20,
     left: 20,
     right: 20,
     backgroundColor: '#3D9DD9',
+    padding: 20,
   },
   title: {
     color: 'white',
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 5,
-  },
-  description: {
-    color: 'white',
-    fontSize: 16,
+    textAlign: 'center',
   },
 });
 
