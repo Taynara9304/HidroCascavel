@@ -7,6 +7,7 @@ const CarrosselInicial = () => {
         <View>
             <Text>Carrossel inicial</Text>
             <NavBar />
+            <Text>Lucas</Text>
         </View>
     );
 };
