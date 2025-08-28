@@ -35,8 +35,9 @@ const styles = StyleSheet.create({
     height: 100,
     backgroundColor: '#FFFFFF',
     display: 'flex',
-    alignContent: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 20,
   },
   slide: {
     flex: 1,
