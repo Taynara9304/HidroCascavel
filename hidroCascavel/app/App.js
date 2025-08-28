@@ -1,22 +1,31 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import CarrosselInicial from './secoes/CarosselInicial';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
+import CarosselInicial from './secoes/CarosselInicial';
 import NavBar from './componentes/NavBar';
 
 const App = () => {
+  const { width } = useWindowDimensions();
+  const contentWidth = width * 0.6;
+
   return (
-    <View style={styles.container}>
-      <CarrosselInicial />
-      <NavBar />
+    <View style={styles.containerApp}>
+      <View style={[styles.contentContainer, { width: contentWidth }]}>
+        <CarosselInicial containerWidth={contentWidth} />
+        <NavBar />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    display: 'flex',
-    width: '60%',
-    margin: 'auto',
+  containerApp: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 40,
+  },
+  contentContainer: {
+    alignItems: 'center',
   }
 });
 
