@@ -1,6 +1,5 @@
 import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import CarosselInicial from './secoes/CarosselInicial';
-import NavBar from './componentes/NavBar';
 
 const App = () => {
   const { width } = useWindowDimensions();
@@ -10,7 +9,6 @@ const App = () => {
     <View style={styles.containerApp}>
       <View style={[styles.contentContainer, { width: contentWidth }]}>
         <CarosselInicial containerWidth={contentWidth} />
-        <NavBar />
       </View>
     </View>
   );

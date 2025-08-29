@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { View, Text, Image, FlatList, StyleSheet } from 'react-native';
+import  NavBar from '../componentes/NavBar'
 
 const CarosselInicial = ({ containerWidth }) => {
   const flatListRef = useRef(null);
@@ -66,6 +67,8 @@ const CarosselInicial = ({ containerWidth }) => {
           index,
         })}
       />
+
+      <NavBar/>
     </View>
   );
 };
