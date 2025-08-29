@@ -4,8 +4,7 @@ import NavBar from './componentes/NavBar';
 
 const App = () => {
   const { width } = useWindowDimensions();
-  const contentWidth = width * 0.6;
-
+  const contentWidth = width < 1000 ? width : width * 0.6;
   return (
     <View style={styles.containerApp}>
       <View style={[styles.contentContainer, { width: contentWidth }]}>
@@ -22,7 +21,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    paddingTop: 40,
+    paddingTop: 0,
   },
   contentContainer: {
     alignItems: 'center',
