@@ -72,11 +72,11 @@ const CarosselInicial = ({ containerWidth }) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 500,
+    height: 600,
     marginVertical: 20,
   },
   slide: {
-    height: 500,
+    height: 600,
     justifyContent: 'center',
     alignItems: 'center',
   },

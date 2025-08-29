@@ -52,3 +52,11 @@ reinstall:
 	cd $(APP_DIR) && \
 	rm -rf node_modules package-lock.json && \
 	npm install
+
+git-taynara:
+	git config --global user.email "taynaradasilva2001@gmail.com"
+	git config --global user.name "Taynara"
+
+git-lucas:
+	git config --global user.email ""
+	git config --global user.name "Lucas"
