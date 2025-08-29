@@ -4,7 +4,7 @@ import NavBar from './componentes/NavBar';
 
 const App = () => {
   const { width } = useWindowDimensions();
-  const contentWidth = width < 1000 ? width : width * 0.6;
+  const contentWidth = width < 800 ? width : width * 0.6;
   return (
     <View style={styles.containerApp}>
       <View style={[styles.contentContainer, { width: contentWidth }]}>
