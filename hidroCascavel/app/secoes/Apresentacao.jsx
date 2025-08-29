@@ -5,10 +5,17 @@ const Apresentacao = () => {
   const [secaoAtiva, setSecaoAtiva] = useState("quemSomos");
 
   const screenWidth = Dimensions.get("window").width;
-  // Tamanho máximo da imagem
-  const maxImageSize = 250;
-  // Diminui proporcionalmente em telas pequenas
-  const imageSize = Math.min(maxImageSize, screenWidth * 0.35);
+
+  // Define se é mobile (menos que 500px)
+  const isMobile = screenWidth < 850;
+
+  // Ajuste proporcional da imagem e fonte
+  const imageSize = Math.min(250, isMobile ? screenWidth * 0.8 : 250);
+  const fontSize = isMobile ? 16 : 20;
+  const lineHeight = fontSize * 1.4;
+  
+  // Defina tamanhos de fonte responsivos para os links
+  const linkFontSize = isMobile ? 15 : 24;
 
   const conteudo = {
     quemSomos: {
@@ -37,41 +44,62 @@ const Apresentacao = () => {
       {/* Menu */}
       <View style={styles.menu}>
         <TouchableOpacity onPress={() => setSecaoAtiva("quemSomos")}>
-          <Text style={[styles.link, secaoAtiva === "quemSomos" && styles.linkAtivo]}>
+          <Text style={[
+            styles.link, 
+            secaoAtiva === "quemSomos" && styles.linkAtivo,
+            { fontSize: linkFontSize }
+          ]}>
             Quem Somos
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setSecaoAtiva("oQueFazemos")}>
-          <Text style={[styles.link, secaoAtiva === "oQueFazemos" && styles.linkAtivo]}>
+          <Text style={[
+            styles.link, 
+            secaoAtiva === "oQueFazemos" && styles.linkAtivo,
+            { fontSize: linkFontSize }
+          ]}>
             O que fazemos
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => setSecaoAtiva("nossaMissao")}>
-          <Text style={[styles.link, secaoAtiva === "nossaMissao" && styles.linkAtivo]}>
+          <Text style={[
+            styles.link, 
+            secaoAtiva === "nossaMissao" && styles.linkAtivo,
+            { fontSize: linkFontSize }
+          ]}>
             Nossa missão
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* Conteúdo dinâmico */}
-      <View style={styles.conteudo}>
+      {/* Conteúdo */}
+      <View style={[styles.conteudo, { flexDirection: isMobile ? "column" : "row" }]}>
         <Image
           source={conteudo[secaoAtiva].imagem}
-          style={{ width: imageSize, height: imageSize, marginRight: 20, borderRadius: 10 }}
+          style={{
+            width: imageSize,
+            height: imageSize,
+            marginRight: isMobile ? 0 : 15,
+            marginBottom: isMobile ? 15 : 0,
+            borderRadius: 10,
+            alignSelf: "center"
+          }}
           resizeMode="contain"
         />
 
         <View style={{ flex: 1 }}>
           {conteudo[secaoAtiva].lista ? (
             conteudo[secaoAtiva].lista.map((item, index) => (
-              <Text key={index} style={styles.itemLista}>
+              <Text key={index} style={[styles.itemLista, { fontSize, lineHeight }]}>
                 • {item}
               </Text>
             ))
           ) : (
-            <Text style={styles.texto}>{conteudo[secaoAtiva].texto}</Text>
+            <Text style={[styles.texto, { fontSize, lineHeight }]}>
+              {conteudo[secaoAtiva].texto}
+            </Text>
           )}
         </View>
       </View>
@@ -93,7 +121,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   link: {
-    fontSize: 24,
     color: "#fff",
     paddingBottom: 5,
   },
@@ -102,19 +129,15 @@ const styles = StyleSheet.create({
     borderBottomColor: "#fff",
   },
   conteudo: {
-    flexDirection: "row",
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
-    alignItems: "flex-start", // alinha a imagem ao topo do texto
+    alignItems: "flex-start",
   },
   texto: {
-    fontSize: 20,
     color: "#000",
-    lineHeight: 28,
   },
   itemLista: {
-    fontSize: 20,
     color: "#000",
     marginBottom: 12,
   },
