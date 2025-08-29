@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   container: {
     height: 600,
     marginVertical: 20,
+    margin: 0,
   },
   slide: {
     height: 600,
