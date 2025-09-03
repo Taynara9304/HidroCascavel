@@ -1,19 +1,15 @@
 import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
 import CarosselInicial from './secoes/CarosselInicial';
 import NavBar from './componentes/NavBar';
-import Apresentacao from './secoes/Apresentacao';
 
 const App = () => {
   const { width } = useWindowDimensions();
   const contentWidth = width < 800 ? width : width * 0.6;
   return (
-    <ScrollView>
-      <View style={styles.containerApp}>
-        <View style={[styles.contentContainer, { width: contentWidth }]}>
-          <CarosselInicial containerWidth={contentWidth} />
-          <NavBar />
-          <Apresentacao />
-        </View>
+    <View style={styles.containerApp}>
+      <View style={[styles.contentContainer, { width: contentWidth }]}>
+        <CarosselInicial containerWidth={contentWidth} />
+        <NavBar />
       </View>
     </ScrollView>
   );
