@@ -101,6 +101,8 @@ const styles = StyleSheet.create({
     right: 20,
     backgroundColor: '#3D9DD9',
     padding: 20,
+    borderRadius: 10,
+
   },
   title: {
     color: 'white',

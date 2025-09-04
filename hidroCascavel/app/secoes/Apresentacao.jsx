@@ -114,6 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#3D9DD9",
     flex: 1,
     width: "100%",
+    borderRadius: 10,
   },
   menu: {
     flexDirection: "row",
