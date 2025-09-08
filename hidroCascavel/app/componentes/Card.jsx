@@ -13,33 +13,34 @@ const Card = ({ name, image, rating, comment }) => {
 };
 
 const styles = StyleSheet.create({
-    card: {
-        backgroundColor: "#3498db",
-        borderRadius: 10,
-        padding: 10,
-        margin: 8,
-        width: 160,
-    },      
+  container: {
+    flex: 1,                  // ocupa todo o espaço do wrapper
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 10,
+    minHeight: 220,           // garante altura boa
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
   image: {
     width: "100%",
-    height: 80,
-    borderRadius: 8,
-    marginBottom: 5,
+    height: 150,
+    borderRadius: 10,
+    resizeMode: "cover",
+    marginBottom: 8,
   },
   name: {
     fontWeight: "bold",
-    fontSize: 14,
-    color: "#fff",
+    fontSize: 16,
+    textAlign: "center",
     marginBottom: 4,
   },
-  stars: {
-    fontSize: 14,
-    marginVertical: 4,
-  },
   comment: {
-    fontSize: 12,
-    color: "#fff",
+    fontSize: 14,
+    textAlign: "center",
+    color: "#333",
   },
 });
+
 
 export default Card;
