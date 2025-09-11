@@ -8,26 +8,26 @@ import {
 } from "react-native";
 import imgInstagram from '../assets/Instagram.png';
 import imgWhatsApp from '../assets/WhatsApp.png';
-import imgIfpr from '../assets/ifpr.png';
+import imgIfpr from '../assets/iconeIfpr2.png';
 
 const Contato = () => {
 
     return (
-        <View>
-            <View>
-                <Text>Contato</Text>
-                <Text>(45) 99988-7766</Text>
-                <Text>email@gmail.com</Text>
-                <View>
-                    <TouchableOpacity><Image source={imgInstagram}/></TouchableOpacity>
-                    <TouchableOpacity><Image source={imgWhatsApp}/></TouchableOpacity>
-                    <TouchableOpacity><Image source={imgIfpr}/></TouchableOpacity>
+        <View style={styles.container}>
+            <View style={styles.containerContato}>
+                <Text style={styles.titulo}>Contato</Text>
+                <Text style={styles.texto}>(45) 99988-7766</Text>
+                <Text style={styles.texto}>email@gmail.com</Text>
+                <View style={styles.containerImagem}>
+                    <TouchableOpacity><Image style={styles.imagem} source={imgInstagram}/></TouchableOpacity>
+                    <TouchableOpacity><Image style={styles.imagem} source={imgWhatsApp}/></TouchableOpacity>
+                    <TouchableOpacity><Image style={styles.imagem} source={imgIfpr}/></TouchableOpacity>
                 </View>
             </View>
 
-            <View>
-                <Text>2025 HidroCascavel</Text>
-                <Text>Feito por Lucas e Taynara</Text>
+            <View style={styles.containerRodape}>
+                <Text style={styles.texto}>2025 HidroCascavel</Text>
+                <Text style={styles.texto}>Feito por Lucas e Taynara</Text>
             </View>
         </View>
     )
@@ -35,14 +35,41 @@ const Contato = () => {
 
 const styles = StyleSheet.create({
     container: {
-
+        display: 'flex',
+        marginTop: 10,
     },
     containerContato:{
         backgroundColor: '#236289',
+        alignItems: 'center',
+        padding: 10,
+        borderRadius: 10,
+        marginBottom: 10,
     },
     containerRodape: {
-        backgroundColor: '#192F38'
+        backgroundColor: '#192F38',
+        alignItems: 'center',
+        padding: 10,
     },
-})
+    containerImagem: {
+        display: 'flex',
+        flexDirection: 'row',
+        marginTop: 10,
+        gap: 10,
+    },
+    imagem: {
+        width: 30,
+        height: 30,
+    },
+    titulo: {
+        fontSize: 30,
+        textAlign: "center",
+        color: "#fff",
+        marginBottom: 15,
+    },
+    texto: {
+        color: '#ffffff',   
+        marginBottom: 10,
+    }
+});
 
 export default Contato;

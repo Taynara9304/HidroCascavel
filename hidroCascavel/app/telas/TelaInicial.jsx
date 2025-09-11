@@ -4,6 +4,7 @@ import CarosselInicial from '../secoes/CarosselInicial';
 import Apresentacao from '../secoes/Apresentacao';
 import EducacaoAmbiental from '../secoes/EducacaoAmbiental';
 import Avaliacoes from '../secoes/Avaliacoes';
+import Contato from '../secoes/Contato';
 
 const TelaInicial = ({ containerWidth }) => {
   return (
@@ -12,6 +13,7 @@ const TelaInicial = ({ containerWidth }) => {
         <Apresentacao />
         <EducacaoAmbiental />
         <Avaliacoes />
+        <Contato />
     </View>
   );
 };
