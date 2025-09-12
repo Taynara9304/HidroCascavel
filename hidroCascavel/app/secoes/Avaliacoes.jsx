@@ -74,7 +74,7 @@ const Avaliacoes = () => {
   };
 
   return (
-    <View style={[styles.container, { minHeight: height - 100 }]}>
+    <View style={styles.container}>
       <Text style={styles.title}>Avaliações e depoimentos</Text>
 
       <View style={styles.content}>
@@ -119,14 +119,15 @@ const Avaliacoes = () => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: "#3498db",
     padding: 20,
     paddingTop: 40,
+    marginTop: 10,
+    borderRadius: 10,
   },
   content: {
-    flex: 1,
-    justifyContent: 'space-between',
+    gap: 20,
+    marginTop: 20,
   },
   title: {
     fontSize: 30,
