@@ -1,33 +1,23 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
 import TelaInicial from './telas/TelaInicial';
+import Login from './telas/Login';
+import Cadastro from './telas/Cadastro';
+
+const Stack = createNativeStackNavigator();
 
 const App = () => {
-  const { width } = useWindowDimensions();
-  const contentWidth = width < 800 ? width : width * 0.6;
-
   return (
-    <ScrollView>
-      <View style={styles.containerApp}>
-        <View style={[styles.contentContainer, { width: contentWidth }]}>
-          <TelaInicial containerWidth={contentWidth} />
-        </View>
-      </View>
-    </ScrollView>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="/" component={TelaInicial} />
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Cadastro" component={Cadastro} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
-};
-
-const styles = StyleSheet.create({
-  containerApp: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    paddingTop: 0,
-  },
-  contentContainer: {
-    alignItems: 'center',
-  },
-});
+}
 
 export default App;

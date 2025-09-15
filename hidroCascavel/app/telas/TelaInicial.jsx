@@ -1,21 +1,41 @@
 import React from 'react';
-import { View } from 'react-native';
+import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import CarosselInicial from '../secoes/CarosselInicial';
 import Apresentacao from '../secoes/Apresentacao';
 import EducacaoAmbiental from '../secoes/EducacaoAmbiental';
 import Avaliacoes from '../secoes/Avaliacoes';
 import Contato from '../secoes/Contato';
 
-const TelaInicial = ({ containerWidth }) => {
+const TelaInicial = () => {
+  const { width } = useWindowDimensions();
+  const contentWidth = width < 800 ? width : width * 0.6;
+
   return (
-    <View>
-        <CarosselInicial containerWidth={containerWidth} />
-        <Apresentacao />
-        <EducacaoAmbiental />
-        <Avaliacoes />
-        <Contato />
-    </View>
+    <ScrollView>
+      <View style={styles.containerApp}>
+        <View style={[styles.contentContainer, { width: contentWidth }]}>
+          <CarosselInicial containerWidth={contentWidth} />
+          <Apresentacao />
+          <EducacaoAmbiental />
+          <Avaliacoes />
+          <Contato />
+        </View>
+      </View>
+    </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  containerApp: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 0,
+  },
+  contentContainer: {
+    alignItems: 'center',
+  },
+});
 
 export default TelaInicial;

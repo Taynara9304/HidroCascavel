@@ -37,6 +37,7 @@ const styles = StyleSheet.create({
     container: {
         display: 'flex',
         marginTop: 10,
+        width: '100%',
     },
     containerContato:{
         backgroundColor: '#236289',
