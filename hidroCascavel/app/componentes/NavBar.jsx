@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import logo from '../assets/logoHidrocascavel.png';
 
 const NavBar = () => {
   const navigation = useNavigation();
@@ -63,6 +65,8 @@ const NavBar = () => {
         </>
       ) : (
         <View style={styles.navRow}>
+          <Image source={logo} style={styles.logo} /> 
+
           <TouchableOpacity style={styles.navItem}>
             <Text style={styles.navText}>Sobre</Text>
           </TouchableOpacity>
@@ -97,7 +101,7 @@ export default NavBar;
 const styles = StyleSheet.create({
   navBar: {
     marginTop: 20,
-    paddingVertical: 12,
+    paddingVertical: 5,
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
     position: "absolute",
@@ -107,6 +111,10 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     alignSelf: "center",
     borderRadius: 10,
+  },
+  logo: {
+    width: 80,
+    height: 80,
   },
   mobileNav: {
     flexDirection: "row",

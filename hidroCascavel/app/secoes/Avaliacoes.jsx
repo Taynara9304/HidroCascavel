@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     marginTop: 10,
     borderRadius: 10,
+    width: '100%',
   },
   content: {
     gap: 20,

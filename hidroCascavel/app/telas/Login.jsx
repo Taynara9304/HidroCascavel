@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import ondaTopo from "../assets/ondaTopo.png";
+import ondaBaixo from "../assets/ondaBaixo.png";
 import Input from "../componentes/Input";
 
 const Login = ({ navigation }) => {
@@ -63,6 +64,12 @@ const Login = ({ navigation }) => {
           <Text style={styles.textoBotao}>Entrar</Text>
         </TouchableOpacity>
       </View>
+
+      <Image
+          source={ondaBaixo}
+          style={[styles.ondaBaixo, { width: contentWidth }]}
+          resizeMode="contain"
+        />
     </View>
   );
 };
@@ -81,6 +88,10 @@ const styles = StyleSheet.create({
   image: {
     alignSelf: "center",
     marginTop: -35, // deixa colada no topo
+  },
+  ondaBaixo: {
+    alignSelf: "center",
+    top: 467,
   },
   titleSobreImagem: {
     position: "absolute",
