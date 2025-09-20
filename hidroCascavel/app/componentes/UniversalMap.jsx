@@ -1,56 +1,70 @@
 // components/UniversalMap.jsx
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Platform, Linking } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Platform, Linking, Alert } from 'react-native';
 
 const UniversalMap = ({ onLocationSelect, initialLocation }) => {
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
 
   const handleManualLocation = () => {
-    // Abrir Google Maps ou outro app de mapa para o usuário obter coordenadas
     const url = `https://www.google.com/maps?q=${initialLocation.latitude},${initialLocation.longitude}`;
     
-    if (Platform.OS === 'web') {
-      window.open(url, '_blank');
-    } else {
-      Linking.openURL(url).catch(err => {
-        Alert.alert('Erro', 'Não foi possível abrir o aplicativo de mapas');
-      });
-    }
+    Linking.openURL(url).catch(err => {
+      Alert.alert('Erro', 'Não foi possível abrir o aplicativo de mapas');
+    });
   };
 
   const focusOnCurrentLocation = () => {
-    if (Platform.OS === 'web') {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            const location = { latitude, longitude };
-            setSelectedLocation(location);
-            onLocationSelect(location);
-          },
-          (error) => {
-            alert('Não foi possível obter sua localização: ' + error.message);
-          }
-        );
-      } else {
-        alert('Geolocalização não é suportada neste navegador.');
-      }
-    } else {
-      // No React Native, pedir para o usuário usar o botão de manual
+    if (navigator.geolocation) {
       Alert.alert(
         'Localização',
-        'Use o botão "Obter Coordenadas" para abrir o aplicativo de mapas e obter suas coordenadas.',
-        [{ text: 'OK' }]
+        'Buscando sua localização atual...',
+        [{ text: 'OK' }],
+        { cancelable: false }
       );
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          const location = { latitude, longitude };
+          setSelectedLocation(location);
+          onLocationSelect(location);
+          
+          Alert.alert(
+            'Localização encontrada',
+            `Latitude: ${latitude.toFixed(6)}\nLongitude: ${longitude.toFixed(6)}`,
+            [{ text: 'OK' }]
+          );
+        },
+        (error) => {
+          let errorMessage = 'Não foi possível obter sua localização';
+          
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage = 'Permissão de localização negada. Habilite nas configurações.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = 'Localização indisponível no momento.';
+              break;
+            case error.TIMEOUT:
+              errorMessage = 'Tempo limite excedido.';
+              break;
+          }
+          
+          Alert.alert('Erro', errorMessage);
+        },
+        { enableHighAccuracy: true, timeout: 15000 }
+      );
+    } else {
+      Alert.alert('Erro', 'Geolocalização não é suportada');
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.mapPlaceholder}>
-        <Text style={styles.placeholderText}>🌍 Mapa</Text>
+        <Text style={styles.placeholderText}>🌍 Mapa Interativo</Text>
         <Text style={styles.placeholderSubtext}>
-          Toque no botão abaixo para selecionar sua localização
+          Use os botões abaixo para selecionar sua localização
         </Text>
       </View>
       
@@ -59,24 +73,24 @@ const UniversalMap = ({ onLocationSelect, initialLocation }) => {
           style={styles.locationButton}
           onPress={focusOnCurrentLocation}
         >
-          <Text style={styles.buttonText}>Usar Minha Localização Atual</Text>
+          <Text style={styles.buttonText}>📍 Usar Localização Atual</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={[styles.locationButton, styles.manualButton]}
           onPress={handleManualLocation}
         >
-          <Text style={styles.buttonText}>Obter Coordenadas no Mapa</Text>
+          <Text style={styles.buttonText}>🗺️ Abrir Google Maps</Text>
         </TouchableOpacity>
       </View>
 
       {selectedLocation && (
         <View style={styles.coordinatesContainer}>
           <Text style={styles.coordinatesText}>
-            Latitude: {selectedLocation.latitude.toFixed(6)}
+            📍 Latitude: {selectedLocation.latitude.toFixed(6)}
           </Text>
           <Text style={styles.coordinatesText}>
-            Longitude: {selectedLocation.longitude.toFixed(6)}
+            📍 Longitude: {selectedLocation.longitude.toFixed(6)}
           </Text>
         </View>
       )}
@@ -97,9 +111,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#bbdefb',
     borderStyle: 'dashed',
+    marginBottom: 15,
   },
   placeholderText: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1976d2',
     marginBottom: 10,
@@ -111,18 +126,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 15,
-    flexWrap: 'wrap',
+    gap: 10,
   },
   locationButton: {
     backgroundColor: '#2196f3',
-    padding: 12,
+    padding: 15,
     borderRadius: 8,
-    minWidth: '48%',
     alignItems: 'center',
-    marginBottom: 10,
   },
   manualButton: {
     backgroundColor: '#ff9800',
@@ -130,13 +140,15 @@ const styles = StyleSheet.create({
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
-    textAlign: 'center',
+    fontSize: 16,
   },
   coordinatesContainer: {
     marginTop: 15,
-    padding: 10,
+    padding: 15,
     backgroundColor: '#f5f5f5',
-    borderRadius: 5,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   coordinatesText: {
     fontSize: 14,

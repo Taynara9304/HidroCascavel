@@ -1,37 +1,39 @@
 // components/WebMap.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
 
 const WebMap = ({ onLocationSelect, initialLocation }) => {
   const [selectedLocation, setSelectedLocation] = useState(initialLocation);
   const mapContainerRef = useRef(null);
   const [map, setMap] = useState(null);
   const [marker, setMarker] = useState(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Carregar o Leaflet CSS e JS dinamicamente
+    // Detectar se é dispositivo móvel
+    const checkIfMobile = () => {
+      return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+    };
+    
+    setIsMobile(checkIfMobile());
+    
     const loadLeaflet = () => {
       if (typeof window === 'undefined' || !mapContainerRef.current) return;
 
-      // Verificar se Leaflet já está carregado
       if (window.L) {
         initMap();
         return;
       }
 
-      // Carregar CSS do Leaflet
       const leafletCss = document.createElement('link');
       leafletCss.rel = 'stylesheet';
       leafletCss.href = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css';
-      leafletCss.integrity = 'sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==';
-      leafletCss.crossOrigin = '';
       document.head.appendChild(leafletCss);
 
-      // Carregar JS do Leaflet
       const leafletJs = document.createElement('script');
       leafletJs.src = 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js';
-      leafletJs.integrity = 'sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==';
-      leafletJs.crossOrigin = '';
       leafletJs.onload = initMap;
       document.head.appendChild(leafletJs);
     };
@@ -41,27 +43,31 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
 
       const mapInstance = window.L.map(mapContainerRef.current).setView(
         [initialLocation.latitude, initialLocation.longitude],
-        initialLocation.zoom || 10
+        isMobile ? 12 : 10 // Zoom diferente para mobile
       );
 
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
       }).addTo(mapInstance);
 
-      // Adicionar marcador inicial
+      // Configurações para mobile
+      if (isMobile) {
+        mapInstance.touchZoom.enable();
+        mapInstance.doubleClickZoom.enable();
+        mapInstance.scrollWheelZoom.enable();
+        mapInstance.dragging.enable();
+      }
+
       const markerInstance = window.L.marker([
         initialLocation.latitude,
         initialLocation.longitude
       ]).addTo(mapInstance);
 
-      // Evento de clique no mapa
       mapInstance.on('click', (e) => {
         const { lat, lng } = e.latlng;
         const newLocation = { latitude: lat, longitude: lng };
         
-        // Mover marcador
         markerInstance.setLatLng([lat, lng]);
-        
         setSelectedLocation(newLocation);
         onLocationSelect(newLocation);
       });
@@ -77,7 +83,7 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
         map.remove();
       }
     };
-  }, []);
+  }, [isMobile]);
 
   const focusOnCurrentLocation = () => {
     if (!navigator.geolocation) {
@@ -106,7 +112,14 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapContainer} ref={mapContainerRef} />
+      <Text style={styles.instructionText}>
+        {isMobile ? 'Toque no mapa para selecionar' : 'Clique no mapa para selecionar'}
+      </Text>
+      
+      <View 
+        ref={mapContainerRef} 
+        style={[styles.mapContainer, isMobile && styles.mobileMap]}
+      />
       
       <TouchableOpacity 
         style={styles.currentLocationButton}
@@ -114,42 +127,92 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
       >
         <Text style={styles.currentLocationText}>📍</Text>
       </TouchableOpacity>
+
+      {selectedLocation && (
+        <View style={styles.coordinatesContainer}>
+          <Text style={styles.coordinatesText}>
+            Lat: {selectedLocation.latitude.toFixed(6)}
+          </Text>
+          <Text style={styles.coordinatesText}>
+            Long: {selectedLocation.longitude.toFixed(6)}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    height: 250,
+    height: 300,
     borderRadius: 10,
     overflow: 'hidden',
     position: 'relative',
+    marginVertical: 10,
+  },
+  instructionText: {
+    textAlign: 'center',
+    padding: 8,
+    backgroundColor: '#2685BF',
+    color: 'white',
+    fontSize: 14,
   },
   mapContainer: {
     width: '100%',
     height: '100%',
   },
+  mobileMap: {
+    cursor: 'pointer',
+  },
   currentLocationButton: {
     position: 'absolute',
-    bottom: 10,
-    right: 10,
+    bottom: 15,
+    right: 15,
     backgroundColor: 'white',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
+    borderRadius: 25,
+    width: 45,
+    height: 45,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
   },
   currentLocationText: {
     fontSize: 20,
+  },
+  coordinatesContainer: {
+    position: 'absolute',
+    top: 45,
+    left: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    padding: 8,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  coordinatesText: {
+    fontSize: 12,
+    color: '#333',
+  },
+  currentLocationButton: {
+    position: 'absolute',
+    bottom: 15,
+    right: 15,
+    backgroundColor: 'white',
+    borderRadius: 25,
+    width: 45,
+    height: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+    // Para web:
+    boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+    // Para mobile (será ignorado na web):
+    ...(Platform.OS !== 'web' && {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
+    }),
   },
 });
 
