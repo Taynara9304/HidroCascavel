@@ -7,11 +7,14 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
+  Alert,
+  ActivityIndicator
 } from "react-native";
 import ondaTopo from "../assets/ondaTopo.png";
 import Input from "../componentes/Input";
+import LocationPicker from "../componentes/LocationPicker";
 
-const Cadastro = () => {
+const Cadastro = ({ navigation }) => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
 
@@ -21,6 +24,60 @@ const Cadastro = () => {
     const [telefone, setTelefone] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmacao, setConfirmacao] = useState("");
+    const [coordenadas, setCoordenadas] = useState(null);
+    const [endereco, setEndereco] = useState({});
+    const [loading, setLoading] = useState(false);
+
+    const handleLocationSelect = (coordenadas) => {
+      setCoordenadas(coordenadas);
+    };
+
+    const handleAddressSelect = (endereco) => {
+      setEndereco(endereco);
+    };
+
+    const handleCadastro = async () => {
+      if (!coordenadas) {
+        Alert.alert('Atenção', 'Por favor, selecione sua localização no mapa.');
+        return;
+      }
+
+      if (senha !== confirmacao) {
+        Alert.alert('Atenção', 'As senhas não coincidem.');
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        // Aqui você faria a requisição para sua API
+        const userData = {
+          email,
+          nome,
+          sobrenome,
+          telefone,
+          senha,
+          coordenadas,
+          endereco: {
+            ...endereco,
+            cep: endereco.cep || '',
+            numero: endereco.numero || ''
+          }
+        };
+        
+        console.log('Dados para cadastro:', userData);
+        
+        // Simulando uma requisição assíncrona
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+        navigation.navigate('Login');
+      } catch (error) {
+        Alert.alert('Erro', 'Ocorreu um erro durante o cadastro. Tente novamente.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
     return(
         <ScrollView>
@@ -56,7 +113,6 @@ const Cadastro = () => {
                         value={nome}
                         onChangeText={setNome}
                         placeholder="Digite seu nome"
-                        secureTextEntry
                         style={{ width: "80%" }}
                     />
 
@@ -65,7 +121,6 @@ const Cadastro = () => {
                         value={sobrenome}
                         onChangeText={setSobrenome}
                         placeholder="Digite seu sobrenome"
-                        secureTextEntry
                         style={{ width: "80%" }}
                     />
 
@@ -74,7 +129,7 @@ const Cadastro = () => {
                         value={telefone}
                         onChangeText={setTelefone}
                         placeholder="Digite seu telefone"
-                        secureTextEntry
+                        keyboardType="phone-pad"
                         style={{ width: "80%" }}
                     />
 
@@ -102,65 +157,49 @@ const Cadastro = () => {
                         <View style={styles.linhaAzul} />
                     </View>
 
+                    <LocationPicker 
+                      onLocationSelect={handleLocationSelect}
+                      onAddressSelect={handleAddressSelect}
+                    />
+
                     <View style={styles.containerEndereco}>
                         <Input
                             label="CEP"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
+                            value={endereco.cep || ""}
+                            onChangeText={(text) => setEndereco({...endereco, cep: text})}
                             placeholder="Digite seu CEP"
-                            secureTextEntry
+                            keyboardType="numeric"
                             style={styles.inputEndereco}
                         />
 
                         <Input
-                            label="Número da casa"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
-                            placeholder="Digite o número da sua casa"
-                            secureTextEntry
+                            label="Número"
+                            value={endereco.numero || ""}
+                            onChangeText={(text) => setEndereco({...endereco, numero: text})}
+                            placeholder="Número (opcional)"
+                            keyboardType="numeric"
                             style={styles.inputEndereco}
                         />
 
                         <Input
-                            label="Rua"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
-                            placeholder="Digite o nome da sua rua"
-                            secureTextEntry
+                            label="Complemento"
+                            value={endereco.complemento || ""}
+                            onChangeText={(text) => setEndereco({...endereco, complemento: text})}
+                            placeholder="Complemento (opcional)"
                             style={styles.inputEndereco}
                         />
 
                         <Input
-                            label="Bairro"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
-                            placeholder="Digite seu bairro"
-                            secureTextEntry
-                            style={styles.inputEndereco}
-                        />
-
-                        <Input
-                            label="Estado"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
-                            placeholder="Digite seu estado"
-                            secureTextEntry
-                            style={styles.inputEndereco}
-                        />
-
-                        <Input
-                            label="Cidade"
-                            value={confirmacao}
-                            onChangeText={setConfirmacao}
-                            placeholder="Digite o nome da sua cidade"
-                            secureTextEntry
+                            label="Referência"
+                            value={endereco.referencia || ""}
+                            onChangeText={(text) => setEndereco({...endereco, referencia: text})}
+                            placeholder="Ponto de referência"
                             style={styles.inputEndereco}
                         />
                     </View>
 
-                    <View>
+                    <View style={styles.loginContainer}>
                         <TouchableOpacity
-                            style={[]}
                             onPress={() => {
                                 navigation.navigate("Login");
                             }}
@@ -169,14 +208,20 @@ const Cadastro = () => {
                         </TouchableOpacity>
                     </View>
 
-
-                    <TouchableOpacity style={styles.botao}>
-                    <Text style={styles.textoBotao}>Cadastrar</Text>
+                    <TouchableOpacity 
+                      style={[styles.botao, loading && styles.botaoDisabled]}
+                      onPress={handleCadastro}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color="#fff" />
+                      ) : (
+                        <Text style={styles.textoBotao}>Cadastrar</Text>
+                      )}
                     </TouchableOpacity>
                 </View>
             </View>
         </ScrollView>
-        
     )
 }
 
@@ -193,7 +238,7 @@ const styles = StyleSheet.create({
   },
   image: {
     alignSelf: "center",
-    marginTop: -35, // deixa colada no topo
+    marginTop: -35,
   },
   titleSobreImagem: {
     position: "absolute",
@@ -206,6 +251,7 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: "center",
+    paddingBottom: 30,
   },
   botao: {
     marginTop: 20,
@@ -215,21 +261,24 @@ const styles = StyleSheet.create({
     width: "50%",
     alignItems: "center",
   },
+  botaoDisabled: {
+    backgroundColor: "#99cde0",
+  },
   textoBotao: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
   containerEndereco: {
-    flexDirection: 'row',   // coloca os inputs lado a lado
-    flexWrap: 'wrap',       // permite quebrar para a próxima linha
-    justifyContent: 'space-between', // espaço entre as colunas
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     width: '80%',
     marginTop: 10,
   },
   inputEndereco: {
-    width: '48%',  // cada input ocupa aproximadamente metade do espaço
-    marginBottom: 10, // espaço entre linhas
+    width: '48%',
+    marginBottom: 10,
   },
   containerDivisao: {
     display: 'flex',
@@ -237,9 +286,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 5,
     alignItems: 'center',
+    marginTop: 20,
   },
   titulo: {
-    fontSize: 18,
+    fontSize: 14,
     marginBottom: 8,
     color: '#2196F3',
     width: '20%',
@@ -249,6 +299,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#2196F3',
     marginBottom: 16,
     width: '80%',
+  },
+  loginContainer: {
+    marginTop: 15,
+  },
+  loginText: {
+    color: '#2685BF',
+    textDecorationLine: 'underline',
   },
 });
 
