@@ -6,17 +6,16 @@ import MobileMap from './MobileMap';
 
 // Coordenadas do IFPR Cascavel
 const IFPR_CASCAVEL = {
-  latitude: -24.943611,  // 24°56'37.0"S
-  longitude: -53.495806  // 53°29'44.9"W
+  latitude: -24.943611,
+  longitude: -53.495806
 };
-
 
 const MapPicker = ({ onLocationSelect, onAddressSelect, initialLocation = IFPR_CASCAVEL }) => {
   if (Platform.OS === 'web') {
     return (
       <WebMap 
         onLocationSelect={onLocationSelect} 
-        onAddressSelect={onAddressSelect}
+        onAddressSelect={onAddressSelect} // PASSA A PROP
         initialLocation={initialLocation}
       />
     );
@@ -25,7 +24,7 @@ const MapPicker = ({ onLocationSelect, onAddressSelect, initialLocation = IFPR_C
   return (
     <MobileMap 
       onLocationSelect={onLocationSelect} 
-      onAddressSelect={onAddressSelect}
+      onAddressSelect={onAddressSelect} // PASSA A PROP
       initialLocation={initialLocation}
     />
   );

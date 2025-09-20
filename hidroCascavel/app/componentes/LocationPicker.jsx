@@ -22,17 +22,16 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       const endereco = await getAddressFromCoordinatesWithRetry(
         coordinate.latitude,
         coordinate.longitude,
-        2 // Número de tentativas
+        2
       );
       
       setAddress(endereco);
       onLocationSelect(coordinate);
-      onAddressSelect(endereco);
+      onAddressSelect(endereco); // CHAMA A PROP onAddressSelect
       
     } catch (error) {
       console.error('Erro ao obter endereço:', error);
       
-      // Fallback: usar apenas coordenadas
       const enderecoFallback = {
         enderecoCompleto: `Localização rural: ${coordinate.latitude.toFixed(6)}, ${coordinate.longitude.toFixed(6)}`,
         rua: '',
@@ -47,7 +46,7 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       
       setAddress(enderecoFallback);
       onLocationSelect(coordinate);
-      onAddressSelect(enderecoFallback);
+      onAddressSelect(enderecoFallback); // CHAMA A PROP onAddressSelect
       
       Alert.alert(
         'Informação', 
@@ -66,6 +65,7 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       
       <MapPicker 
         onLocationSelect={handleLocationSelect}
+        onAddressSelect={onAddressSelect} // PASSA A PROP PARA O MapPicker
         initialLocation={initialLocation}
       />
 

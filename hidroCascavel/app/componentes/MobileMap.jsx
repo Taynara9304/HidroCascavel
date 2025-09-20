@@ -20,7 +20,6 @@ const MobileMap = ({
   initialLocation = IFPR_CASCAVEL
 }) => {
   const [selectedLocation, setSelectedLocation] = useState(IFPR_CASCAVEL);
-  const [address, setAddress] = useState(null);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const webViewRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -54,7 +53,6 @@ const MobileMap = ({
     setLoadingAddress(true);
     try {
       const endereco = await getAddressFromCoordinatesWithRetry(latitude, longitude, 2);
-      setAddress(endereco);
       if (onAddressSelect) {
         onAddressSelect(endereco);
       }
@@ -72,7 +70,6 @@ const MobileMap = ({
         latitude: latitude,
         longitude: longitude
       };
-      setAddress(enderecoFallback);
       if (onAddressSelect) {
         onAddressSelect(enderecoFallback);
       }
@@ -82,6 +79,7 @@ const MobileMap = ({
     }
   };
 
+  // FUNÇÃO htmlContent ADICIONADA DE VOLTA
   const htmlContent = (lat, lng, zoom) => `
 <!DOCTYPE html>
 <html>
@@ -310,22 +308,7 @@ const MobileMap = ({
         setSelectedLocation(location);
         onLocationSelect(location);
         
-        const endereco = await getAddressFromCoordinates(data.latitude, data.longitude);
-        
-        if (webViewRef.current) {
-          const addressText = `
-            <strong>📍 Localização Selecionada:</strong><br>
-            ${endereco.rua ? `${endereco.rua}${endereco.numero ? ', ' + endereco.numero : ''}<br>` : ''}
-            ${endereco.bairro ? `${endereco.bairro}<br>` : ''}
-            ${endereco.cidade ? `${endereco.cidade} - ${endereco.estado || ''}` : ''}
-            ${endereco.cep ? `<br>CEP: ${endereco.cep}` : ''}
-          `;
-          
-          webViewRef.current.injectJavaScript(`
-            showAddressInfo(\`${addressText}\`);
-            true;
-          `);
-        }
+        await getAddressFromCoordinates(data.latitude, data.longitude);
       }
       
       if (data.type === 'mapLoaded') {
@@ -380,18 +363,6 @@ const MobileMap = ({
       console.error('Erro ao obter localização:', error);
       Alert.alert('Erro', 'Não foi possível obter sua localização');
     }
-  };
-
-  const openInMapsApp = () => {
-    const url = Platform.select({
-      ios: `maps://?q=${selectedLocation.latitude},${selectedLocation.longitude}`,
-      android: `geo://${selectedLocation.latitude},${selectedLocation.longitude}?q=${selectedLocation.latitude},${selectedLocation.longitude}`
-    });
-
-    Linking.openURL(url).catch(() => {
-      const webUrl = `https://www.google.com/maps?q=${selectedLocation.latitude},${selectedLocation.longitude}`;
-      Linking.openURL(webUrl);
-    });
   };
 
   const handleModalClose = () => {
@@ -493,62 +464,6 @@ const MobileMap = ({
           <Text style={styles.loadingAddressText}>Buscando endereço...</Text>
         </View>
       )}
-
-      {address && (
-        <View style={styles.addressContainer}>
-          <Text style={styles.addressTitle}>📍 Endereço Selecionado:</Text>
-          
-          {address.rua && (
-            <Text style={styles.addressText}>
-              {address.rua}{address.numero && `, ${address.numero}`}
-            </Text>
-          )}
-          
-          {address.bairro && (
-            <Text style={styles.addressText}>Bairro: {address.bairro}</Text>
-          )}
-          
-          {(address.cidade || address.estado) && (
-            <Text style={styles.addressText}>
-              {address.cidade && `${address.cidade}`}
-              {address.estado && ` - ${address.estado}`}
-            </Text>
-          )}
-          
-          {address.cep && (
-            <Text style={styles.addressText}>CEP: {address.cep}</Text>
-          )}
-          
-          {!address.rua && (
-            <Text style={styles.coordinatesText}>
-              Coordenadas: {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
-            </Text>
-          )}
-        </View>
-      )}
-
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={styles.mapsButton}
-          onPress={openInMapsApp}
-          disabled={!selectedLocation}
-        >
-          <Text style={styles.mapsButtonText}>🗺️ Abrir no Maps</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.confirmButton}
-          onPress={() => {
-            if (onLocationSelect && selectedLocation) {
-              onLocationSelect(selectedLocation);
-              Alert.alert('Sucesso', 'Localização confirmada com sucesso!');
-            }
-          }}
-          disabled={!selectedLocation}
-        >
-          <Text style={styles.confirmButtonText}>✅ Confirmar</Text>
-        </TouchableOpacity>
-      </View>
 
       <Modal
         visible={isExpanded}
@@ -691,38 +606,6 @@ const styles = StyleSheet.create({
     color: '#1976d2',
     fontSize: 14,
   },
-  addressContainer: {
-    backgroundColor: '#e8f5e8',
-    padding: 15,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#c8e6c9',
-    marginTop: 15,
-  },
-  addressTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 10,
-  },
-  addressText: {
-    fontSize: 14,
-    color: '#388e3c',
-    marginBottom: 5,
-    lineHeight: 20,
-  },
-  mapsButton: {
-    backgroundColor: '#ff9800',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  mapsButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
   modalContainer: {
     flex: 1,
     backgroundColor: 'white',
@@ -773,136 +656,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 12,
-  },
-  // Estilos adicionais para melhorar a UI
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 15,
-    gap: 10,
-  },
-  confirmButton: {
-    flex: 1,
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  resetButton: {
-    flex: 1,
-    backgroundColor: '#dc3545',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  resetButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  coordinatesText: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
-    fontFamily: 'monospace',
-  },
-  errorContainer: {
-    backgroundColor: '#f8d7da',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f5c6cb',
-    marginTop: 10,
-  },
-  errorText: {
-    color: '#721c24',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  successContainer: {
-    backgroundColor: '#d4edda',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#c3e6cb',
-    marginTop: 10,
-  },
-  successText: {
-    color: '#155724',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  infoContainer: {
-    backgroundColor: '#d1ecf1',
-    padding: 10,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#bee5eb',
-    marginTop: 10,
-  },
-  infoText: {
-    color: '#0c5460',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  // Estilos para o marcador de posição
-  markerContainer: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    marginLeft: -12,
-    marginTop: -12,
-    zIndex: 999,
-  },
-  marker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#2685BF',
-    borderWidth: 3,
-    borderColor: 'white',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  // Estilos para o loading do mapa
-  mapLoadingContainer: {
-    ...StyleSheet.absoluteFillObject,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(240, 240, 240, 0.8)',
-    borderRadius: 15,
-  },
-  mapLoadingIndicator: {
-    marginBottom: 10,
-  },
-  mapLoadingText: {
-    fontSize: 14,
-    color: '#2685BF',
-    fontWeight: '500',
-  },
-  // Estilos para a versão compacta
-  compactContainer: {
-    height: 200,
-    marginVertical: 5,
-  },
-  compactWebview: {
-    height: 200,
-  },
-  // Estilos responsivos
-  responsiveText: {
-    fontSize: width < 375 ? 12 : 14,
-  },
-  responsiveTitle: {
-    fontSize: width < 375 ? 14 : 16,
   },
 });
 
