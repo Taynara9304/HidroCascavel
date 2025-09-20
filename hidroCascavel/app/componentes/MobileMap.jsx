@@ -1,14 +1,41 @@
 // components/MobileMap.jsx
 import React, { useState, useRef, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Alert, Linking, Platform } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Alert, Linking, Platform, Modal, Dimensions, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import * as Location from 'expo-location';
+import { Ionicons } from '@expo/vector-icons';
+import { getAddressFromCoordinatesWithRetry } from '../services/geocodingService';
 
-const MobileMap = ({ onLocationSelect, initialLocation }) => {
-  const [selectedLocation, setSelectedLocation] = useState(initialLocation);
+const { width, height } = Dimensions.get('window');
+
+// Coordenadas fixas do IFPR Cascavel
+const IFPR_CASCAVEL = {
+  latitude: -24.943611,
+  longitude: -53.495806
+};
+
+const MobileMap = ({
+  onLocationSelect,
+  onAddressSelect,
+  initialLocation = IFPR_CASCAVEL
+}) => {
+  const [selectedLocation, setSelectedLocation] = useState(IFPR_CASCAVEL);
+  const [address, setAddress] = useState(null);
   const [hasLocationPermission, setHasLocationPermission] = useState(false);
   const webViewRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isWebViewReady, setIsWebViewReady] = useState(false);
+  const [loadingAddress, setLoadingAddress] = useState(false);
+
+  const [lastMapState, setLastMapState] = useState({
+    latitude: IFPR_CASCAVEL.latitude,
+    longitude: IFPR_CASCAVEL.longitude,
+    zoom: 16
+  });
+
+  const [webViewKey, setWebViewKey] = useState(1);
+  const [expandedMapState, setExpandedMapState] = useState(null);
 
   useEffect(() => {
     checkLocationPermission();
@@ -23,88 +50,258 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
     }
   };
 
-  const htmlContent = `
+  const getAddressFromCoordinates = async (latitude, longitude) => {
+    setLoadingAddress(true);
+    try {
+      const endereco = await getAddressFromCoordinatesWithRetry(latitude, longitude, 2);
+      setAddress(endereco);
+      if (onAddressSelect) {
+        onAddressSelect(endereco);
+      }
+      return endereco;
+    } catch (error) {
+      console.error('Erro ao obter endereço:', error);
+      const enderecoFallback = {
+        enderecoCompleto: `Localização: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+        rua: '',
+        numero: '',
+        bairro: '',
+        cidade: '',
+        estado: '',
+        cep: '',
+        latitude: latitude,
+        longitude: longitude
+      };
+      setAddress(enderecoFallback);
+      if (onAddressSelect) {
+        onAddressSelect(enderecoFallback);
+      }
+      return enderecoFallback;
+    } finally {
+      setLoadingAddress(false);
+    }
+  };
+
+  const htmlContent = (lat, lng, zoom) => `
 <!DOCTYPE html>
 <html>
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; }
-        #map { width: 100%; height: 100vh; }
-        .leaflet-container { background: #f8f9fa; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; overflow: hidden; }
+        #map { width: 100%; height: 100%; background: #f8f9fa; }
+        .leaflet-container { background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        .leaflet-control-attribution { font-size: 10px; }
+        
+        .leaflet-touch .leaflet-control-layers, 
+        .leaflet-touch .leaflet-bar {
+            border: 2px solid rgba(0,0,0,0.2);
+        }
+        .leaflet-touch .leaflet-bar a {
+            width: 35px;
+            height: 35px;
+            line-height: 35px;
+            font-size: 18px;
+        }
+        
+        .address-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #2685BF;
+            z-index: 1000;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .location-marker {
+            background-color: #2685BF;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 12px;
+            height: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+        
+        .ifpr-marker {
+            background-color: #ff0000;
+            border: 2px solid white;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        
+        .expand-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            border-radius: 4px;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .leaflet-layer,
+        .leaflet-tile-container {
+            will-change: auto !important;
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div id="addressInfo" class="address-info" style="display: none;"></div>
     
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
         let map, marker;
-        const initialLocation = { 
-            lat: ${initialLocation.latitude}, 
-            lng: ${initialLocation.longitude} 
+        const initialLat = ${lat};
+        const initialLng = ${lng};
+        const initialZoom = ${zoom};
+        const IFPR_CASCAVEL = {
+            lat: -24.943611,
+            lng: -53.495806
         };
 
         function initMap() {
-            map = L.map('map').setView([initialLocation.lat, initialLocation.lng], 13);
+            map = L.map('map', {
+                zoomControl: true,
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: false,
+                doubleClickZoom: true,
+                boxZoom: true,
+                keyboard: false,
+                tap: true,
+                zoomSnap: 0.5,
+                preferCanvas: true
+            }).setView([initialLat, initialLng], initialZoom);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                maxZoom: 19,
+                minZoom: 3,
+                crossOrigin: true,
+                detectRetina: false
             }).addTo(map);
 
-            marker = L.marker([initialLocation.lat, initialLocation.lng], {
-                draggable: true
+            const ifprIcon = L.divIcon({
+                className: 'ifpr-marker',
+                html: '<div style="color: white; font-weight: bold; text-align: center; font-size: 10px;">IFPR</div>',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            L.marker([IFPR_CASCAVEL.lat, IFPR_CASCAVEL.lng], {
+                title: 'IFPR - Campus Cascavel',
+                icon: ifprIcon,
+                zIndexOffset: 1000
+            }).addTo(map).bindPopup('<strong>IFPR Campus Cascavel</strong><br>Avenida das Palmas, 2020');
+
+            marker = L.marker([initialLat, initialLng], {
+                draggable: true,
+                autoPan: true,
+                title: 'Local selecionado'
             }).addTo(map);
 
-            // Evento de clique no mapa
             map.on('click', function(e) {
                 const { lat, lng } = e.latlng;
-                marker.setLatLng([lat, lng]);
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'locationSelected',
-                    latitude: lat,
-                    longitude: lng
-                }));
+                updateMarkerPosition(lat, lng);
             });
 
-            // Evento de arrastar marcador
             marker.on('dragend', function(e) {
                 const { lat, lng } = marker.getLatLng();
-                window.ReactNativeWebView.postMessage(JSON.stringify({
-                    type: 'locationSelected',
-                    latitude: lat,
-                    longitude: lng
-                }));
+                updateMarkerPosition(lat, lng);
             });
 
-            // Configurações para mobile
+            setTimeout(function() {
+                map.invalidateSize(true);
+                map.setView([initialLat, initialLng], initialZoom);
+                marker.setLatLng([initialLat, initialLng]);
+                
+                setTimeout(function() {
+                    map.invalidateSize(true);
+                }, 300);
+            }, 100);
+
             map.touchZoom.enable();
             map.doubleClickZoom.enable();
             map.scrollWheelZoom.enable();
             map.dragging.enable();
 
-            // Notificar que o mapa está carregado
+            map.zoomControl.setPosition('bottomright');
+
+            setTimeout(function() {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                    type: 'mapLoaded',
+                    latitude: initialLat,
+                    longitude: initialLng,
+                    zoom: initialZoom
+                }));
+                
+                setTimeout(function() {
+                    map.invalidateSize(true);
+                }, 500);
+            }, 800);
+        }
+
+        function updateMarkerPosition(lat, lng) {
+            marker.setLatLng([lat, lng]);
             window.ReactNativeWebView.postMessage(JSON.stringify({
-                type: 'mapLoaded'
+                type: 'locationSelected',
+                latitude: lat,
+                longitude: lng
             }));
         }
 
-        function setMapLocation(lat, lng) {
+        function setMapLocation(lat, lng, zoom = 15) {
             if (map && marker) {
-                map.setView([lat, lng], 15);
+                map.setView([lat, lng], zoom);
                 marker.setLatLng([lat, lng]);
+                updateMarkerPosition(lat, lng);
+                
+                setTimeout(function() {
+                    map.invalidateSize(true);
+                }, 100);
             }
         }
 
-        // Inicializar o mapa quando a página carregar
-        document.addEventListener('DOMContentLoaded', initMap);
+        function showAddressInfo(addressText) {
+            const addressDiv = document.getElementById('addressInfo');
+            addressDiv.innerHTML = addressText;
+            addressDiv.style.display = 'block';
+            
+            setTimeout(() => {
+                addressDiv.style.display = 'none';
+            }, 8000);
+        }
+
+        window.addEventListener('load', function() {
+            initMap();
+        });
+
+        setTimeout(initMap, 1000);
     </script>
 </body>
 </html>
 `;
 
-  const handleWebViewMessage = (event) => {
+  const handleWebViewMessage = async (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       
@@ -112,10 +309,28 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
         const location = { latitude: data.latitude, longitude: data.longitude };
         setSelectedLocation(location);
         onLocationSelect(location);
+        
+        const endereco = await getAddressFromCoordinates(data.latitude, data.longitude);
+        
+        if (webViewRef.current) {
+          const addressText = `
+            <strong>📍 Localização Selecionada:</strong><br>
+            ${endereco.rua ? `${endereco.rua}${endereco.numero ? ', ' + endereco.numero : ''}<br>` : ''}
+            ${endereco.bairro ? `${endereco.bairro}<br>` : ''}
+            ${endereco.cidade ? `${endereco.cidade} - ${endereco.estado || ''}` : ''}
+            ${endereco.cep ? `<br>CEP: ${endereco.cep}` : ''}
+          `;
+          
+          webViewRef.current.injectJavaScript(`
+            showAddressInfo(\`${addressText}\`);
+            true;
+          `);
+        }
       }
       
       if (data.type === 'mapLoaded') {
         setMapLoaded(true);
+        setIsWebViewReady(true);
       }
     } catch (error) {
       console.log('Erro ao processar mensagem:', error);
@@ -141,13 +356,6 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
         }
       }
 
-      Alert.alert(
-        'Buscando localização',
-        'Procurando sua posição atual...',
-        [{ text: 'OK' }],
-        { cancelable: false }
-      );
-
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
         timeout: 15000,
@@ -159,19 +367,14 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
       setSelectedLocation(newLocation);
       onLocationSelect(newLocation);
 
-      // Mover o mapa para a localização atual
       if (webViewRef.current && mapLoaded) {
         webViewRef.current.injectJavaScript(`
-          setMapLocation(${latitude}, ${longitude});
+          setMapLocation(${latitude}, ${longitude}, 15);
           true;
         `);
       }
 
-      Alert.alert(
-        'Localização encontrada!',
-        `Sua localização atual foi definida no mapa.`,
-        [{ text: 'OK' }]
-      );
+      await getAddressFromCoordinates(latitude, longitude);
 
     } catch (error) {
       console.error('Erro ao obter localização:', error);
@@ -191,6 +394,35 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
     });
   };
 
+  const handleModalClose = () => {
+    setIsExpanded(false);
+    setWebViewKey(prev => prev + 1);
+  };
+
+  const handleModalOpen = () => {
+    if (webViewRef.current && mapLoaded) {
+      webViewRef.current.injectJavaScript(`
+        const center = map.getCenter();
+        const zoom = map.getZoom();
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'currentMapState',
+          latitude: center.lat,
+          longitude: center.lng,
+          zoom: zoom
+        }));
+        true;
+      `);
+    }
+    setIsExpanded(true);
+  };
+
+  const getExpandedMapLocation = () => {
+    if (expandedMapState) {
+      return expandedMapState;
+    }
+    return lastMapState;
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.instructionText}>
@@ -199,15 +431,37 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
       
       <View style={styles.mapContainer}>
         <WebView
+          key={webViewKey}
           ref={webViewRef}
           style={styles.webview}
-          source={{ html: htmlContent }}
+          source={{ html: htmlContent(
+            lastMapState.latitude,
+            lastMapState.longitude,
+            lastMapState.zoom
+          ) }}
           onMessage={handleWebViewMessage}
           javaScriptEnabled={true}
           domStorageEnabled={true}
           startInLoadingState={true}
           scalesPageToFit={true}
           automaticallyAdjustContentInsets={false}
+          overScrollMode="never"
+          bounces={false}
+          scrollEnabled={false}
+          onLoadEnd={() => {
+            setIsWebViewReady(true);
+            setTimeout(() => {
+              if (webViewRef.current) {
+                webViewRef.current.injectJavaScript(`
+                  if (map) {
+                    map.invalidateSize(true);
+                    setTimeout(function() { map.invalidateSize(true); }, 300);
+                  }
+                  true;
+                `);
+              }
+            }, 500);
+          }}
         />
         
         <TouchableOpacity 
@@ -215,29 +469,137 @@ const MobileMap = ({ onLocationSelect, initialLocation }) => {
           onPress={focusOnCurrentLocation}
           disabled={!mapLoaded}
         >
-          <Text style={styles.currentLocationText}>📍</Text>
+          <Ionicons name="locate" size={24} color="#2685BF" />
+        </TouchableOpacity>
+
+        <TouchableOpacity 
+          style={styles.expandButton}
+          onPress={handleModalOpen}
+        >
+          <Ionicons name="expand" size={24} color="#2685BF" />
+        </TouchableOpacity>
+
+        {!isWebViewReady && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#2685BF" style={styles.mapLoadingIndicator} />
+            <Text style={styles.loadingText}>Carregando mapa...</Text>
+          </View>
+        )}
+      </View>
+
+      {loadingAddress && (
+        <View style={styles.loadingAddressContainer}>
+          <ActivityIndicator size="small" color="#2685BF" />
+          <Text style={styles.loadingAddressText}>Buscando endereço...</Text>
+        </View>
+      )}
+
+      {address && (
+        <View style={styles.addressContainer}>
+          <Text style={styles.addressTitle}>📍 Endereço Selecionado:</Text>
+          
+          {address.rua && (
+            <Text style={styles.addressText}>
+              {address.rua}{address.numero && `, ${address.numero}`}
+            </Text>
+          )}
+          
+          {address.bairro && (
+            <Text style={styles.addressText}>Bairro: {address.bairro}</Text>
+          )}
+          
+          {(address.cidade || address.estado) && (
+            <Text style={styles.addressText}>
+              {address.cidade && `${address.cidade}`}
+              {address.estado && ` - ${address.estado}`}
+            </Text>
+          )}
+          
+          {address.cep && (
+            <Text style={styles.addressText}>CEP: {address.cep}</Text>
+          )}
+          
+          {!address.rua && (
+            <Text style={styles.coordinatesText}>
+              Coordenadas: {address.latitude.toFixed(6)}, {address.longitude.toFixed(6)}
+            </Text>
+          )}
+        </View>
+      )}
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={styles.mapsButton}
+          onPress={openInMapsApp}
+          disabled={!selectedLocation}
+        >
+          <Text style={styles.mapsButtonText}>🗺️ Abrir no Maps</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.confirmButton}
+          onPress={() => {
+            if (onLocationSelect && selectedLocation) {
+              onLocationSelect(selectedLocation);
+              Alert.alert('Sucesso', 'Localização confirmada com sucesso!');
+            }
+          }}
+          disabled={!selectedLocation}
+        >
+          <Text style={styles.confirmButtonText}>✅ Confirmar</Text>
         </TouchableOpacity>
       </View>
 
-      {selectedLocation && (
-        <View style={styles.infoContainer}>
-          <View style={styles.coordinatesContainer}>
-            <Text style={styles.coordinatesText}>
-              📍 Latitude: {selectedLocation.latitude.toFixed(6)}
-            </Text>
-            <Text style={styles.coordinatesText}>
-              📍 Longitude: {selectedLocation.longitude.toFixed(6)}
-            </Text>
+      <Modal
+        visible={isExpanded}
+        animationType="slide"
+        onRequestClose={handleModalClose}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Mapa - Toque para selecionar</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={handleModalClose}
+            >
+              <Ionicons name="close" size={28} color="#333" />
+            </TouchableOpacity>
           </View>
           
-          <TouchableOpacity 
-            style={styles.mapsButton}
-            onPress={openInMapsApp}
-          >
-            <Text style={styles.mapsButtonText}>🗺️ Abrir no App de Mapas</Text>
-          </TouchableOpacity>
+          <WebView
+            key={`expanded-${webViewKey}`}
+            ref={webViewRef}
+            style={styles.expandedWebview}
+            source={{ html: htmlContent(
+              getExpandedMapLocation().latitude,
+              getExpandedMapLocation().longitude,
+              getExpandedMapLocation().zoom
+            ) }}
+            onMessage={handleWebViewMessage}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            scalesPageToFit={true}
+          />
+          
+          <View style={styles.modalControls}>
+            <TouchableOpacity 
+              style={styles.modalLocationButton}
+              onPress={focusOnCurrentLocation}
+            >
+              <Ionicons name="locate" size={20} color="white" />
+              <Text style={styles.modalButtonText}>Minha Localização</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={[styles.modalLocationButton, styles.modalCloseButton]}
+              onPress={handleModalClose}
+            >
+              <Ionicons name="close" size={20} color="white" />
+              <Text style={styles.modalButtonText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -258,7 +620,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   mapContainer: {
-    height: 400,
+    height: 300,
     borderRadius: 15,
     overflow: 'hidden',
     borderWidth: 2,
@@ -274,49 +636,273 @@ const styles = StyleSheet.create({
     right: 15,
     backgroundColor: 'white',
     borderRadius: 25,
-    width: 50,
-    height: 50,
+    width: 45,
+    height: 45,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    zIndex: 1000,
   },
-  currentLocationText: {
-    fontSize: 20,
+  expandButton: {
+    position: 'absolute',
+    bottom: 70,
+    right: 15,
+    backgroundColor: 'white',
+    borderRadius: 25,
+    width: 45,
+    height: 45,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
   },
-  infoContainer: {
-    marginTop: 15,
-    gap: 10,
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 15,
   },
-  coordinatesContainer: {
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#2685BF',
+    fontWeight: '500',
+  },
+  loadingAddressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    backgroundColor: 'rgba(38, 133, 191, 0.1)',
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  loadingAddressText: {
+    marginLeft: 10,
+    color: '#1976d2',
+    fontSize: 14,
+  },
+  addressContainer: {
     backgroundColor: '#e8f5e8',
     padding: 15,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#c8e6c9',
+    marginTop: 15,
   },
-  coordinatesText: {
-    fontSize: 14,
+  addressTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
     color: '#2e7d32',
-    fontWeight: '500',
+    marginBottom: 10,
+  },
+  addressText: {
+    fontSize: 14,
+    color: '#388e3c',
     marginBottom: 5,
+    lineHeight: 20,
   },
   mapsButton: {
     backgroundColor: '#ff9800',
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',
+    marginTop: 15,
   },
   mapsButtonText: {
     color: 'white',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderBottomWidth: 1,
+    borderBottomColor: '#dee2e6',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  expandedWebview: {
+    flex: 1,
+  },
+  modalControls: {
+    flexDirection: 'row',
+    padding: 15,
+    backgroundColor: '#f8f9fa',
+    borderTopWidth: 1,
+    borderTopColor: '#dee2e6',
+    gap: 10,
+  },
+  modalLocationButton: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#2685BF',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+  },
+  modalCloseButton: {
+    backgroundColor: '#6c757d',
+    flex: 0.5,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
+  },
+  // Estilos adicionais para melhorar a UI
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 15,
+    gap: 10,
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#28a745',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  resetButton: {
+    flex: 1,
+    backgroundColor: '#dc3545',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  coordinatesText: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
+    fontFamily: 'monospace',
+  },
+  errorContainer: {
+    backgroundColor: '#f8d7da',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#f5c6cb',
+    marginTop: 10,
+  },
+  errorText: {
+    color: '#721c24',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  successContainer: {
+    backgroundColor: '#d4edda',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#c3e6cb',
+    marginTop: 10,
+  },
+  successText: {
+    color: '#155724',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  infoContainer: {
+    backgroundColor: '#d1ecf1',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#bee5eb',
+    marginTop: 10,
+  },
+  infoText: {
+    color: '#0c5460',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  // Estilos para o marcador de posição
+  markerContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    marginLeft: -12,
+    marginTop: -12,
+    zIndex: 999,
+  },
+  marker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#2685BF',
+    borderWidth: 3,
+    borderColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 3,
+    elevation: 5,
+  },
+  // Estilos para o loading do mapa
+  mapLoadingContainer: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(240, 240, 240, 0.8)',
+    borderRadius: 15,
+  },
+  mapLoadingIndicator: {
+    marginBottom: 10,
+  },
+  mapLoadingText: {
+    fontSize: 14,
+    color: '#2685BF',
+    fontWeight: '500',
+  },
+  // Estilos para a versão compacta
+  compactContainer: {
+    height: 200,
+    marginVertical: 5,
+  },
+  compactWebview: {
+    height: 200,
+  },
+  // Estilos responsivos
+  responsiveText: {
+    fontSize: width < 375 ? 12 : 14,
+  },
+  responsiveTitle: {
+    fontSize: width < 375 ? 14 : 16,
   },
 });
 

@@ -4,21 +4,28 @@ import { Platform } from 'react-native';
 import WebMap from './WebMap';
 import MobileMap from './MobileMap';
 
-const MapPicker = ({ onLocationSelect, initialLocation }) => {
-  // Para web, use WebMap com Leaflet
+// Coordenadas do IFPR Cascavel
+const IFPR_CASCAVEL = {
+  latitude: -24.943611,  // 24°56'37.0"S
+  longitude: -53.495806  // 53°29'44.9"W
+};
+
+
+const MapPicker = ({ onLocationSelect, onAddressSelect, initialLocation = IFPR_CASCAVEL }) => {
   if (Platform.OS === 'web') {
     return (
       <WebMap 
         onLocationSelect={onLocationSelect} 
+        onAddressSelect={onAddressSelect}
         initialLocation={initialLocation}
       />
     );
   }
 
-  // Para mobile, use MobileMap com WebView
   return (
     <MobileMap 
       onLocationSelect={onLocationSelect} 
+      onAddressSelect={onAddressSelect}
       initialLocation={initialLocation}
     />
   );
