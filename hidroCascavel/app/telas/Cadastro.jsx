@@ -15,6 +15,9 @@ import {
 import ondaTopo from "../assets/ondaTopo.png";
 import Input from "../componentes/Input";
 import LocationPicker from "../componentes/LocationPicker";
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../services/firebaseConfig';
 
 const Cadastro = ({ navigation }) => {
     const { width } = useWindowDimensions();
@@ -45,7 +48,6 @@ const Cadastro = ({ navigation }) => {
     };
 
     const handleAddressSelect = (enderecoSelecionado) => {
-      // Atualiza apenas os campos que vieram do geocoding
       setEndereco(prev => ({
         ...prev,
         rua: enderecoSelecionado.rua || prev.rua,
@@ -70,29 +72,44 @@ const Cadastro = ({ navigation }) => {
       setLoading(true);
 
       try {
-        const userData = {
-          email,
-          nome,
-          sobrenome,
-          telefone,
-          senha,
-          coordenadas,
+        // 1. Criar usuário no Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+        const user = userCredential.user;
+
+        // 2. Salvar dados adicionais no Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+          email: email,
+          nome: nome,
+          sobrenome: sobrenome,
+          telefone: telefone,
+          coordenadas: coordenadas,
           endereco: {
             ...endereco,
             numero: endereco.numero || '',
             complemento: endereco.complemento || '',
             referencia: endereco.referencia || ''
-          }
-        };
-        
-        console.log('Dados para cadastro:', userData);
-        
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
+          },
+          createdAt: new Date(),
+        });
+
         Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
-        navigation.navigate('Login');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'HomeAdm' }],
+        });
       } catch (error) {
-        Alert.alert('Erro', 'Ocorreu um erro durante o cadastro. Tente novamente.');
+        console.error('Erro ao cadastrar:', error);
+        let errorMessage = 'Ocorreu um erro durante o cadastro. Tente novamente.';
+        
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Este e-mail já está em uso.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'E-mail inválido.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+        }
+        
+        Alert.alert('Erro', errorMessage);
       } finally {
         setLoading(false);
       }
@@ -181,7 +198,6 @@ const Cadastro = ({ navigation }) => {
                       />
                     </View>
 
-                    {/* CONTAINER DE INPUTS DE ENDEREÇO - AGORA VISÍVEL NO MOBILE */}
                     <View style={styles.containerEndereco}>
                         <Input
                             label="Rua"
