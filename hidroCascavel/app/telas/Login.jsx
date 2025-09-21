@@ -60,7 +60,12 @@ const Login = ({ navigation }) => {
               </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.botao}>
+        <TouchableOpacity
+          style={styles.botao}
+          onPress={() => {
+            navigation.navigate("HomeAdm");
+          }}
+          >
           <Text style={styles.textoBotao}>Entrar</Text>
         </TouchableOpacity>
       </View>
