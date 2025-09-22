@@ -1,8 +1,9 @@
-// App.js
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider } from './contexts/authContext'; // Adicione esta importação
+import { AuthProvider } from './contexts/authContext';
+import Toast from 'react-native-toast-message';
+import { toastConfig } from './services/toastConfig';
 
 import TelaInicial from './telas/TelaInicial';
 import Login from './telas/Login';
@@ -13,7 +14,7 @@ const Stack = createNativeStackNavigator();
 
 const App = () => {
   return (
-    <AuthProvider> {/* Agora esta linha funcionará */}
+    <AuthProvider>
       <NavigationContainer>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="/" component={TelaInicial} />
@@ -22,6 +23,7 @@ const App = () => {
           <Stack.Screen name="HomeAdm" component={HomeAdm} />
         </Stack.Navigator>
       </NavigationContainer>
+      <Toast config={toastConfig} />
     </AuthProvider>
   );
 }

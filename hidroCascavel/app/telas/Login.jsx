@@ -6,9 +6,9 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  Alert,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  ActivityIndicator
 } from "react-native";
 import ondaTopo from "../assets/ondaTopo.png";
 import ondaBaixo from "../assets/ondaBaixo.png";
@@ -16,6 +16,7 @@ import Input from "../componentes/Input";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
+import Toast from 'react-native-toast-message';
 
 const Login = ({ navigation }) => {
   const { width } = useWindowDimensions();
@@ -24,11 +25,28 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const { buscarDadosUsuario } = useAuth();
 
+  const validateFields = () => {
+    const newErrors = {};
+
+    if (!email) newErrors.email = 'E-mail é obrigatório';
+    else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
+
+    if (!senha) newErrors.senha = 'Senha é obrigatória';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleLogin = async () => {
-    if (!email || !senha) {
-      Alert.alert('Erro', 'PREENCHA TODOS OS CAMPOS');
+    if (!validateFields()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Atenção',
+        text2: 'Por favor, preencha todos os campos corretamente.'
+      });
       return;
     }
 
@@ -40,6 +58,12 @@ const Login = ({ navigation }) => {
 
       // Busca e salva os dados do usuário usando o contexto
       await buscarDadosUsuario(userFirebase);
+
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Login realizado com sucesso!'
+      });
 
       // Redireciona para a HomeAdm após login bem-sucedido
       navigation.reset({
@@ -57,9 +81,15 @@ const Login = ({ navigation }) => {
         errorMessage = 'Senha incorreta';
       } else if (error.code === 'auth/invalid-email') {
         errorMessage = 'Email inválido';
+      } else if (error.code === 'auth/network-request-failed') {
+        errorMessage = 'Erro de conexão. Verifique sua internet.';
       }
       
-      Alert.alert('Erro', errorMessage);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: errorMessage
+      });
     } finally {
       setIsLoading(false);
     }
@@ -79,23 +109,29 @@ const Login = ({ navigation }) => {
         </View>
 
         <View style={[styles.content, { width: contentWidth }]}>
-          <Input
-            label="E-mail"
-            value={email}
-            onChangeText={setEmail}
-            placeholder="Digite seu e-mail"
-            keyboardType="email-address"
-            style={{ width: "80%" }}
-          />
+          <View style={styles.inputContainer}>
+            <Input
+              label="E-mail"
+              value={email}
+              onChangeText={setEmail}
+              placeholder="Digite seu e-mail"
+              keyboardType="email-address"
+              style={{ width: "100%" }}
+            />
+            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+          </View>
 
-          <Input
-            label="Senha"
-            value={senha}
-            onChangeText={setSenha}
-            placeholder="Digite sua senha"
-            secureTextEntry
-            style={{ width: "80%" }}
-          />
+          <View style={styles.inputContainer}>
+            <Input
+              label="Senha"
+              value={senha}
+              onChangeText={setSenha}
+              placeholder="Digite sua senha"
+              secureTextEntry
+              style={{ width: "100%" }}
+            />
+            {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
+          </View>
 
           <View>
             <TouchableOpacity
@@ -112,9 +148,11 @@ const Login = ({ navigation }) => {
             onPress={handleLogin}
             disabled={isLoading}
           >
-            <Text style={styles.textoBotao}>
-              {isLoading ? 'Entrando...' : 'Entrar'}
-            </Text>
+            {isLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.textoBotao}>Entrar</Text>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -158,6 +196,11 @@ const styles = StyleSheet.create({
   },
   content: {
     alignItems: "center",
+    width: "100%",
+  },
+  inputContainer: {
+    width: "80%",
+    marginBottom: 15,
   },
   botao: {
     marginTop: 20,
@@ -179,6 +222,12 @@ const styles = StyleSheet.create({
     color: "#2685BF",
     marginTop: 10,
     textDecorationLine: 'underline',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
   },
 });
 

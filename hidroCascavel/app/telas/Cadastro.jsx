@@ -8,7 +8,6 @@ import {
   Text,
   TouchableOpacity,
   useWindowDimensions,
-  Alert,
   ActivityIndicator,
   Platform
 } from "react-native";
@@ -18,11 +17,11 @@ import LocationPicker from "../componentes/LocationPicker";
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
+import Toast from 'react-native-toast-message';
 
 const Cadastro = ({ navigation }) => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
-    const isMobile = Platform.OS !== 'web';
 
     const [email, setEmail] = useState("");
     const [nome, setNome] = useState("");
@@ -42,9 +41,13 @@ const Cadastro = ({ navigation }) => {
       referencia: ""
     });
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
     const handleLocationSelect = (coordenadas) => {
       setCoordenadas(coordenadas);
+      if (errors.coordenadas) {
+        setErrors(prev => ({ ...prev, coordenadas: '' }));
+      }
     };
 
     const handleAddressSelect = (enderecoSelecionado) => {
@@ -58,25 +61,44 @@ const Cadastro = ({ navigation }) => {
       }));
     };
 
-    const handleCadastro = async () => {
-      if (!coordenadas) {
-        Alert.alert('Atenção', 'Por favor, selecione sua localização no mapa.');
-        return;
-      }
+    const validateFields = () => {
+      const newErrors = {};
 
-      if (senha !== confirmacao) {
-        Alert.alert('Atenção', 'As senhas não coincidem.');
+      if (!email) newErrors.email = 'E-mail é obrigatório';
+      else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
+
+      if (!nome) newErrors.nome = 'Nome é obrigatório';
+      if (!sobrenome) newErrors.sobrenome = 'Sobrenome é obrigatório';
+      if (!telefone) newErrors.telefone = 'Telefone é obrigatório';
+      
+      if (!senha) newErrors.senha = 'Senha é obrigatória';
+      else if (senha.length < 6) newErrors.senha = 'Senha deve ter pelo menos 6 caracteres';
+      
+      if (!confirmacao) newErrors.confirmacao = 'Confirmação de senha é obrigatória';
+      else if (senha !== confirmacao) newErrors.confirmacao = 'As senhas não coincidem';
+      
+      if (!coordenadas) newErrors.coordenadas = 'Localização é obrigatória';
+
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
+
+    const handleCadastro = async () => {
+      if (!validateFields()) {
+        Toast.show({
+          type: 'error',
+          text1: 'Atenção',
+          text2: 'Por favor, corrija os erros no formulário.'
+        });
         return;
       }
 
       setLoading(true);
 
       try {
-        // 1. Criar usuário no Firebase Authentication
         const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
         const user = userCredential.user;
 
-        // 2. Salvar dados adicionais no Firestore
         await setDoc(doc(db, 'users', user.uid), {
           email: email,
           nome: nome,
@@ -92,7 +114,12 @@ const Cadastro = ({ navigation }) => {
           createdAt: new Date(),
         });
 
-        Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso',
+          text2: 'Cadastro realizado com sucesso!'
+        });
+
         navigation.reset({
           index: 0,
           routes: [{ name: 'HomeAdm' }],
@@ -109,9 +136,31 @@ const Cadastro = ({ navigation }) => {
           errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
         }
         
-        Alert.alert('Erro', errorMessage);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: errorMessage
+        });
       } finally {
         setLoading(false);
+      }
+    };
+
+    const handleSenhaChange = (text) => {
+      setSenha(text);
+      if (confirmacao && text !== confirmacao) {
+        setErrors(prev => ({ ...prev, confirmacao: 'As senhas não coincidem' }));
+      } else if (confirmacao && text === confirmacao) {
+        setErrors(prev => ({ ...prev, confirmacao: '' }));
+      }
+    };
+
+    const handleConfirmacaoChange = (text) => {
+      setConfirmacao(text);
+      if (text !== senha) {
+        setErrors(prev => ({ ...prev, confirmacao: 'As senhas não coincidem' }));
+      } else {
+        setErrors(prev => ({ ...prev, confirmacao: '' }));
       }
     };
 
@@ -134,57 +183,75 @@ const Cadastro = ({ navigation }) => {
                         <View style={styles.linhaAzul} />
                     </View>
 
-                    <Input
-                        label="E-mail"
-                        value={email}
-                        onChangeText={setEmail}
-                        placeholder="Digite seu e-mail"
-                        keyboardType="email-address"
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="E-mail"
+                            value={email}
+                            onChangeText={setEmail}
+                            placeholder="Digite seu e-mail"
+                            keyboardType="email-address"
+                            style={styles.input}
+                        />
+                        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                    </View>
 
-                    <Input
-                        label="Nome"
-                        value={nome}
-                        onChangeText={setNome}
-                        placeholder="Digite seu nome"
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Nome"
+                            value={nome}
+                            onChangeText={setNome}
+                            placeholder="Digite seu nome"
+                            style={styles.input}
+                        />
+                        {errors.nome && <Text style={styles.errorText}>{errors.nome}</Text>}
+                    </View>
 
-                    <Input
-                        label="Sobrenome"
-                        value={sobrenome}
-                        onChangeText={setSobrenome}
-                        placeholder="Digite seu sobrenome"
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Sobrenome"
+                            value={sobrenome}
+                            onChangeText={setSobrenome}
+                            placeholder="Digite seu sobrenome"
+                            style={styles.input}
+                        />
+                        {errors.sobrenome && <Text style={styles.errorText}>{errors.sobrenome}</Text>}
+                    </View>
 
-                    <Input
-                        label="Telefone"
-                        value={telefone}
-                        onChangeText={setTelefone}
-                        placeholder="Digite seu telefone"
-                        keyboardType="phone-pad"
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Telefone"
+                            value={telefone}
+                            onChangeText={setTelefone}
+                            placeholder="Digite seu telefone"
+                            keyboardType="phone-pad"
+                            style={styles.input}
+                        />
+                        {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
+                    </View>
 
-                    <Input
-                        label="Senha"
-                        value={senha}
-                        onChangeText={setSenha}
-                        placeholder="Digite sua senha"
-                        secureTextEntry
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Senha"
+                            value={senha}
+                            onChangeText={handleSenhaChange}
+                            placeholder="Digite sua senha (mín. 6 caracteres)"
+                            secureTextEntry
+                            style={styles.input}
+                        />
+                        {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
+                    </View>
 
-                    <Input
-                        label="Confimação"
-                        value={confirmacao}
-                        onChangeText={setConfirmacao}
-                        placeholder="Confirme sua senha"
-                        secureTextEntry
-                        style={styles.input}
-                    />
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Confirmação de Senha"
+                            value={confirmacao}
+                            onChangeText={handleConfirmacaoChange}
+                            placeholder="Confirme sua senha"
+                            secureTextEntry
+                            style={styles.input}
+                        />
+                        {errors.confirmacao && <Text style={styles.errorText}>{errors.confirmacao}</Text>}
+                    </View>
 
                     <View style={styles.containerDivisao}>
                         <Text style={styles.titulo}>Endereço</Text>
@@ -196,6 +263,7 @@ const Cadastro = ({ navigation }) => {
                         onLocationSelect={handleLocationSelect}
                         onAddressSelect={handleAddressSelect}
                       />
+                      {errors.coordenadas && <Text style={styles.errorText}>{errors.coordenadas}</Text>}
                     </View>
 
                     <View style={styles.containerEndereco}>
@@ -326,9 +394,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingBottom: 30,
   },
-  input: {
+  inputContainer: {
     width: Platform.OS === 'web' ? "80%" : "90%",
     marginBottom: 15,
+  },
+  input: {
+    width: '100%',
   },
   botao: {
     marginTop: 20,
@@ -385,6 +456,12 @@ const styles = StyleSheet.create({
   mapContainer: {
     width: Platform.OS === 'web' ? '80%' : '90%',
     marginBottom: 15,
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
   },
 });
 
