@@ -3,9 +3,13 @@ import { View, Text, StyleSheet, useWindowDimensions, ScrollView } from 'react-n
 import PopUp from "../componentes/PopUp";
 import Calendario from "../componentes/Calendario";
 import TabelaVisitas from '../componentes/TabelaVisitas';
-import NavBar from '../componentes/NavBar';
+import NavBar from '../componentes/NavBarHome';
 import MapaUniversal from '../componentes/MapaUniversalPocos';
 import BotaoFuncionalidades from "../componentes/BotaoFuncionalidades";
+import iconeMundo from '../assets/iconeMundo.png';
+import iconePessoa from "../assets/iconePessoa.png";
+import iconeQuimica from '../assets/iconeQuimica.png';
+import iconeCalendario from '../assets/iconeCalendario.png';
 
 const HomeAdm = ({ navigation }) => {
       const { width } = useWindowDimensions();
@@ -44,10 +48,10 @@ const marcadores = [
                 </View>
 
                 <View style={[styles.containerPopUps, { width: contentWidth }]}>
-                    <PopUp />
-                    <PopUp />
-                    <PopUp />
-                    <PopUp />
+                    <PopUp texto="Total de poços" num="1" img={iconeMundo} />
+                    <PopUp texto="Análises realizadas" num="2" img={iconeQuimica} />
+                    <PopUp texto="Visitas agendadas" num="3" img={iconeCalendario} />
+                    <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
                 </View>
 
                 <View style={styles.containerItems}>

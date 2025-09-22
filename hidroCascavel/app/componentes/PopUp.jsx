@@ -1,12 +1,12 @@
 import React from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 
-const PopUp = () => {
+const PopUp = prop => {
     return (
         <View style={styles.container} >
-            <View style={styles.numero}>1</View>
-            <Text style={styles.texto}>PopUp</Text>
-            <Image style={styles.icone} />
+            <View style={styles.numero}>{prop.num}</View>
+            <Text style={styles.texto}>{prop.texto}</Text>
+            <Image style={styles.icone} source={prop.img} />
         </View>
     )
 }
@@ -16,26 +16,28 @@ const styles = StyleSheet.create(
         container: {
             width: 300,
             height: 50,
-            backgroundColor: '#aa566a',
+            backgroundColor: 'white',
             display: 'flex',
             justifyContent: "space-between",
             flexDirection: "row",
             borderRadius: 10,
             margin: 0,
+            borderColor: '#3D9DD9',
+            borderWidth: 1,
         },
         numero: {
-            width: 80,
-            height: 50,
-            backgroundColor: "#ddafbb",
+            width: 50,
+            height: 45,
+            backgroundColor: "white",
             display: 'flex',
             justifyContent: "center",
             alignItems: "center",
             borderRadius: 10,
         },
         icone: {
-            width: 80,
+            width: 50,
             height: 50,
-            backgroundColor: "#ccd55a",
+            backgroundColor: "#3D9DD9",
             borderRadius: 10,
         },
         texto: {
