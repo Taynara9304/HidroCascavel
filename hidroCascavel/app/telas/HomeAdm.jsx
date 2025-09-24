@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, useWindowDimensions, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions, ScrollView, TouchableOpacity } from 'react-native';
 import PopUp from "../componentes/PopUp";
 import Calendario from "../componentes/Calendario";
 import TabelaVisitas from '../componentes/TabelaVisitas';
@@ -10,35 +10,37 @@ import iconeMundo from '../assets/iconeMundo.png';
 import iconePessoa from "../assets/iconePessoa.png";
 import iconeQuimica from '../assets/iconeQuimica.png';
 import iconeCalendario from '../assets/iconeCalendario.png';
+import { useNavigation } from "@react-navigation/native";
 
-const HomeAdm = ({ navigation }) => {
-      const { width } = useWindowDimensions();
-      const contentWidth = width < 800 ? width : width * 0.6;
+const HomeAdm = () => {
+    const { width } = useWindowDimensions();
+    const contentWidth = width < 800 ? width : width * 0.6;
+    const navigation = useNavigation();
 
-const marcadores = [
-    {
-      latitude: -23.5505,
-      longitude: -46.6333,
-      titulo: 'Visita Técnica - SP',
-      endereco: 'Av. Paulista, 1000, São Paulo - SP',
-      data: '15/01/2024',
-      responsavel: 'Carlos Silva',
-      status: 'Agendado'
-    },
-    {
-      latitude: -23.5489,
-      longitude: -46.6388,
-      titulo: 'Manutenção Preventiva',
-      endereco: 'Rua Augusta, 500, São Paulo - SP',
-      data: '18/01/2024',
-      responsavel: 'Ana Santos',
-      status: 'Pendente'
-    }
-  ];
+    const marcadores = [
+        {
+        latitude: -23.5505,
+        longitude: -46.6333,
+        titulo: 'Visita Técnica - SP',
+        endereco: 'Av. Paulista, 1000, São Paulo - SP',
+        data: '15/01/2024',
+        responsavel: 'Carlos Silva',
+        status: 'Agendado'
+        },
+        {
+        latitude: -23.5489,
+        longitude: -46.6388,
+        titulo: 'Manutenção Preventiva',
+        endereco: 'Rua Augusta, 500, São Paulo - SP',
+        data: '18/01/2024',
+        responsavel: 'Ana Santos',
+        status: 'Pendente'
+        }
+    ];
 
-  const handleLocationSelect = (location) => {
-    console.log('Localização selecionada:', location);
-  };
+    const handleLocationSelect = (location) => {
+        console.log('Localização selecionada:', location);
+    };
 
     return (
         <ScrollView>
@@ -48,10 +50,15 @@ const marcadores = [
                 </View>
 
                 <View style={[styles.containerPopUps, { width: contentWidth }]}>
-                    <PopUp texto="Total de poços" num="1" img={iconeMundo} />
-                    <PopUp texto="Análises realizadas" num="2" img={iconeQuimica} />
-                    <PopUp texto="Visitas agendadas" num="3" img={iconeCalendario} />
-                    <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
+                    <View>
+                        <PopUp texto="Total de poços" num="1" img={iconeMundo} />
+                        <PopUp texto="Análises realizadas" num="2" img={iconeQuimica} />
+                    </View>
+                    
+                    <View>
+                        <PopUp texto="Visitas agendadas" num="3" img={iconeCalendario} />
+                        <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
+                    </View>
                 </View>
 
                 <View style={styles.containerItems}>
@@ -70,7 +77,15 @@ const marcadores = [
                 </View>
 
                 <View style={styles.containerPopUps}>
+                <TouchableOpacity
+                    style={[styles.navItem, styles.loginButton]}
+                    onPress={() => {
+                    navigation.navigate("GerenciarUsuarios");
+                    }}
+                >
                     <BotaoFuncionalidades texto="Gerenciar poços" />
+              </TouchableOpacity>
+
                     <BotaoFuncionalidades texto="Gerenciar visitas" />
                     <BotaoFuncionalidades texto="Gerenciar análises" />
                     <BotaoFuncionalidades texto="Gerenciar usuários" />
