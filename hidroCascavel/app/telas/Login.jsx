@@ -15,8 +15,9 @@ import ondaBaixo from "../assets/ondaBaixo.png";
 import Input from "../componentes/Input";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
-import { useAuth } from '../contexts/authContext';
+import { AuthProvider, useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
+import LogoHidroCvel from '../assets/logoHidroCascavel.png';
 
 const Login = ({ navigation }) => {
   const { width } = useWindowDimensions();
@@ -74,7 +75,7 @@ const Login = ({ navigation }) => {
     } catch (error) {
       console.error(error);
       let errorMessage = 'Erro ao fazer login';
-      
+
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'Usuário não encontrado';
       } else if (error.code === 'auth/wrong-password') {
@@ -84,7 +85,7 @@ const Login = ({ navigation }) => {
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Erro de conexão. Verifique sua internet.';
       }
-      
+
       Toast.show({
         type: 'error',
         text1: 'Erro',
@@ -98,69 +99,82 @@ const Login = ({ navigation }) => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={styles.container}>
-        <View style={[styles.topContainer, { width: contentWidth }]}>
-          <Image
-            source={ondaTopo}
-            style={[styles.image, { width: contentWidth }]}
-            resizeMode="contain"
-          />
 
-          <Text style={styles.titleSobreImagem}>Olá, vamos fazer login!</Text>
+        <View style={styles.containerLeft}>
+          <Image source={LogoHidroCvel} style={styles.LogoHidroCvel}></Image>
         </View>
 
-        <View style={[styles.content, { width: contentWidth }]}>
-          <View style={styles.inputContainer}>
-            <Input
-              label="E-mail"
-              value={email}
-              onChangeText={setEmail}
-              placeholder="Digite seu e-mail"
-              keyboardType="email-address"
-              style={{ width: "100%" }}
+        <View style={styles.containerRight}>
+          {/* Onda do topo */}
+          <View style={[styles.topContainer, { width: contentWidth }]}>
+            <Image
+              source={ondaTopo}
+              style={[styles.ondaTopo, { width: contentWidth }]}
+              resizeMode="cover"
             />
-            {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+            <Text style={styles.titleSobreImagem}>Olá, vamos fazer login!</Text>
           </View>
 
-          <View style={styles.inputContainer}>
-            <Input
-              label="Senha"
-              value={senha}
-              onChangeText={setSenha}
-              placeholder="Digite sua senha"
-              secureTextEntry
-              style={{ width: "100%" }}
-            />
-            {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
-          </View>
+          {/* Conteúdo principal */}
+          <View style={[styles.content, { width: contentWidth }]}>
+            <View style={styles.formContainer}>
+              <View style={styles.inputContainer}>
+                <Input
+                  label="E-mail"
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="Digite seu e-mail"
+                  keyboardType="email-address"
+                  style={{ width: "100%" }}
+                />
+                {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+              </View>
 
-          <View>
-            <TouchableOpacity
-              onPress={() => {
-                navigation.navigate("Cadastro");
-              }}
-            >
-              <Text style={styles.loginText}>Não tem conta? Cadastre-se!</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.inputContainer}>
+                <Input
+                  label="Senha"
+                  value={senha}
+                  onChangeText={setSenha}
+                  placeholder="Digite sua senha"
+                  secureTextEntry
+                  style={{ width: "100%" }}
+                />
+                {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
+              </View>
 
-          <TouchableOpacity
-            style={[styles.botao, isLoading && styles.botaoDisabled]}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.textoBotao}>Entrar</Text>
-            )}
-          </TouchableOpacity>
+              <View>
+                <TouchableOpacity
+                  onPress={() => {
+                    navigation.navigate("Cadastro");
+                  }}
+                >
+                  <Text style={styles.loginText}>Não tem conta? Cadastre-se!</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.botao, isLoading && styles.botaoDisabled]}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.textoBotao}>Entrar</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {/* Onda de baixo */}
+            <View style={styles.bottomContainer}>
+              <Image
+                source={ondaBaixo}
+                style={[styles.ondaBaixo, { width: contentWidth }]}
+                resizeMode="cover"
+              />
+            </View>
+          </View>
         </View>
-
-        <Image
-          source={ondaBaixo}
-          style={[styles.ondaBaixo, { width: contentWidth }]}
-          resizeMode="contain"
-        />
       </View>
     </TouchableWithoutFeedback>
   );
@@ -169,38 +183,51 @@ const Login = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    flexDirection: "row",
     backgroundColor: "#fff",
+  },
+  containerLeft: {
+    backgroundColor: "#2685BF",
+    width: "40%",
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "flex-start",
+  },
+  containerRight: {
+    flex: 1,
+  },
+  LogoHidroCvel: {
+    width: 300,
+    height: 300,
+    resizeMode: "contain",
   },
   topContainer: {
     position: "relative",
     alignItems: "center",
   },
-  image: {
-    alignSelf: "center",
-    marginTop: -35,
-  },
-  ondaBaixo: {
-    alignSelf: "center",
-    top: 467,
-  },
-  titleSobreImagem: {
-    position: "absolute",
-    top: "20%",
-    left: "20%",
-    transform: [{ translateX: -100 }, { translateY: -10 }],
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "bold",
-  },
-  content: {
-    alignItems: "center",
+  ondaTopo: {
     width: "100%",
+        height: 125,
+  },
+  
+  content: {
+    flex: 1,
+    justifyContent: "space-between",
+  },
+  formContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 20,
   },
   inputContainer: {
     width: "80%",
-    marginBottom: 15,
+    marginBottom: 20,
+  },
+  bottomContainer: {
+    width: "100%",
+  },
+  ondaBaixo: {
+    width: "100%",
   },
   botao: {
     marginTop: 20,
