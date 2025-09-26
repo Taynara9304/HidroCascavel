@@ -19,6 +19,7 @@ export const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Salvar dados do usuário no AsyncStorage
   const saveUserData = async (userData) => {
     try {
       await AsyncStorage.setItem('userData', JSON.stringify(userData));
@@ -29,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Limpar dados do usuário
   const clearUserData = async () => {
     try {
       await AsyncStorage.removeItem('userData');
@@ -39,19 +41,25 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Carregar dados do usuário do AsyncStorage
   const loadUserData = async () => {
     try {
       const userData = await AsyncStorage.getItem('userData');
       
       if (userData) {
-        setUser(JSON.parse(userData));
+        const parsedUserData = JSON.parse(userData);
+        setUser(parsedUserData);
         setIsAuthenticated(true);
+        return parsedUserData;
       }
+      return null;
     } catch (error) {
       console.error('Erro ao carregar dados do usuário:', error);
+      return null;
     }
   };
 
+  // Buscar dados do usuário no Firestore
   const buscarDadosUsuario = async (firebaseUser) => {
     try {
       const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -65,7 +73,18 @@ export const AuthProvider = ({ children }) => {
         };
 
         await saveUserData(userData);
-        return { userData };
+        return userData;
+      } else {
+        // Se não encontrou no Firestore, cria um objeto básico
+        const userData = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email,
+          nome: firebaseUser.displayName || 'Usuário',
+          dataCriacao: new Date().toISOString()
+        };
+        
+        await saveUserData(userData);
+        return userData;
       }
     } catch (error) {
       console.error('Erro ao buscar dados do usuário:', error);
@@ -73,6 +92,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Fazer logout
   const logout = async () => {
     try {
       await auth.signOut();
@@ -101,10 +121,10 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(false);
     });
 
+    // Carregar dados salvos enquanto verifica a autenticação do Firebase
     loadUserData().finally(() => {
-      if (!auth.currentUser) {
-        setIsLoading(false);
-      }
+      // Garante que o loading para após um tempo máximo
+      setTimeout(() => setIsLoading(false), 2000);
     });
 
     return () => unsubscribe();

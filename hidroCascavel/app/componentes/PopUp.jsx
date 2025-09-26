@@ -6,7 +6,9 @@ const PopUp = prop => {
         <View style={styles.container} >
             <View style={styles.numero}>{prop.num}</View>
             <Text style={styles.texto}>{prop.texto}</Text>
-            <Image style={styles.icone} source={prop.img} />
+            <View style={styles.containerIcone}>
+                <Image style={styles.icone} source={prop.img} />
+            </View>
         </View>
     )
 }
@@ -34,11 +36,18 @@ const styles = StyleSheet.create(
             alignItems: "center",
             borderRadius: 10,
         },
-        icone: {
+        containerIcone: {
             width: 50,
             height: 50,
             backgroundColor: "#3D9DD9",
             borderRadius: 10,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+        },
+        icone: {
+            width: 30,
+            height: 30,
         },
         texto: {
             display: 'flex',
