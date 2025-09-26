@@ -1,19 +1,7 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { TextInput } from 'react-native-paper';
 
-/**
- * Componente reutilizável de Input com label flutuante (Outlined)
- *
- * Props:
- * - label: string → texto do label
- * - value: string → valor do input
- * - onChangeText: function → callback para alterar valor
- * - placeholder: string → texto placeholder
- * - keyboardType: string → tipo de teclado (ex: 'default', 'email-address', 'numeric')
- * - secureTextEntry: boolean → para senhas
- * - style: objeto opcional para estilos extras
- */
 const Input = ({
   label,
   value,
@@ -23,19 +11,35 @@ const Input = ({
   secureTextEntry = false,
   style,
 }) => {
+  const inputRef = useRef(null);
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleContainerPress = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
-    <TextInput
-      mode="outlined"
-      label={label}
-      value={value}
-      onChangeText={onChangeText}
-      placeholder={placeholder}
-      keyboardType={keyboardType}
-      secureTextEntry={secureTextEntry}
-      outlineColor="#2685BF"
-      activeOutlineColor="#2685BF"
-      style={[styles.input, style]}
-    />
+    <TouchableWithoutFeedback onPress={handleContainerPress}>
+      <TextInput
+        ref={inputRef}
+        mode="outlined"
+        label={label}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        outlineColor="#2685BF"
+        activeOutlineColor="#2685BF"
+        style={[styles.input, style]}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
+        dense={false}
+        selectionColor="#2685BF"
+      />
+    </TouchableWithoutFeedback>
   );
 }
 
