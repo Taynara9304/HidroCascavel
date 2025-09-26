@@ -58,5 +58,5 @@ git-taynara:
 	git config --global user.name "Taynara"
 
 git-lucas:
-	git config --global user.email ""
+	git config --global user.email "Lukinhasx248@gmail.com"
 	git config --global user.name "Lucas"
