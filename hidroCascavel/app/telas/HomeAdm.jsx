@@ -14,7 +14,9 @@ import { useNavigation } from "@react-navigation/native";
 
 const HomeAdm = () => {
     const { width } = useWindowDimensions();
+
     const contentWidth = width < 800 ? width : width * 0.6;
+    
     const navigation = useNavigation();
 
     // Função simples para lidar com seleção de localização (se necessário)

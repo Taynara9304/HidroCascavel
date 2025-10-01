@@ -112,7 +112,7 @@ const Login = ({ navigation }) => {
               style={[styles.ondaTopo, { width: contentWidth }]}
               resizeMode="cover"
             />
-            <Text style={styles.titleSobreImagem}>Olá, vamos fazer login!</Text>
+            <Text style={styles.titleSobreImagem}>OLÁ, VAMOS FAZER LOGIN!</Text>
           </View>
 
           {/* Conteúdo principal */}
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   containerRight: {
-    flex: 1,
+    flex: 1
   },
   LogoHidroCvel: {
     width: 300,
@@ -206,9 +206,8 @@ const styles = StyleSheet.create({
   },
   ondaTopo: {
     width: "100%",
-        height: 125,
+    height: 140,
   },
-  
   content: {
     flex: 1,
     justifyContent: "space-between",
@@ -256,6 +255,11 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginLeft: 5,
   },
+  titleSobreImagem: {
+    marginTop: 100,
+    fontSize: 25,
+    color: "#2685BF",
+  }
 });
 
 export default Login;
