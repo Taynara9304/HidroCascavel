@@ -20,8 +20,8 @@ import Toast from 'react-native-toast-message';
 import LogoHidroCvel from '../assets/logoHidroCascavel.png';
 
 const Login = ({ navigation }) => {
-  const { width } = useWindowDimensions();
-  const contentWidth = width < 800 ? width : width * 0.6;
+  let { width } = useWindowDimensions();
+  const isCellPhone = width < 800; // Define se é celular/tablet menor
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -30,6 +30,7 @@ const Login = ({ navigation }) => {
   const { buscarDadosUsuario } = useAuth();
 
   const validateFields = () => {
+    // ... (restante da função validateFields permanece o mesmo)
     const newErrors = {};
 
     if (!email) newErrors.email = 'E-mail é obrigatório';
@@ -42,6 +43,7 @@ const Login = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
+    // ... (restante da função handleLogin permanece o mesmo)
     if (!validateFields()) {
       Toast.show({
         type: 'error',
@@ -57,7 +59,6 @@ const Login = ({ navigation }) => {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userFirebase = userCredential.user;
 
-      // Busca e salva os dados do usuário usando o contexto
       await buscarDadosUsuario(userFirebase);
 
       Toast.show({
@@ -66,7 +67,6 @@ const Login = ({ navigation }) => {
         text2: 'Login realizado com sucesso!'
       });
 
-      // Redireciona para a HomeAdm após login bem-sucedido
       navigation.reset({
         index: 0,
         routes: [{ name: "HomeAdm" }],
@@ -98,25 +98,28 @@ const Login = ({ navigation }) => {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <View style={styles.container}>
+      <View style={[styles.container, isCellPhone && styles.containerCellPhone]}>
 
+      {!isCellPhone && (
         <View style={styles.containerLeft}>
           <Image source={LogoHidroCvel} style={styles.LogoHidroCvel}></Image>
         </View>
+      )}
 
-        <View style={styles.containerRight}>
-          {/* Onda do topo */}
-          <View style={[styles.topContainer, { width: contentWidth }]}>
+      <View style={[styles.containerRight, isCellPhone && styles.containerRightCellPhone]}>
+          <View style={[styles.topContainer]}>
             <Image
               source={ondaTopo}
-              style={[styles.ondaTopo, { width: contentWidth }]}
+              // 💡 Estilo condicional para a onda do topo
+              style={[styles.ondaTopo, isCellPhone && styles.ondaTopoCellPhone]}
               resizeMode="cover"
             />
-            <Text style={styles.titleSobreImagem}>OLÁ, VAMOS FAZER LOGIN!</Text>
+            {/* 💡 Estilo condicional para o título */}
+            <Text style={[styles.titleSobreImagem, isCellPhone && styles.titleSobreImagemCellPhone]}>OLÁ, VAMOS FAZER LOGIN!</Text>
           </View>
 
           {/* Conteúdo principal */}
-          <View style={[styles.content, { width: contentWidth }]}>
+          <View style={[styles.content]}>
             <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
                 <Input
@@ -169,7 +172,8 @@ const Login = ({ navigation }) => {
             <View style={styles.bottomContainer}>
               <Image
                 source={ondaBaixo}
-                style={[styles.ondaBaixo, { width: contentWidth }]}
+                // 💡 Estilo condicional para a onda de baixo
+                style={[styles.ondaBaixo, isCellPhone && styles.ondaBaixoCellPhone]}
                 resizeMode="cover"
               />
             </View>
@@ -181,10 +185,14 @@ const Login = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  // ... (Estilos container, containerLeft, containerRight e Logo permanecem os mesmos)
   container: {
     flex: 1,
     flexDirection: "row",
     backgroundColor: "#fff",
+  },
+  containerCellPhone: {
+    flexDirection: "column",
   },
   containerLeft: {
     backgroundColor: "#2685BF",
@@ -193,7 +201,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   containerRight: {
-    flex: 1
+    flex: 1,
+    width: "60%"
+  },
+  containerRightCellPhone: {
+    width: "100%",
   },
   LogoHidroCvel: {
     width: 300,
@@ -204,10 +216,35 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
   },
+  
+  // ESTILOS PADRÃO (DESKTOP)
   ondaTopo: {
     width: "100%",
-    height: 140,
+    height: 140, // Altura maior para desktop
   },
+  titleSobreImagem: {
+    marginTop: 100, // Margem maior para desktop
+    fontSize: 25, // Fonte maior para desktop
+    color: "#2685BF",
+  },
+  ondaBaixo: {
+    width: "100%",
+    height: 140, // Defina uma altura padrão (opcional, mas bom para controle)
+  },
+  
+  // NOVOS ESTILOS PARA CELULAR (MENORES)
+  ondaTopoCellPhone: {
+    height: 100, // Altura reduzida para celular
+  },
+  titleSobreImagemCellPhone: {
+    marginTop: 70, // Margem reduzida para celular
+    fontSize: 20, // Fonte reduzida para celular
+  },
+  ondaBaixoCellPhone: {
+    height: 100, // Altura reduzida para celular
+  },
+  
+  // ... (Restante dos estilos permanecem os mesmos)
   content: {
     flex: 1,
     justifyContent: "space-between",
@@ -224,9 +261,7 @@ const styles = StyleSheet.create({
   },
   bottomContainer: {
     width: "100%",
-  },
-  ondaBaixo: {
-    width: "100%",
+    justifyContent: "flex-end"
   },
   botao: {
     marginTop: 20,
@@ -255,11 +290,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginLeft: 5,
   },
-  titleSobreImagem: {
-    marginTop: 100,
-    fontSize: 25,
-    color: "#2685BF",
-  }
 });
 
 export default Login;
