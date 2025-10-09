@@ -1,4 +1,4 @@
-// components/ExpoMap.jsx
+// componentes/ExpoMap.jsx
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert, Platform } from 'react-native';
 import { MapView, Marker } from 'expo-maps';

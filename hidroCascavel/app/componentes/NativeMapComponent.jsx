@@ -1,4 +1,4 @@
-// components/NativeMapComponent.jsx
+// componentes/NativeMapComponent.jsx
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Alert } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';

@@ -1,4 +1,4 @@
-// components/WebMap.jsx
+// componentes/WebMap.jsx
 import React, { useState, useRef, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
 

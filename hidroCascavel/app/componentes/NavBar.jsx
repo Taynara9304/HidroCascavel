@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import logo from '../assets/logoHidrocascavel.png';
+import logo from '../assets/logoHidroCascavel.png';
 
 const NavBar = () => {
   const navigation = useNavigation();

@@ -1,4 +1,4 @@
-// components/LocationPicker.jsx
+// componentes/LocationPicker.jsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, ActivityIndicator, Alert } from 'react-native';
 import MapPicker from './MapPicker';

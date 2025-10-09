@@ -1,4 +1,4 @@
-// components/FallbackMap.jsx
+// componentes/FallbackMap.jsx
 import React, { useState } from 'react';
 import { View, StyleSheet, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
 

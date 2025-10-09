@@ -1,28 +1,43 @@
-import React from "react";
-import { ScrollView, View, Text, useWindowDimensions, StyleSheet } from "react-native";
+import React from 'react';
+import { View, ScrollView } from 'react-native';
+import TabelaPocos from '../componentes/TabelaPocos';
+import AddPocos from '../componentes/AddPocos';
+import useWells from '../hooks/useWells';
 
 const GerenciarPocos = () => {
-    const { width } = useWindowDimensions();
-    const contentWidth = width < 800 ? width : width * 0.6;
+  const {
+    wells,
+    sortField,
+    sortDirection,
+    handleSort,
+    addWell,
+    editWell,
+    deleteWell,
+  } = useWells();
 
-    return (
-         <ScrollView>
-            <View style={[styles.container, { width: contentWidth }]}>
-                <Text>Gerenciar poços</Text>
-            </View>
-        </ScrollView>
-    )
-}
+  const handleAdicionarPoco = (novoPoco) => {
+    console.log('GerenciarPocos: Recebendo novo poço', novoPoco);
+    
+    // Chamar a função addWell do hook
+    addWell(novoPoco);
+  };
 
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        margin: 'auto',
-        padding: 10,
-    },
-});
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: 'white' }}>
+      <TabelaPocos
+        wells={wells}
+        onEdit={(well) => {
+          console.log('Editar poço:', well);
+        }}
+        onDelete={deleteWell}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={handleSort}
+      />
+      
+      <AddPocos onAdicionarPoco={handleAdicionarPoco} />
+    </ScrollView>
+  );
+};
 
 export default GerenciarPocos;
