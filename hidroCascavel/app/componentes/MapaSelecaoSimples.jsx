@@ -1,255 +1,298 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, Platform, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 
+// Importação condicional do WebView
+let WebView;
+if (Platform.OS !== 'web') {
+  WebView = require('react-native-webview').WebView;
+}
+
 const MapaSelecaoSimples = ({ onLocationSelected, initialLocation }) => {
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasUserSelected, setHasUserSelected] = useState(false);
+  const webViewRef = useRef(null);
+  const iframeRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const mapContainerRef = useRef(null);
-  const mapRef = useRef(null);
-  const markerRef = useRef(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   // Localização padrão (Cascavel-PR)
-  const defaultLocation = { 
+  const defaultLocation = initialLocation || { 
     latitude: -24.9555, 
     longitude: -53.4562 
   };
 
-  useEffect(() => {
-    // Se veio com uma localização inicial, usar ela
-    if (initialLocation && initialLocation.latitude && initialLocation.longitude) {
-      setSelectedLocation(initialLocation);
-      setHasUserSelected(true);
-    } else {
-      setSelectedLocation(defaultLocation);
-    }
+  // Função para gerar HTML do mapa
+  const generateMapHTML = () => {
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body, html { width: 100%; height: 100%; overflow: hidden; }
+          #map { width: 100%; height: 100%; background: #f8f9fa; }
+          .leaflet-container { background: #f8f9fa; font-family: -apple-system, BlinkMacSystemFont, sans-serif; }
+        </style>
+      </head>
+      <body>
+        <div id="map"></div>
+        
+        <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+        <script>
+          let map;
+          let marker;
+          const centerLat = ${defaultLocation.latitude};
+          const centerLng = ${defaultLocation.longitude};
 
+          function initMap() {
+            try {
+              map = L.map('map', {
+                zoomControl: true,
+                dragging: true,
+                touchZoom: true,
+                scrollWheelZoom: ${Platform.OS === 'web'}, // Só habilita scroll na web
+                doubleClickZoom: true,
+                boxZoom: true
+              }).setView([centerLat, centerLng], 13);
+              
+              L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+              }).addTo(map);
+
+              // Criar marcador inicial
+              marker = L.marker([centerLat, centerLng], {
+                draggable: true,
+                title: 'Local selecionado'
+              }).addTo(map);
+
+              // Evento de clique no mapa
+              map.on('click', function(e) {
+                const { lat, lng } = e.latlng;
+                marker.setLatLng([lat, lng]);
+                handleLocationSelected(lat, lng);
+              });
+
+              // Evento de arrastar marcador
+              marker.on('dragend', function(e) {
+                const { lat, lng } = marker.getLatLng();
+                handleLocationSelected(lat, lng);
+              });
+
+              // Sinalizar que o mapa carregou
+              signalMapLoaded();
+
+              // Corrigir tamanho do mapa
+              setTimeout(function() {
+                map.invalidateSize(true);
+              }, 100);
+
+            } catch (error) {
+              console.error('Erro ao inicializar mapa:', error);
+            }
+          }
+
+          function handleLocationSelected(lat, lng) {
+            // Enviar coordenadas para React Native (mobile) ou parent (web)
+            if (window.ReactNativeWebView) {
+              // Mobile
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'locationSelected',
+                latitude: lat,
+                longitude: lng
+              }));
+            } else if (window.parent) {
+              // Web - usando postMessage para iframe
+              window.parent.postMessage({
+                type: 'locationSelected',
+                latitude: lat,
+                longitude: lng
+              }, '*');
+            }
+          }
+
+          function signalMapLoaded() {
+            if (window.ReactNativeWebView) {
+              // Mobile
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'mapLoaded'
+              }));
+            } else if (window.parent) {
+              // Web
+              window.parent.postMessage({
+                type: 'mapLoaded'
+              }, '*');
+            }
+          }
+
+          // Função para obter localização atual
+          function getCurrentLocation() {
+            if (navigator.geolocation) {
+              navigator.geolocation.getCurrentPosition(
+                function(position) {
+                  const lat = position.coords.latitude;
+                  const lng = position.coords.longitude;
+                  
+                  map.setView([lat, lng], 15);
+                  marker.setLatLng([lat, lng]);
+                  handleLocationSelected(lat, lng);
+                },
+                function(error) {
+                  if (window.ReactNativeWebView) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      type: 'geolocationError',
+                      error: error.message
+                    }));
+                  } else if (window.parent) {
+                    window.parent.postMessage({
+                      type: 'geolocationError',
+                      error: error.message
+                    }, '*');
+                  }
+                },
+                {
+                  enableHighAccuracy: true,
+                  timeout: 15000,
+                  maximumAge: 60000
+                }
+              );
+            }
+          }
+
+          // Inicializar mapa quando a página carregar
+          window.addEventListener('load', initMap);
+          
+          // Redimensionar mapa quando a orientação mudar
+          window.addEventListener('resize', function() {
+            if (map) {
+              setTimeout(function() {
+                map.invalidateSize(true);
+              }, 300);
+            }
+          });
+
+          // Expor função globalmente
+          window.getCurrentLocation = getCurrentLocation;
+          window.initMap = initMap;
+
+        </script>
+      </body>
+      </html>
+    `;
+  };
+
+  // Handler para mensagens do WebView (mobile) e iframe (web)
+  const handleMessage = (event) => {
+    try {
+      let data;
+      
+      if (Platform.OS === 'web') {
+        // Web - evento direto do postMessage
+        data = event.data;
+      } else {
+        // Mobile - evento do WebView
+        data = JSON.parse(event.nativeEvent.data);
+      }
+
+      console.log('Mensagem recebida:', data);
+      
+      if (data.type === 'mapLoaded') {
+        setMapLoaded(true);
+      } else if (data.type === 'locationSelected') {
+        const location = {
+          latitude: data.latitude,
+          longitude: data.longitude
+        };
+        setSelectedLocation(location);
+        if (onLocationSelected) {
+          onLocationSelected(location);
+        }
+      } else if (data.type === 'geolocationError') {
+        Alert.alert('Erro de Localização', data.error || 'Não foi possível obter a localização atual.');
+      }
+    } catch (error) {
+      console.log('Erro ao processar mensagem:', error);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
     if (Platform.OS === 'web') {
-      loadWebMap();
+      // Web - chamar função diretamente no iframe
+      if (iframeRef.current && iframeRef.current.contentWindow) {
+        iframeRef.current.contentWindow.getCurrentLocation();
+      }
+    } else {
+      // Mobile - usar injectJavaScript
+      if (webViewRef.current) {
+        webViewRef.current.injectJavaScript(`
+          if (typeof getCurrentLocation === 'function') {
+            getCurrentLocation();
+          }
+          true;
+        `);
+      }
+    }
+  };
+
+  // Efeito para configurar event listener na web
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleMessageEvent = (event) => handleMessage(event);
+      window.addEventListener('message', handleMessageEvent);
+      
+      return () => {
+        window.removeEventListener('message', handleMessageEvent);
+      };
     }
   }, []);
 
-  const loadWebMap = () => {
-    if (typeof window === 'undefined' || !mapContainerRef.current) return;
-
-    // Verificar se Leaflet já está carregado
-    if (window.L) {
-      initWebMap();
-      return;
-    }
-
-    // Carregar CSS do Leaflet
-    if (!document.querySelector('link[href*="leaflet"]')) {
-      const leafletCss = document.createElement('link');
-      leafletCss.rel = 'stylesheet';
-      leafletCss.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-      leafletCss.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-      leafletCss.crossOrigin = "";
-      document.head.appendChild(leafletCss);
-    }
-
-    // Carregar JavaScript do Leaflet
-    if (!document.querySelector('script[src*="leaflet"]')) {
-      const leafletJs = document.createElement('script');
-      leafletJs.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-      leafletJs.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-      leafletJs.crossOrigin = "";
-      leafletJs.onload = () => {
-        setTimeout(initWebMap, 100);
-      };
-      document.head.appendChild(leafletJs);
-    } else {
-      setTimeout(initWebMap, 100);
-    }
-  };
-
-  const initWebMap = () => {
-    if (!window.L || !mapContainerRef.current) {
-      console.log('Leaflet não carregou ou container não existe');
-      return;
-    }
-
-    try {
-      // Limpar mapa existente se houver
-      if (mapRef.current) {
-        mapRef.current.remove();
-      }
-
-      // Criar novo mapa
-      const locationToUse = selectedLocation || defaultLocation;
-      
-      const map = window.L.map(mapContainerRef.current).setView(
-        [locationToUse.latitude, locationToUse.longitude],
-        13
-      );
-
-      // Adicionar tile layer
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-      }).addTo(map);
-
-      // Adicionar marcador se tiver localização selecionada
-      if (selectedLocation) {
-        const marker = window.L.marker([selectedLocation.latitude, selectedLocation.longitude], {
-          draggable: true
-        }).addTo(map);
-
-        marker.on('dragend', function() {
-          const { lat, lng } = this.getLatLng();
-          handleLocationSelect(lat, lng);
-        });
-
-        markerRef.current = marker;
-      }
-
-      // Evento de clique no mapa
-      map.on('click', function(e) {
-        const { lat, lng } = e.latlng;
-        handleLocationSelect(lat, lng);
-
-        // Criar ou mover marcador
-        if (markerRef.current) {
-          markerRef.current.setLatLng([lat, lng]);
+  // Efeito para redimensionar o mapa quando carregar
+  useEffect(() => {
+    if (mapLoaded) {
+      const resizeMap = () => {
+        if (Platform.OS === 'web') {
+          if (iframeRef.current && iframeRef.current.contentWindow) {
+            setTimeout(() => {
+              iframeRef.current.contentWindow.initMap?.();
+            }, 100);
+          }
         } else {
-          const newMarker = window.L.marker([lat, lng], {
-            draggable: true
-          }).addTo(map);
-          
-          newMarker.on('dragend', function() {
-            const { lat, lng } = this.getLatLng();
-            handleLocationSelect(lat, lng);
-          });
-          
-          markerRef.current = newMarker;
-        }
-      });
-
-      mapRef.current = map;
-      setMapLoaded(true);
-
-      // Redimensionar mapa após um delay
-      setTimeout(() => {
-        map.invalidateSize();
-      }, 300);
-
-    } catch (error) {
-      console.error('Erro ao inicializar mapa:', error);
-      Alert.alert('Erro', 'Não foi possível carregar o mapa. Tente recarregar a página.');
-    }
-  };
-
-  const handleLocationSelect = (latitude, longitude) => {
-    const newLocation = { latitude, longitude };
-    setSelectedLocation(newLocation);
-    setHasUserSelected(true);
-    
-    // Notificar o componente pai
-    if (onLocationSelected) {
-      onLocationSelected(newLocation);
-    }
-  };
-
-  const getCurrentLocation = () => {
-    setIsLoading(true);
-    
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          handleLocationSelect(latitude, longitude);
-          
-          // Mover mapa para a nova localização
-          if (mapRef.current) {
-            mapRef.current.setView([latitude, longitude], 15);
-            if (markerRef.current) {
-              markerRef.current.setLatLng([latitude, longitude]);
-            } else {
-              // Criar marcador se não existir
-              const marker = window.L.marker([latitude, longitude], {
-                draggable: true
-              }).addTo(mapRef.current);
-              
-              marker.on('dragend', function() {
-                const { lat, lng } = this.getLatLng();
-                handleLocationSelect(lat, lng);
-              });
-              
-              markerRef.current = marker;
-            }
+          if (webViewRef.current) {
+            webViewRef.current.injectJavaScript(`
+              if (map) {
+                map.invalidateSize(true);
+                setTimeout(function() { map.invalidateSize(true); }, 300);
+              }
+              true;
+            `);
           }
-          
-          setIsLoading(false);
-        },
-        (error) => {
-          setIsLoading(false);
-          let errorMessage = 'Não foi possível obter sua localização';
-          
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              errorMessage = 'Permissão de localização negada. Habilite nas configurações do seu navegador.';
-              break;
-            case error.POSITION_UNAVAILABLE:
-              errorMessage = 'Localização indisponível. Verifique se o GPS está ativado.';
-              break;
-            case error.TIMEOUT:
-              errorMessage = 'Tempo limite excedido ao buscar localização.';
-              break;
-          }
-          
-          Alert.alert('Erro', errorMessage);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 60000
         }
-      );
-    } else {
-      setIsLoading(false);
-      Alert.alert('Erro', 'Geolocalização não é suportada neste navegador.');
-    }
-  };
-
-  const handleCoordinateChange = (field, value) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue)) {
-      const newLocation = {
-        ...selectedLocation,
-        [field]: numValue
       };
-      
-      setSelectedLocation(newLocation);
-      setHasUserSelected(true);
-      
-      // Atualizar mapa
-      if (mapRef.current && markerRef.current) {
-        markerRef.current.setLatLng([newLocation.latitude, newLocation.longitude]);
-        mapRef.current.setView([newLocation.latitude, newLocation.longitude]);
-      }
-      
-      if (onLocationSelected) {
-        onLocationSelected(newLocation);
-      }
+
+      setTimeout(resizeMap, 500);
     }
-  };
+  }, [mapLoaded]);
 
   // Renderização para Web
   const renderWebMap = () => (
-    <View style={webStyles.mapContainer}>
+    <View style={styles.mapContainer}>
       {!mapLoaded && (
-        <View style={webStyles.loadingOverlay}>
+        <View style={styles.loadingOverlay}>
           <ActivityIndicator size="large" color="#2685BF" />
-          <Text style={webStyles.loadingText}>Carregando mapa...</Text>
+          <Text style={styles.loadingText}>Carregando mapa...</Text>
         </View>
       )}
-      <div 
-        ref={mapContainerRef}
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: '10px'
+      <iframe
+        ref={iframeRef}
+        srcDoc={generateMapHTML()}
+        style={styles.iframe}
+        allow="geolocation"
+        onLoad={() => {
+          // Forçar redimensionamento após carregar
+          setTimeout(() => {
+            if (iframeRef.current && iframeRef.current.contentWindow) {
+              iframeRef.current.contentWindow.initMap?.();
+            }
+          }, 100);
         }}
       />
     </View>
@@ -257,109 +300,66 @@ const MapaSelecaoSimples = ({ onLocationSelected, initialLocation }) => {
 
   // Renderização para Mobile
   const renderMobileMap = () => (
-    <View style={mobileStyles.mobileMapContainer}>
-      <View style={mobileStyles.mobileMapPlaceholder}>
-        <Text style={mobileStyles.mapEmoji}>🗺️</Text>
-        <Text style={mobileStyles.mapTitle}>Mapa Interativo</Text>
-        <Text style={mobileStyles.mapSubtitle}>
-          {hasUserSelected ? 'Localização definida' : 'Use os campos abaixo para definir as coordenadas'}
-        </Text>
-        
-        {/* Campos de coordenadas para mobile */}
-        <View style={mobileStyles.mobileCoordInputs}>
-          <View style={mobileStyles.mobileInputGroup}>
-            <Text style={mobileStyles.mobileInputLabel}>Latitude:</Text>
-            <TextInput
-              style={mobileStyles.mobileCoordInput}
-              value={selectedLocation?.latitude ? selectedLocation.latitude.toString() : ''}
-              onChangeText={(text) => handleCoordinateChange('latitude', text)}
-              placeholder="Ex: -24.9555"
-              keyboardType="numeric"
-            />
-          </View>
-          
-          <View style={mobileStyles.mobileInputGroup}>
-            <Text style={mobileStyles.mobileInputLabel}>Longitude:</Text>
-            <TextInput
-              style={mobileStyles.mobileCoordInput}
-              value={selectedLocation?.longitude ? selectedLocation.longitude.toString() : ''}
-              onChangeText={(text) => handleCoordinateChange('longitude', text)}
-              placeholder="Ex: -53.4562"
-              keyboardType="numeric"
-            />
-          </View>
+    <View style={styles.mapContainer}>
+      {!mapLoaded && (
+        <View style={styles.loadingOverlay}>
+          <ActivityIndicator size="large" color="#2685BF" />
+          <Text style={styles.loadingText}>Carregando mapa...</Text>
         </View>
-      </View>
+      )}
+      <WebView
+        ref={webViewRef}
+        style={styles.webview}
+        source={{ html: generateMapHTML() }}
+        onMessage={handleMessage}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        startInLoadingState={true}
+        scalesPageToFit={true}
+        mixedContentMode="compatibility"
+        onLoadEnd={() => {
+          setTimeout(() => {
+            if (webViewRef.current) {
+              webViewRef.current.injectJavaScript(`
+                if (map) {
+                  map.invalidateSize(true);
+                  setTimeout(function() { map.invalidateSize(true); }, 500);
+                }
+                true;
+              `);
+            }
+          }, 1000);
+        }}
+      />
     </View>
   );
 
   return (
-    <View style={Platform.OS === 'web' ? webStyles.container : mobileStyles.container}>
-      <Text style={Platform.OS === 'web' ? webStyles.instruction : mobileStyles.instruction}>
-        {hasUserSelected ? '✅ Localização selecionada' : 'Selecione a localização do poço'}
+    <View style={styles.container}>
+      <Text style={styles.instruction}>
+        {selectedLocation ? '✅ Localização selecionada' : 'Toque no mapa para selecionar a localização'}
       </Text>
-
-      {/* Mapa */}
+      
       {Platform.OS === 'web' ? renderWebMap() : renderMobileMap()}
 
-      {/* Coordenadas - Só mostra na web */}
-      {Platform.OS === 'web' && (
-        <View style={webStyles.coordinatesSection}>
-          <Text style={webStyles.sectionTitle}>Coordenadas:</Text>
-          
-          <View style={webStyles.coordInputs}>
-            <View style={webStyles.inputGroup}>
-              <Text style={webStyles.inputLabel}>Latitude:</Text>
-              <input
-                type="number"
-                step="any"
-                value={selectedLocation?.latitude || ''}
-                onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
-                style={webStyles.coordInput}
-                placeholder="Ex: -24.9555"
-              />
-            </View>
-            
-            <View style={webStyles.inputGroup}>
-              <Text style={webStyles.inputLabel}>Longitude:</Text>
-              <input
-                type="number"
-                step="any"
-                value={selectedLocation?.longitude || ''}
-                onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
-                style={webStyles.coordInput}
-                placeholder="Ex: -53.4562"
-              />
-            </View>
-          </View>
-        </View>
-      )}
-
-      {/* Botão de localização atual */}
       <TouchableOpacity 
-        style={Platform.OS === 'web' ? webStyles.locationButton : mobileStyles.locationButton}
-        onPress={getCurrentLocation}
-        disabled={isLoading}
+        style={styles.locationButton}
+        onPress={handleUseCurrentLocation}
       >
-        {isLoading ? (
-          <ActivityIndicator color="white" size="small" />
-        ) : (
-          <Text style={Platform.OS === 'web' ? webStyles.buttonText : mobileStyles.buttonText}>
-            📍 Usar Minha Localização Atual
-          </Text>
-        )}
+        <Text style={styles.buttonText}>
+          📍 Usar Minha Localização Atual
+        </Text>
       </TouchableOpacity>
 
-      {/* Preview */}
-      {hasUserSelected && selectedLocation && (
-        <View style={Platform.OS === 'web' ? webStyles.previewSection : mobileStyles.previewSection}>
-          <Text style={Platform.OS === 'web' ? webStyles.previewTitle : mobileStyles.previewTitle}>
+      {selectedLocation && (
+        <View style={styles.previewSection}>
+          <Text style={styles.previewTitle}>
             Localização selecionada:
           </Text>
-          <Text style={Platform.OS === 'web' ? webStyles.previewText : mobileStyles.previewText}>
+          <Text style={styles.previewText}>
             Latitude: {selectedLocation.latitude.toFixed(6)}
           </Text>
-          <Text style={Platform.OS === 'web' ? webStyles.previewText : mobileStyles.previewText}>
+          <Text style={styles.previewText}>
             Longitude: {selectedLocation.longitude.toFixed(6)}
           </Text>
         </View>
@@ -368,19 +368,18 @@ const MapaSelecaoSimples = ({ onLocationSelected, initialLocation }) => {
   );
 };
 
-// Estilos para Web
-const webStyles = {
+const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   instruction: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: 12,
     textAlign: 'center',
     color: '#333',
-    padding: 12,
-    backgroundColor: '#f0f8ff',
+    padding: 8,
+    backgroundColor: '#f8f9fa',
     borderRadius: 8,
   },
   mapContainer: {
@@ -390,7 +389,14 @@ const webStyles = {
     borderWidth: 2,
     borderColor: '#2685BF',
     position: 'relative',
-    marginBottom: 16,
+  },
+  webview: {
+    flex: 1,
+  },
+  iframe: {
+    width: '100%',
+    height: '100%',
+    border: 'none',
   },
   loadingOverlay: {
     position: 'absolute',
@@ -409,151 +415,18 @@ const webStyles = {
     color: '#2685BF',
     fontWeight: '500',
   },
-  coordinatesSection: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  coordInputs: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  inputGroup: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: '#333',
-  },
-  coordInput: {
-    width: '100%',
-    padding: '10px 12px',
-    border: '1px solid #ddd',
-    borderRadius: 6,
-    fontSize: 14,
-    backgroundColor: 'white',
-  },
   locationButton: {
     backgroundColor: '#2685BF',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
+    marginTop: 16,
     marginBottom: 16,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 14,
-  },
-  previewSection: {
-    backgroundColor: '#e8f5e8',
-    padding: 16,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  previewTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 8,
-  },
-  previewText: {
-    fontSize: 14,
-    color: '#2e7d32',
-    marginBottom: 4,
-  },
-};
-
-// Estilos para Mobile (React Native)
-const mobileStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  instruction: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#333',
-    padding: 12,
-    backgroundColor: '#f0f8ff',
-    borderRadius: 8,
-  },
-  mobileMapContainer: {
-    height: 300,
-    marginBottom: 16,
-  },
-  mobileMapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#bbdefb',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  mapEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  mapTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 4,
-  },
-  mapSubtitle: {
-    fontSize: 14,
-    color: '#546e7a',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  mobileCoordInputs: {
-    width: '100%',
-    gap: 12,
-  },
-  mobileInputGroup: {
-    marginBottom: 12,
-  },
-  mobileInputLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: '#333',
-    textAlign: 'center',
-  },
-  mobileCoordInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 10,
-    fontSize: 14,
-    backgroundColor: 'white',
-    textAlign: 'center',
-  },
-  locationButton: {
-    backgroundColor: '#2685BF',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
   },
   previewSection: {
     backgroundColor: '#e8f5e8',
