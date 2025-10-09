@@ -140,21 +140,16 @@ const MapaSelecaoSimples = ({ onLocationSelected, initialLocation }) => {
     }
   };
 
-const handleLocationSelect = (latitude, longitude) => {
-  console.log('MapaSelecaoSimples: handleLocationSelect chamado', { latitude, longitude }); // Debug
-  
-  const newLocation = { latitude, longitude };
-  setSelectedLocation(newLocation);
-  setHasUserSelected(true);
-  
-  // Notificar o componente pai
-  if (onLocationSelected) {
-    console.log('MapaSelecaoSimples: Chamando onLocationSelected', newLocation); // Debug
-    onLocationSelected(newLocation);
-  } else {
-    console.log('MapaSelecaoSimples: onLocationSelected não está definido'); // Debug
-  }
-};
+  const handleLocationSelect = (latitude, longitude) => {
+    const newLocation = { latitude, longitude };
+    setSelectedLocation(newLocation);
+    setHasUserSelected(true);
+    
+    // Notificar o componente pai
+    if (onLocationSelected) {
+      onLocationSelected(newLocation);
+    }
+  };
 
   const getCurrentLocation = () => {
     setIsLoading(true);
@@ -240,12 +235,13 @@ const handleLocationSelect = (latitude, longitude) => {
     }
   };
 
+  // Renderização para Web
   const renderWebMap = () => (
-    <View style={styles.mapContainer}>
+    <View style={webStyles.mapContainer}>
       {!mapLoaded && (
-        <View style={styles.loadingOverlay}>
+        <View style={webStyles.loadingOverlay}>
           <ActivityIndicator size="large" color="#2685BF" />
-          <Text style={styles.loadingText}>Carregando mapa...</Text>
+          <Text style={webStyles.loadingText}>Carregando mapa...</Text>
         </View>
       )}
       <div 
@@ -259,79 +255,111 @@ const handleLocationSelect = (latitude, longitude) => {
     </View>
   );
 
+  // Renderização para Mobile
   const renderMobileMap = () => (
-    <View style={styles.mobileMapContainer}>
-      <View style={styles.mobileMapPlaceholder}>
-        <Text style={styles.mapEmoji}>🗺️</Text>
-        <Text style={styles.mapTitle}>Mapa Interativo</Text>
-        <Text style={styles.mapSubtitle}>
+    <View style={mobileStyles.mobileMapContainer}>
+      <View style={mobileStyles.mobileMapPlaceholder}>
+        <Text style={mobileStyles.mapEmoji}>🗺️</Text>
+        <Text style={mobileStyles.mapTitle}>Mapa Interativo</Text>
+        <Text style={mobileStyles.mapSubtitle}>
           {hasUserSelected ? 'Localização definida' : 'Use os campos abaixo para definir as coordenadas'}
         </Text>
+        
+        {/* Campos de coordenadas para mobile */}
+        <View style={mobileStyles.mobileCoordInputs}>
+          <View style={mobileStyles.mobileInputGroup}>
+            <Text style={mobileStyles.mobileInputLabel}>Latitude:</Text>
+            <TextInput
+              style={mobileStyles.mobileCoordInput}
+              value={selectedLocation?.latitude ? selectedLocation.latitude.toString() : ''}
+              onChangeText={(text) => handleCoordinateChange('latitude', text)}
+              placeholder="Ex: -24.9555"
+              keyboardType="numeric"
+            />
+          </View>
+          
+          <View style={mobileStyles.mobileInputGroup}>
+            <Text style={mobileStyles.mobileInputLabel}>Longitude:</Text>
+            <TextInput
+              style={mobileStyles.mobileCoordInput}
+              value={selectedLocation?.longitude ? selectedLocation.longitude.toString() : ''}
+              onChangeText={(text) => handleCoordinateChange('longitude', text)}
+              placeholder="Ex: -53.4562"
+              keyboardType="numeric"
+            />
+          </View>
+        </View>
       </View>
     </View>
   );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.instruction}>
+    <View style={Platform.OS === 'web' ? webStyles.container : mobileStyles.container}>
+      <Text style={Platform.OS === 'web' ? webStyles.instruction : mobileStyles.instruction}>
         {hasUserSelected ? '✅ Localização selecionada' : 'Selecione a localização do poço'}
       </Text>
 
       {/* Mapa */}
       {Platform.OS === 'web' ? renderWebMap() : renderMobileMap()}
 
-      {/* Coordenadas */}
-      <View style={styles.coordinatesSection}>
-        <Text style={styles.sectionTitle}>Coordenadas:</Text>
-        
-        <View style={styles.coordInputs}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Latitude:</Text>
-            <input
-              type="number"
-              step="any"
-              value={selectedLocation?.latitude || ''}
-              onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
-              style={styles.coordInput}
-              placeholder="Ex: -24.9555"
-            />
-          </View>
+      {/* Coordenadas - Só mostra na web */}
+      {Platform.OS === 'web' && (
+        <View style={webStyles.coordinatesSection}>
+          <Text style={webStyles.sectionTitle}>Coordenadas:</Text>
           
-          <View style={styles.inputGroup}>
-            <Text style={styles.inputLabel}>Longitude:</Text>
-            <input
-              type="number"
-              step="any"
-              value={selectedLocation?.longitude || ''}
-              onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
-              style={styles.coordInput}
-              placeholder="Ex: -53.4562"
-            />
+          <View style={webStyles.coordInputs}>
+            <View style={webStyles.inputGroup}>
+              <Text style={webStyles.inputLabel}>Latitude:</Text>
+              <input
+                type="number"
+                step="any"
+                value={selectedLocation?.latitude || ''}
+                onChange={(e) => handleCoordinateChange('latitude', e.target.value)}
+                style={webStyles.coordInput}
+                placeholder="Ex: -24.9555"
+              />
+            </View>
+            
+            <View style={webStyles.inputGroup}>
+              <Text style={webStyles.inputLabel}>Longitude:</Text>
+              <input
+                type="number"
+                step="any"
+                value={selectedLocation?.longitude || ''}
+                onChange={(e) => handleCoordinateChange('longitude', e.target.value)}
+                style={webStyles.coordInput}
+                placeholder="Ex: -53.4562"
+              />
+            </View>
           </View>
         </View>
-      </View>
+      )}
 
       {/* Botão de localização atual */}
       <TouchableOpacity 
-        style={styles.locationButton}
+        style={Platform.OS === 'web' ? webStyles.locationButton : mobileStyles.locationButton}
         onPress={getCurrentLocation}
         disabled={isLoading}
       >
         {isLoading ? (
           <ActivityIndicator color="white" size="small" />
         ) : (
-          <Text style={styles.buttonText}>📍 Usar Minha Localização Atual</Text>
+          <Text style={Platform.OS === 'web' ? webStyles.buttonText : mobileStyles.buttonText}>
+            📍 Usar Minha Localização Atual
+          </Text>
         )}
       </TouchableOpacity>
 
       {/* Preview */}
       {hasUserSelected && selectedLocation && (
-        <View style={styles.previewSection}>
-          <Text style={styles.previewTitle}>Localização selecionada:</Text>
-          <Text style={styles.previewText}>
+        <View style={Platform.OS === 'web' ? webStyles.previewSection : mobileStyles.previewSection}>
+          <Text style={Platform.OS === 'web' ? webStyles.previewTitle : mobileStyles.previewTitle}>
+            Localização selecionada:
+          </Text>
+          <Text style={Platform.OS === 'web' ? webStyles.previewText : mobileStyles.previewText}>
             Latitude: {selectedLocation.latitude.toFixed(6)}
           </Text>
-          <Text style={styles.previewText}>
+          <Text style={Platform.OS === 'web' ? webStyles.previewText : mobileStyles.previewText}>
             Longitude: {selectedLocation.longitude.toFixed(6)}
           </Text>
         </View>
@@ -340,8 +368,8 @@ const handleLocationSelect = (latitude, longitude) => {
   );
 };
 
-// Estilos
-const styles = {
+// Estilos para Web
+const webStyles = {
   container: {
     flex: 1,
   },
@@ -380,36 +408,6 @@ const styles = {
     fontSize: 16,
     color: '#2685BF',
     fontWeight: '500',
-  },
-  mobileMapContainer: {
-    height: 200,
-    marginBottom: 16,
-  },
-  mobileMapPlaceholder: {
-    flex: 1,
-    backgroundColor: '#e3f2fd',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#bbdefb',
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  mapEmoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  mapTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1976d2',
-    marginBottom: 4,
-  },
-  mapSubtitle: {
-    fontSize: 14,
-    color: '#546e7a',
-    textAlign: 'center',
   },
   coordinatesSection: {
     backgroundColor: '#f8f9fa',
@@ -476,110 +474,105 @@ const styles = {
   },
 };
 
-// Para React Native
-if (Platform.OS !== 'web') {
-  const { StyleSheet } = require('react-native');
-  
-  styles = StyleSheet.create({
-    container: {
-      flex: 1,
-    },
-    instruction: {
-      fontSize: 16,
-      fontWeight: '600',
-      marginBottom: 16,
-      textAlign: 'center',
-      color: '#333',
-      padding: 12,
-      backgroundColor: '#f0f8ff',
-      borderRadius: 8,
-    },
-    mobileMapContainer: {
-      height: 200,
-      marginBottom: 16,
-    },
-    mobileMapPlaceholder: {
-      flex: 1,
-      backgroundColor: '#e3f2fd',
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: '#bbdefb',
-      borderStyle: 'dashed',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    mapEmoji: {
-      fontSize: 40,
-      marginBottom: 8,
-    },
-    mapTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#1976d2',
-      marginBottom: 4,
-    },
-    mapSubtitle: {
-      fontSize: 14,
-      color: '#546e7a',
-      textAlign: 'center',
-    },
-    coordinatesSection: {
-      backgroundColor: '#f8f9fa',
-      padding: 16,
-      borderRadius: 8,
-      marginBottom: 16,
-    },
-    sectionTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginBottom: 12,
-      color: '#333',
-    },
-    coordInputs: {
-      flexDirection: 'row',
-      gap: 12,
-    },
-    inputGroup: {
-      flex: 1,
-    },
-    inputLabel: {
-      fontSize: 14,
-      fontWeight: '500',
-      marginBottom: 6,
-      color: '#333',
-    },
-    locationButton: {
-      backgroundColor: '#2685BF',
-      padding: 15,
-      borderRadius: 8,
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    buttonText: {
-      color: 'white',
-      fontWeight: 'bold',
-      fontSize: 14,
-    },
-    previewSection: {
-      backgroundColor: '#e8f5e8',
-      padding: 16,
-      borderRadius: 8,
-      borderLeftWidth: 4,
-      borderLeftColor: '#4CAF50',
-    },
-    previewTitle: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 8,
-    },
-    previewText: {
-      fontSize: 14,
-      color: '#2e7d32',
-      marginBottom: 4,
-    },
-  });
-}
+// Estilos para Mobile (React Native)
+const mobileStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  instruction: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#333',
+    padding: 12,
+    backgroundColor: '#f0f8ff',
+    borderRadius: 8,
+  },
+  mobileMapContainer: {
+    height: 300,
+    marginBottom: 16,
+  },
+  mobileMapPlaceholder: {
+    flex: 1,
+    backgroundColor: '#e3f2fd',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#bbdefb',
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  mapEmoji: {
+    fontSize: 40,
+    marginBottom: 8,
+  },
+  mapTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#1976d2',
+    marginBottom: 4,
+  },
+  mapSubtitle: {
+    fontSize: 14,
+    color: '#546e7a',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  mobileCoordInputs: {
+    width: '100%',
+    gap: 12,
+  },
+  mobileInputGroup: {
+    marginBottom: 12,
+  },
+  mobileInputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 6,
+    color: '#333',
+    textAlign: 'center',
+  },
+  mobileCoordInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 6,
+    padding: 10,
+    fontSize: 14,
+    backgroundColor: 'white',
+    textAlign: 'center',
+  },
+  locationButton: {
+    backgroundColor: '#2685BF',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  buttonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  previewSection: {
+    backgroundColor: '#e8f5e8',
+    padding: 16,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  previewTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 8,
+  },
+  previewText: {
+    fontSize: 14,
+    color: '#2e7d32',
+    marginBottom: 4,
+  },
+});
 
 export default MapaSelecaoSimples;
