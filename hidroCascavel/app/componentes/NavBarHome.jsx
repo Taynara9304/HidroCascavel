@@ -12,7 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
-import logo from '../assets/logoHidrocascavel.png';
+import logo from '../assets/logoHidroCascavel.png';
 
 const Deslogar = (navigation) => {
   signOut(auth)

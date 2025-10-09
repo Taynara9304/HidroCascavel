@@ -2,7 +2,7 @@ import React from 'react';
 import { View, ScrollView } from 'react-native';
 import TabelaPocos from '../componentes/TabelaPocos';
 import AddPocos from '../componentes/AddPocos';
-import useWells from '../hooks/useWells';
+import useWells from '../hooks/useTabelaPocos';
 
 const GerenciarPocos = () => {
   const {
