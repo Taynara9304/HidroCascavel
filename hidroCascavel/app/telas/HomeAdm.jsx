@@ -14,8 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 
 const HomeAdm = () => {
     const { width } = useWindowDimensions();
-
     const contentWidth = width < 800 ? width : width * 0.6;
+    const isMobile = width < 800;
     
     const navigation = useNavigation();
 
@@ -40,6 +40,53 @@ const HomeAdm = () => {
     const navigateToGerenciarUsuarios = () => {
         navigation.navigate("GerenciarUsuarios");
     };
+
+    // Styles DEFINIDOS DENTRO do componente para acessar isMobile
+    const styles = StyleSheet.create({
+        scrollView: {
+            flex: 1,
+            backgroundColor: "#fff",
+        },
+        container: {
+            flex: 1,
+            backgroundColor: "#fff",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            margin: 'auto',
+            padding: 10,
+        },
+        containerNavBar: {
+            top: isMobile ? 20 : 0,
+            width: '100%',
+            height: 150,
+        },
+        containerPopUps: {
+            top: isMobile ? -50 : 0,
+            display: 'flex',
+            justifyContent: "center",
+            flexDirection: "row",
+            flexWrap: 'wrap',
+            gap: 10,
+            width: '100%',
+            marginVertical: 10,
+        },
+        containerItems: {
+            top: isMobile ? -60 : 0,
+            width: '100%',
+            marginVertical: 10,
+        },
+        containerBotaoRelatorio: {
+            width: '100%',
+            marginTop: 20,
+            marginBottom: 40,
+            display: 'flex',
+            justifyContent: "center",
+            flexDirection: "row",
+        },
+        navItem: {
+            margin: 5,
+        }
+    });
 
     return (
         <ScrollView style={styles.scrollView}>
@@ -115,48 +162,5 @@ const HomeAdm = () => {
         </ScrollView>
     );
 }
-
-const styles = StyleSheet.create({
-    scrollView: {
-        flex: 1,
-        backgroundColor: "#fff",
-    },
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        margin: 'auto',
-        padding: 10,
-    },
-    containerNavBar: {
-        width: '100%',
-        height: 150,
-    },
-    containerPopUps: {
-        display: 'flex',
-        justifyContent: "center",
-        flexDirection: "row",
-        flexWrap: 'wrap',
-        gap: 10,
-        width: '100%',
-        marginVertical: 10,
-    },
-    containerItems: {
-        width: '100%',
-        marginVertical: 10,
-    },
-    containerBotaoRelatorio: {
-        width: '100%',
-        marginTop: 20,
-        marginBottom: 40,
-        display: 'flex',
-        justifyContent: "center",
-        flexDirection: "row",
-    },
-    navItem: {
-        margin: 5,
-    }
-});
 
 export default HomeAdm;
