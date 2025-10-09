@@ -3,6 +3,7 @@
     "name": "app",
     "slug": "app",
     "version": "1.0.0",
+    "entryPoint": "./index.js",
     "orientation": "portrait",
     "icon": "./assets/splash-icon.png",
     "userInterfaceStyle": "light",
