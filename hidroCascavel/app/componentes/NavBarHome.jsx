@@ -9,7 +9,37 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import logo from '../assets/logoHidroCascavel.png';
+import { signOut } from 'firebase/auth';
+import { auth } from '../services/firebaseConfig';
+import Toast from 'react-native-toast-message';
+import logo from '../assets/logoHidrocascavel.png';
+
+const Deslogar = (navigation) => {
+  signOut(auth)
+    .then(() => {
+      console.log('Usuário deslogado com sucesso');
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Logout realizado',
+        text2: 'Você saiu da sua conta'
+      });
+      
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "TelaInicial" }],
+      });
+    })
+    .catch((error) => {
+      console.error('Erro ao deslogar:', error);
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível fazer logout'
+      });
+    });
+};
 
 const NavBar = () => {
   const navigation = useNavigation();
@@ -29,7 +59,7 @@ const NavBar = () => {
         <>
           {/* Ícone menu mobile */}
           <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)}>
-            <MaterialIcons name="menu" size={30} color="#2685BF" />
+            <MaterialIcons name="menu" size={30} color="#fff" />
           </TouchableOpacity>
 
           {menuOpen && (
@@ -50,15 +80,21 @@ const NavBar = () => {
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
+              {/* Configurações no mobile */}
+              <TouchableOpacity style={[styles.navItem, styles.configButton]}>
+                <MaterialIcons name="settings" size={20} color="#fff" />
+                <Text style={styles.configText}></Text>
+              </TouchableOpacity>
+
               <TouchableOpacity
                 style={[styles.navItem, styles.loginButton]}
                 onPress={() => {
-                  setMenuOpen(false); // fecha o menu
-                  navigation.navigate("Login");
+                  setMenuOpen(false);
+                  Deslogar(navigation);
                 }}
               >
-                <MaterialIcons name="login" size={20} color="#2685BF" />
-                <Text style={styles.loginText}>Entrar</Text>
+                <MaterialIcons name="logout" size={20} color="#fff" />
+                <Text style={styles.loginText}>Sair</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -67,21 +103,40 @@ const NavBar = () => {
         <View style={styles.navRow}>
           <Image source={logo} style={styles.logo} /> 
 
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navText}>Sobre</Text>
-          </TouchableOpacity>
+          <View style={styles.navItemsContainer}>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>Sobre</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navText}>Serviços</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>Serviços</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navText}>Educação Ambiental</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>Educação Ambiental</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
-            <Text style={styles.navText}>Contato</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.navItem}>
+              <Text style={styles.navText}>Contato</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.rightButtons}>
+            {/* Botão Configurações para Desktop */}
+            <TouchableOpacity style={[styles.navItem, styles.configButton]}>
+              <MaterialIcons name="settings" size={30} color="#fff" />
+              <Text style={styles.configText}></Text>
+            </TouchableOpacity>
+
+            {/* Botão Sair para Desktop */}
+            <TouchableOpacity
+              style={[styles.navItem, styles.loginButton]}
+              onPress={() => Deslogar(navigation)}
+            >
+              <MaterialIcons name="logout" size={30} color="#fff" />
+              <Text style={styles.loginText}>Sair</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
     </View>
@@ -99,7 +154,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     width: "95%",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#2685BF",
     zIndex: 1000,
     alignSelf: "center",
     borderRadius: 10,
@@ -115,10 +170,24 @@ const styles = StyleSheet.create({
   },
   desktopNav: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 20,
   },
   navRow: {
+    left: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  navItemsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "center",
+  },
+  rightButtons: {
     flexDirection: "row",
     alignItems: "center",
   },
@@ -127,7 +196,7 @@ const styles = StyleSheet.create({
     top: 60,
     left: 0,
     width: "70%",
-    backgroundColor: "#fff",
+    backgroundColor: "#3D9DD9",
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderRightWidth: 1,
@@ -141,15 +210,34 @@ const styles = StyleSheet.create({
   },
   navText: {
     fontSize: 16,
-    color: "#333",
+    color: "#fff",
+  },
+  configButton: {
+    backgroundColor: "#1a6fa3",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    left:2,
+    top: 1
+  },
+  configText: {
+    marginLeft: 4,
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#fff",
   },
   loginButton: {
     marginLeft: 12,
+    backgroundColor: "#1a6fa3",
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 6,
+    top: 1
   },
   loginText: {
     marginLeft: 4,
     fontSize: 16,
     fontWeight: "bold",
-    color: "#2685BF",
+    color: "#fff",
   },
 });

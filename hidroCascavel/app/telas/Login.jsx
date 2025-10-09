@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
     height: 140, // Altura maior para desktop
   },
   titleSobreImagem: {
-    marginTop: 100, // Margem maior para desktop
+    marginTop: 30, // Margem maior para desktop
     fontSize: 25, // Fonte maior para desktop
     color: "#2685BF",
   },
@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
   },
   loginText: {
     color: "#2685BF",
-    marginTop: 10,
+    marginTop: 5,
     textDecorationLine: 'underline',
   },
   errorText: {
