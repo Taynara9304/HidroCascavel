@@ -1,258 +1,317 @@
+// componentes/TabelaVisitas.js
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
-import { DataTable } from 'react-native-paper';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 
-const TabelaVisitas = () => {
-  // Dados de exemplo para as tabelas
-  const [proximasVisitas, setProximasVisitas] = useState([
-    {
-      id: '1',
-      data: '15/01/2024',
-      poco: 'PO-001',
-      analista: 'Carlos Silva',
-      resultado: 'Pendente'
-    },
-    {
-      id: '2',
-      data: '18/01/2024',
-      poco: 'PO-005',
-      analista: 'Ana Santos',
-      resultado: 'Pendente'
-    },
-    {
-      id: '3',
-      data: '22/01/2024',
-      poco: 'PO-012',
-      analista: 'Roberto Alves',
-      resultado: 'Pendente'
-    },
-  ]);
+const TabelaVisitas = ({ visits, onEdit, onDelete, sortField, sortDirection, onSort }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const [visitasRecentes, setVisitasRecentes] = useState([
-    {
-      id: '101',
-      data: '05/01/2024',
-      poco: 'PO-007',
-      solicitante: 'Maria Oliveira',
-      status: 'Concluído'
-    },
-    {
-      id: '102',
-      data: '02/01/2024',
-      poco: 'PO-003',
-      solicitante: 'João Mendes',
-      status: 'Concluído'
-    },
-    {
-      id: '103',
-      data: '28/12/2023',
-      poco: 'PO-009',
-      solicitante: 'Pedro Costa',
-      status: 'Concluído'
-    },
-  ]);
+  // Garantir que visits seja um array
+  const safeVisits = Array.isArray(visits) ? visits : [];
+  
+  // Calcular dados paginados
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedVisits = safeVisits.slice(startIndex, startIndex + itemsPerPage);
+  const totalPages = Math.ceil(safeVisits.length / itemsPerPage);
 
-  // Função para ações (exemplo)
-  const handleAcao = (id, tipo) => {
-    console.log(`Ação ${tipo} na visita ${id}`);
-    // Aqui você implementaria a lógica real
+  const HeaderCell = ({ title, field, sortable = false }) => (
+    <View style={[styles.cell, styles.mediumCell]}>
+      {sortable ? (
+        <TouchableOpacity onPress={() => onSort(field)} style={styles.sortButton}>
+          <Text style={styles.headerText}>
+            {title}
+            {sortField === field && (
+              <Text>{sortDirection === 'asc' ? ' ↑' : ' ↓'}</Text>
+            )}
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        <Text style={styles.headerText}>{title}</Text>
+      )}
+    </View>
+  );
+
+  const getSituacaoColor = (situacao) => {
+    switch (situacao?.toLowerCase()) {
+      case 'concluida':
+        return '#4CAF50';
+      case 'pendente':
+        return '#FF9800';
+      default:
+        return '#666';
+    }
   };
+
+  const getSituacaoText = (situacao) => {
+    switch (situacao?.toLowerCase()) {
+      case 'concluida':
+        return 'Concluída';
+      case 'pendente':
+        return 'Pendente';
+      default:
+        return situacao;
+    }
+  };
+
+  const formatDateTime = (dateString) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR') + ' ' + date.toLocaleTimeString('pt-BR', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+    } catch (error) {
+      return 'Data inválida';
+    }
+  };
+
+  const renderItem = (item) => (
+    <View style={styles.tableRow} key={item.id}>
+      <View style={[styles.cell, styles.smallCell]}>
+        <Text style={styles.cellText}>{item.id}</Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell]}>
+        <Text style={styles.cellText}>{item.pocoNome || 'N/A'}</Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell]}>
+        <Text style={styles.cellText}>{item.localizacao || 'N/A'}</Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell]}>
+        <Text style={styles.cellText}>{item.proprietario || 'N/A'}</Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell]}>
+        <Text style={styles.cellText}>
+          {formatDateTime(item.dataVisita)}
+        </Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell]}>
+        <Text style={[styles.cellText, { color: getSituacaoColor(item.situacao) }]}>
+          {getSituacaoText(item.situacao)}
+        </Text>
+      </View>
+      <View style={[styles.cell, styles.mediumCell, styles.actionsCell]}>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.editButton]}
+          onPress={() => onEdit && onEdit(item)}
+        >
+          <Text style={styles.actionButtonText}>Editar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.actionButton, styles.deleteButton]}
+          onPress={() => onDelete && onDelete(item.id)}
+        >
+          <Text style={styles.actionButtonText}>Excluir</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  // Calcular altura aproximada da tabela
+  const tableHeight = 120 + (paginatedVisits.length * 50);
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#1e88e5" barStyle="light-content" />
+      <Text style={styles.title}>Gerenciar Visitas</Text>
       
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Sistema de Visitas</Text>
+      {/* Container da tabela com altura fixa baseada no conteúdo */}
+      <View style={[styles.tableWrapper, { minHeight: Math.max(tableHeight, 200) }]}>
+        {/* Cabeçalho */}
+        <View style={styles.tableHeader}>
+          <View style={[styles.cell, styles.smallCell]}>
+            <Text style={styles.headerText}>ID</Text>
+          </View>
+          <View style={[styles.cell, styles.mediumCell]}>
+            <Text style={styles.headerText}>Poço</Text>
+          </View>
+          <View style={[styles.cell, styles.mediumCell]}>
+            <Text style={styles.headerText}>Localização</Text>
+          </View>
+          <HeaderCell title="Propriedade" field="proprietario" sortable={true} />
+          <HeaderCell title="Data da Visita" field="dataVisita" sortable={true} />
+          <View style={[styles.cell, styles.mediumCell]}>
+            <Text style={styles.headerText}>Situação</Text>
+          </View>
+          <View style={[styles.cell, styles.mediumCell]}>
+            <Text style={styles.headerText}>Ações</Text>
+          </View>
+        </View>
+
+        {/* Lista de dados */}
+        <View style={styles.tableBody}>
+          {paginatedVisits.length > 0 ? (
+            paginatedVisits.map((item) => renderItem(item))
+          ) : (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>Nenhuma visita encontrada</Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      <ScrollView style={styles.scrollView}>
-        {/* Tabela de Próximas Visitas */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>Próximas Visitas</Text>
-          <DataTable style={styles.dataTable}>
-            <DataTable.Header style={styles.tableHeader}>
-              <DataTable.Title>Data</DataTable.Title>
-              <DataTable.Title>Poço</DataTable.Title>
-              <DataTable.Title>Analista</DataTable.Title>
-              <DataTable.Title>Resultado</DataTable.Title>
-              <DataTable.Title>Ações</DataTable.Title>
-            </DataTable.Header>
-
-            {proximasVisitas.map((visita) => (
-              <DataTable.Row key={visita.id}>
-                <DataTable.Cell>{visita.data}</DataTable.Cell>
-                <DataTable.Cell>{visita.poco}</DataTable.Cell>
-                <DataTable.Cell>{visita.analista}</DataTable.Cell>
-                <DataTable.Cell>
-                  <Text style={[
-                    styles.statusText, 
-                    visita.resultado === 'Pendente' ? styles.pendente : styles.concluido
-                  ]}>
-                    {visita.resultado}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell>
-                  <View style={styles.actionsContainer}>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.editButton]}
-                      onPress={() => handleAcao(visita.id, 'editar')}
-                    >
-                      <Text style={styles.actionText}>Editar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.deleteButton]}
-                      onPress={() => handleAcao(visita.id, 'excluir')}
-                    >
-                      <Text style={styles.actionText}>Excluir</Text>
-                    </TouchableOpacity>
-                  </View>
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
+      {/* Paginação - só mostra se tiver mais de uma página */}
+      {totalPages > 1 && (
+        <View style={styles.pagination}>
+          <TouchableOpacity 
+            style={[styles.pageButton, currentPage === 1 && styles.disabledButton]}
+            onPress={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+            disabled={currentPage === 1}
+          >
+            <Text style={styles.pageButtonText}>{'<'}</Text>
+          </TouchableOpacity>
+          
+          <Text style={styles.pageInfo}>
+            Página {currentPage} de {totalPages}
+          </Text>
+          
+          <TouchableOpacity 
+            style={[styles.pageButton, currentPage === totalPages && styles.disabledButton]}
+            onPress={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <Text style={styles.pageButtonText}>{'>'}</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Tabela de Visitas Recentes */}
-        <View style={styles.tableContainer}>
-          <Text style={styles.tableTitle}>Visitas Recentes</Text>
-          <DataTable style={styles.dataTable}>
-            <DataTable.Header style={styles.tableHeader}>
-              <DataTable.Title>Data</DataTable.Title>
-              <DataTable.Title>Poço</DataTable.Title>
-              <DataTable.Title>Solicitante</DataTable.Title>
-              <DataTable.Title>Status</DataTable.Title>
-              <DataTable.Title>Ações</DataTable.Title>
-            </DataTable.Header>
-
-            {visitasRecentes.map((visita) => (
-              <DataTable.Row key={visita.id}>
-                <DataTable.Cell>{visita.data}</DataTable.Cell>
-                <DataTable.Cell>{visita.poco}</DataTable.Cell>
-                <DataTable.Cell>{visita.solicitante}</DataTable.Cell>
-                <DataTable.Cell>
-                  <Text style={[
-                    styles.statusText, 
-                    visita.status === 'Concluído' ? styles.concluido : styles.pendente
-                  ]}>
-                    {visita.status}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell>
-                  <View style={styles.actionsContainer}>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.viewButton]}
-                      onPress={() => handleAcao(visita.id, 'visualizar')}
-                    >
-                      <Text style={styles.actionText}>Visualizar</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      style={[styles.actionButton, styles.reportButton]}
-                      onPress={() => handleAcao(visita.id, 'relatorio')}
-                    >
-                      <Text style={styles.actionText}>Relatório</Text>
-                    </TouchableOpacity>
-                  </View>
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
-        </View>
-      </ScrollView>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
+    marginHorizontal: 16,
+    marginTop: 16,
+    backgroundColor: 'white',
   },
-  header: {
-    backgroundColor: '#1e88e5',
-    padding: 16,
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-  },
-  headerTitle: {
-    color: 'white',
+  title: {
     fontSize: 20,
     fontWeight: 'bold',
+    marginBottom: 16,
     textAlign: 'center',
+    color: '#333',
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  tableContainer: {
-    backgroundColor: 'white',
+  tableWrapper: {
+    borderWidth: 1,
+    borderColor: '#ddd',
     borderRadius: 8,
-    marginBottom: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
     overflow: 'hidden',
-  },
-  tableTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    padding: 16,
-    backgroundColor: '#f0f0f0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  dataTable: {
-    borderRadius: 8,
+    backgroundColor: 'white',
   },
   tableHeader: {
-    backgroundColor: '#e3f2fd',
+    flexDirection: 'row',
+    backgroundColor: '#f5f5f5',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingVertical: 12,
+    minHeight: 40,
   },
-  statusText: {
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+  tableBody: {
+    minHeight: 100,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    paddingVertical: 12,
+    minHeight: 50,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
     textAlign: 'center',
   },
-  pendente: {
-    backgroundColor: '#ffecb3',
-    color: '#f57c00',
+  cell: {
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  concluido: {
-    backgroundColor: '#c8e6c9',
-    color: '#388e3c',
+  smallCell: {
+    flex: 0.8,
   },
-  actionsContainer: {
+  mediumCell: {
+    flex: 1.2,
+  },
+  actionsCell: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerText: {
+    fontWeight: 'bold',
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  cellText: {
+    fontSize: 12,
+    color: '#333',
+    textAlign: 'center',
+  },
+  sortButton: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionButton: {
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 6,
     borderRadius: 4,
-    marginHorizontal: 2,
-  },
-  actionText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
+    minWidth: 50,
+    alignItems: 'center',
   },
   editButton: {
-    backgroundColor: '#2196f3',
+    backgroundColor: '#007AFF',
   },
   deleteButton: {
-    backgroundColor: '#f44336',
+    backgroundColor: '#FF3B30',
   },
-  viewButton: {
-    backgroundColor: '#4caf50',
+  actionButtonText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
-  reportButton: {
-    backgroundColor: '#ff9800',
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  pageButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+    marginHorizontal: 8,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
+  },
+  pageButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  pageInfo: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
   },
 });
 

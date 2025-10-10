@@ -1,28 +1,64 @@
-import React from "react";
-import { ScrollView, View, Text, useWindowDimensions, StyleSheet } from "react-native";
+// screens/GerenciarVisitas.js
+import React from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import TabelaVisitas from '../componentes/TabelaVisitas';
+import AddVisitas from '../componentes/AddVisitas';
+import useVisitas from '../hooks/useTabelaVisitas';
 
 const GerenciarVisitas = () => {
-    const { width } = useWindowDimensions();
-    const contentWidth = width < 800 ? width : width * 0.6;
+  const {
+    visits,
+    sortField,
+    sortDirection,
+    handleSort,
+    addVisit,
+    editVisit,
+    deleteVisit,
+  } = useVisitas();
 
-    return (
-         <ScrollView>
-            <View style={[styles.container, { width: contentWidth }]}>
-                <Text>Gerenciar visitas</Text>
-            </View>
-        </ScrollView>
-    )
-}
+  const handleAdicionarVisita = (novaVisita) => {
+    console.log('GerenciarVisitas: Recebendo nova visita', novaVisita);
+    addVisit(novaVisita);
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+      >
+        <TabelaVisitas
+          visits={visits}
+          onEdit={(visit) => {
+            console.log('Editar visita:', visit);
+          }}
+          onDelete={deleteVisit}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+        
+        <AddVisitas 
+          onAdicionarVisita={handleAdicionarVisita}
+        />
+      </ScrollView>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        margin: 'auto',
-        padding: 10,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    flexGrow: 1,
+    paddingBottom: 16,
+  },
 });
 
 export default GerenciarVisitas;
