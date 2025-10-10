@@ -1,28 +1,79 @@
-import React from "react";
-import { ScrollView, View, Text, useWindowDimensions, StyleSheet } from "react-native";
+// screens/GerenciarAnalises.js
+import React from 'react';
+import { View, ScrollView, StyleSheet } from 'react-native';
+import TabelaAnalises from '../componentes/TabelaAnalises';
+import AddAnalises from '../componentes/AddAnalises';
+import useAnalyses from '../hooks/useTabelaAnalises';
 
 const GerenciarAnalises = () => {
-    const { width } = useWindowDimensions();
-    const contentWidth = width < 800 ? width : width * 0.6;
+  const {
+    analyses,
+    pocos,
+    proprietarios,
+    analistas,
+    sortField,
+    sortDirection,
+    handleSort,
+    addAnalysis,
+    editAnalysis,
+    deleteAnalysis,
+  } = useAnalyses();
 
-    return (
-         <ScrollView>
-            <View style={[styles.container, { width: contentWidth }]}>
-                <Text>Gerenciar análises</Text>
-            </View>
-        </ScrollView>
-    )
-}
+  const handleAdicionarAnalise = (novaAnalise) => {
+    console.log('GerenciarAnalises: Recebendo nova análise', novaAnalise);
+    addAnalysis(novaAnalise);
+  };
+
+  return (
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={true}
+      >
+        <View style={styles.tableSection}>
+          <TabelaAnalises
+            analyses={analyses}
+            onEdit={(analysis) => {
+              console.log('Editar análise:', analysis);
+            }}
+            onDelete={deleteAnalysis}
+            sortField={sortField}
+            sortDirection={sortDirection}
+            onSort={handleSort}
+          />
+        </View>
+        
+        <View style={styles.formSection}>
+          <AddAnalises 
+            onAdicionarAnalise={handleAdicionarAnalise}
+            pocos={pocos}
+            proprietarios={proprietarios}
+            analistas={analistas}
+          />
+        </View>
+      </ScrollView>
+    </View>
+  );
+};
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "flex-start",
-        margin: 'auto',
-        padding: 10,
-    },
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  contentContainer: {
+    flexGrow: 1,
+  },
+  tableSection: {
+    marginBottom: 8, // Espaço mínimo entre tabela e formulário
+  },
+  formSection: {
+    flex: 1,
+  },
 });
 
 export default GerenciarAnalises;
