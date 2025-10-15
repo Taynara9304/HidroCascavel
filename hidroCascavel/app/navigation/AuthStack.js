@@ -6,6 +6,8 @@ import GerenciarUsuarios from '../telas/GerenciarUsuarios';
 import GerenciarAnalises from '../telas/GerenciarAnalises';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
+import PerfilUsuario from '../componentes/PerfilUsuario';
+import GerenciarRelatorios from '../telas/GerenciarRelatorios';
 
 const Stack = createNativeStackNavigator();
 
@@ -66,6 +68,19 @@ const AuthStack = () => {
           headerShown: isWeb,
           title: "Gerenciar Poços" 
         }}
+      />
+      <Stack.Screen 
+        name="PerfilUsuario" 
+        component={PerfilUsuario}
+        options={{ 
+          headerShown: isWeb,
+          title: "Meu perfil"
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarRelatorios" 
+        component={GerenciarRelatorios}
+        options={{ title: 'Gerenciar Relatórios' }}
       />
     </Stack.Navigator>
   );

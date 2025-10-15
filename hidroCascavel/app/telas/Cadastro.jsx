@@ -1,4 +1,4 @@
-// components/Cadastro.jsx
+// componentes/Cadastro.jsx
 import React, { useState } from "react";
 import {
   View,
