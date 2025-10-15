@@ -1,20 +1,49 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 
 const FormAvaliacoes = ({ onSubmit }) => {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
+  const [charCount, setCharCount] = useState(0);
+
+  const handleCommentChange = (text) => {
+    if (text.length <= 100) {
+      setComment(text);
+      setCharCount(text.length);
+    }
+  };
+
+  const handleSubmit = () => {
+    if (comment.trim().length === 0) {
+      Alert.alert("Erro", "Por favor, escreva um depoimento antes de enviar.");
+      return;
+    }
+    
+    if (rating === 0) {
+      Alert.alert("Erro", "Por favor, selecione uma avaliação com estrelas.");
+      return;
+    }
+    
+    onSubmit({ comment, rating });
+    setComment("");
+    setRating(0);
+    setCharCount(0);
+  };
 
   return (
     <View style={styles.form}>
       <Text style={styles.label}>Deixe seu depoimento:</Text>
       <TextInput
         style={styles.input}
-        placeholder="Escreva aqui..."
+        placeholder="Escreva aqui... (máximo 100 caracteres)"
         value={comment}
-        onChangeText={setComment}
+        onChangeText={handleCommentChange}
         multiline
+        maxLength={100}
       />
+      <Text style={styles.charCount}>
+        {charCount}/100 caracteres
+      </Text>
 
       <Text style={styles.label}>Deixe sua avaliação:</Text>
       <View style={styles.starsRow}>
@@ -29,7 +58,7 @@ const FormAvaliacoes = ({ onSubmit }) => {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => onSubmit({ comment, rating })}
+        onPress={handleSubmit}
       >
         <Text style={styles.buttonText}>Enviar</Text>
       </TouchableOpacity>
@@ -54,9 +83,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderRadius: 6,
     padding: 8,
-    marginBottom: 10,
+    marginBottom: 5,
     minHeight: 60,
     textAlignVertical: "top",
+  },
+  charCount: {
+    fontSize: 12,
+    color: "#fff",
+    textAlign: "right",
+    marginBottom: 10,
   },
   starsRow: {
     flexDirection: "row",
