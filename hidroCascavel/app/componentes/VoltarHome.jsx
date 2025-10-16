@@ -12,7 +12,7 @@ const VoltarHome = ({ navigation, tela = "Home", titulo = "Título" }) => {
     };
 
     return (
-        <View>
+        <View style={styles.container}>
             <View style={[styles.topContainer, { width: contentWidth }]}>
                 <Image
                     source={ondaTopo}
@@ -30,6 +30,8 @@ const VoltarHome = ({ navigation, tela = "Home", titulo = "Título" }) => {
                         <MaterialIcons name="arrow-back" size={24} color="#fff" />
                         <Text style={styles.titleSobreImagem}>{titulo}</Text>
                     </TouchableOpacity>
+                    
+                    
                 </View>
             </View>
         </View>
@@ -37,14 +39,19 @@ const VoltarHome = ({ navigation, tela = "Home", titulo = "Título" }) => {
 }
 
 const styles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white', // Fundo branco para todo o componente
+    },
     topContainer: {
         position: "relative",
         alignItems: "center",
         marginBottom: 20,
+        backgroundColor: 'white', // Fundo branco
     },
     image: {
         alignSelf: "center",
         marginTop: -35,
+        backgroundColor: 'white', // Fundo branco atrás da imagem
     },
     headerContent: {
         position: "absolute",
@@ -74,11 +81,11 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: "bold",
         textAlign: 'center',
-        flex: 1, // Ocupa o espaço disponível
-        marginHorizontal: 10, // Pequena margem nas laterais
+        flex: 1,
+        marginHorizontal: 10,
     },
     placeholder: {
-        width: 80, // Largura similar ao botão de voltar para balancear
+        width: 40, // Ajustado para o tamanho do ícone
     },
 });
 

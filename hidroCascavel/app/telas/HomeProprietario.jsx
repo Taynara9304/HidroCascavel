@@ -12,7 +12,7 @@ import iconeQuimica from '../assets/iconeQuimica.png';
 import iconeCalendario from '../assets/iconeCalendario.png';
 import { useNavigation } from "@react-navigation/native";
 
-const HomeAnalista = () => {
+const HomeProprietario = () => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
     const isMobile = width < 800;
@@ -100,16 +100,6 @@ const HomeAnalista = () => {
                     <NavBar />
                 </View>
 
-                <View style={[styles.containerPopUps, { width: contentWidth }]}>
-                    <View>
-                        <PopUp texto="Análises realizadas" num="1" img={iconeQuimica} />
-                    </View>
-                    
-                    <View>
-                        <PopUp texto="Visitas agendadas" num="2" img={iconeCalendario} />
-                    </View>
-                </View>
-
                 <View style={styles.containerItems}>
                     <Calendario />
                 </View>
@@ -142,13 +132,7 @@ const HomeAnalista = () => {
                         style={styles.navItem}
                         onPress={navigateToGerenciarAnalises}
                     >
-                        <BotaoFuncionalidades texto="Gerenciar análises" />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={navigateToGerenciarRelatorios}
-                    >
-                        <BotaoFuncionalidades texto="Gerar relatórios" />
+                        <BotaoFuncionalidades texto="Consultar análises" />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -156,4 +140,4 @@ const HomeAnalista = () => {
     );
 }
 
-export default HomeAnalista;
+export default HomeProprietario;

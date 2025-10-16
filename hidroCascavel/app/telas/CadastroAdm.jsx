@@ -18,17 +18,16 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
-import { useNavigation } from '@react-navigation/native'; // Importe o hook
 
-const Cadastro = () => {
+const Cadastro = ({ navigation }) => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
-    const navigation = useNavigation(); // Use o hook
 
     const [email, setEmail] = useState("");
     const [nome, setNome] = useState("");
     const [sobrenome, setSobrenome] = useState("");
     const [telefone, setTelefone] = useState("");
+    const [siape, setSiape] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmacao, setConfirmacao] = useState("");
     const [coordenadas, setCoordenadas] = useState(null);
@@ -106,6 +105,7 @@ const Cadastro = () => {
           nome: nome,
           sobrenome: sobrenome,
           telefone: telefone,
+          siape: siape,
           coordenadas: coordenadas,
           endereco: {
             ...endereco,
@@ -166,10 +166,6 @@ const Cadastro = () => {
       }
     };
 
-    const navigateToTipoCadastro = () => {
-      navigation.navigate("TipoCadastro"); // Agora deve funcionar
-    };
-
     return(
         <ScrollView style={styles.scrollView}>
             <View style={styles.container}>
@@ -184,12 +180,6 @@ const Cadastro = () => {
                 </View>
 
                 <View style={[styles.content, { width: contentWidth }]}>
-                    <TouchableOpacity
-                      onPress={navigateToTipoCadastro}
-                    >
-                      <Text style={styles.link}>É do HidroCascavel? Clique aqui para se cadastrar!</Text>
-                    </TouchableOpacity>
-
                     <View style={styles.containerDivisao}>
                         <Text style={styles.titulo}>Dados pessoais</Text>
                         <View style={styles.linhaAzul} />
@@ -239,6 +229,18 @@ const Cadastro = () => {
                             style={styles.input}
                         />
                         {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="siape"
+                            value={siape}
+                            onChangeText={setSiape}
+                            placeholder="Digite seu SIAPE"
+                            keyboardType="phone-pad"
+                            style={styles.input}
+                        />
+                        {errors.siape && <Text style={styles.errorText}>{errors.siape}</Text>}
                     </View>
 
                     <View style={styles.inputContainer}>
@@ -388,10 +390,6 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     marginBottom: 10,
-  },
-  link: {
-    color: '#2685BF',
-    textDecorationLine: 'underline',
   },
   image: {
     alignSelf: "center",

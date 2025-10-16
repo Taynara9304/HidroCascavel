@@ -2,13 +2,16 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeAdm from '../telas/HomeAdm';
+import HomeAnalista from '../telas/HomeAnalista';
+import HomeProprietario from '../telas/HomeProprietario';
 import GerenciarUsuarios from '../telas/GerenciarUsuarios';
 import GerenciarAnalises from '../telas/GerenciarAnalises';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
-import PerfilUsuario from '../componentes/PerfilUsuario';
+import PerfilUsuario from '../telas/PerfilUsuario';
 import GerenciarRelatorios from '../telas/GerenciarRelatorios';
-import VoltarHome from '../componentes/VoltarHome'; // Importe seu componente
+import TipoCadastro from '../telas/TipoCadastro';
+import VoltarHome from '../componentes/VoltarHome';
 
 const Stack = createNativeStackNavigator();
 
@@ -27,6 +30,15 @@ const AuthStack = () => {
       <Stack.Screen 
         name="HomeAdm" 
         component={HomeAdm}
+      />
+      <Stack.Screen 
+        name="HomeAnalista" 
+        component={HomeAnalista}
+      />
+
+      <Stack.Screen 
+        name="HomeProprietario" 
+        component={HomeProprietario}
       />
       
       {/* Demais telas COM header personalizado apenas na web */}
@@ -110,6 +122,20 @@ const AuthStack = () => {
               {...props}
               tela="HomeAdm" 
               titulo="Gerenciar Relatórios" 
+            />
+          )
+        }}
+      />
+      <Stack.Screen 
+        name="TipoCadastro" 
+        component={TipoCadastro}
+        options={{ 
+          headerShown: isWeb,
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="Cadastro" 
+              titulo="Tipo usuário" 
             />
           )
         }}

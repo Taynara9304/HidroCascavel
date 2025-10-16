@@ -93,6 +93,10 @@ const HomeAdm = () => {
         }
     });
 
+    const irHome = () => {
+        navigation.navigate("HomeProprietario");
+    }
+
     return (
         <ScrollView style={styles.scrollView}>
             <View style={[styles.container, { width: contentWidth }]}>
@@ -115,6 +119,11 @@ const HomeAdm = () => {
                     <View>
                         <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
                     </View>
+
+                    <TouchableOpacity
+                    onPress={irHome}>
+                        oi
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.containerItems}>

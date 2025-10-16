@@ -239,15 +239,6 @@ const PerfilUsuario = ({ navigation }) => {
     return(
         <ScrollView style={styles.scrollView}>
             <View style={styles.container}>
-                <View style={[styles.topContainer, { width: contentWidth }]}>
-                    <Image
-                        source={ondaTopo}
-                        style={[styles.image, { width: contentWidth }]}
-                        resizeMode="contain"
-                    />
-                    <Text style={styles.titleSobreImagem}>Meu Perfil</Text>
-                </View>
-
                 <View style={[styles.content, { width: contentWidth }]}>
                     {/* Header com botão de editar */}
                     <View style={styles.header}>
@@ -449,34 +440,9 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "flex-start",
     },
-    topContainer: {
-        position: "relative",
-        alignItems: "center",
-        marginBottom: 10,
-    },
-    image: {
-        alignSelf: "center",
-        marginTop: -35,
-    },
-    titleSobreImagem: {
-        position: "absolute",
-        top: "20%",
-        left: "20%",
-        transform: [{ translateX: -100 }, { translateY: -10 }],
-        color: "#fff",
-        fontSize: 20,
-        fontWeight: "bold",
-    },
     content: {
         alignItems: "center",
         paddingBottom: 30,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: Platform.OS === 'web' ? '80%' : '90%',
-        marginBottom: 20,
     },
     tituloPrincipal: {
         fontSize: 18,
