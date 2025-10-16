@@ -8,6 +8,7 @@ import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
 import PerfilUsuario from '../componentes/PerfilUsuario';
 import GerenciarRelatorios from '../telas/GerenciarRelatorios';
+import VoltarHome from '../componentes/VoltarHome'; // Importe seu componente
 
 const Stack = createNativeStackNavigator();
 
@@ -20,14 +21,6 @@ const AuthStack = () => {
       screenOptions={{ 
         // Configuração padrão: header oculto
         headerShown: false,
-        // Configurações que serão usadas quando headerShown for true
-        headerStyle: {
-          backgroundColor: '#f5f5f5',
-        },
-        headerTintColor: '#333',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
       }}
     >
       {/* HomeAdm SEM header */}
@@ -36,13 +29,19 @@ const AuthStack = () => {
         component={HomeAdm}
       />
       
-      {/* Demais telas COM header apenas na web */}
+      {/* Demais telas COM header personalizado apenas na web */}
       <Stack.Screen 
         name="GerenciarUsuarios" 
         component={GerenciarUsuarios}
         options={{ 
           headerShown: isWeb,
-          title: "Gerenciar Usuários" 
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Gerenciar Usuários" 
+            />
+          )
         }}
       />
       <Stack.Screen 
@@ -50,7 +49,13 @@ const AuthStack = () => {
         component={GerenciarAnalises}
         options={{ 
           headerShown: isWeb,
-          title: "Gerenciar Análises" 
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Gerenciar Análises" 
+            />
+          )
         }}
       />
       <Stack.Screen 
@@ -58,7 +63,13 @@ const AuthStack = () => {
         component={GerenciarVisitas}
         options={{ 
           headerShown: isWeb,
-          title: "Gerenciar Visitas" 
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Gerenciar Visitas" 
+            />
+          )
         }}
       />
       <Stack.Screen 
@@ -66,7 +77,13 @@ const AuthStack = () => {
         component={GerenciarPocos}
         options={{ 
           headerShown: isWeb,
-          title: "Gerenciar Poços" 
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Gerenciar Poços" 
+            />
+          )
         }}
       />
       <Stack.Screen 
@@ -74,13 +91,28 @@ const AuthStack = () => {
         component={PerfilUsuario}
         options={{ 
           headerShown: isWeb,
-          title: "Meu perfil"
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Meu Perfil" 
+            />
+          )
         }}
       />
       <Stack.Screen 
         name="GerenciarRelatorios" 
         component={GerenciarRelatorios}
-        options={{ title: 'Gerenciar Relatórios' }}
+        options={{ 
+          headerShown: isWeb,
+          header: (props) => (
+            <VoltarHome 
+              {...props}
+              tela="HomeAdm" 
+              titulo="Gerenciar Relatórios" 
+            />
+          )
+        }}
       />
     </Stack.Navigator>
   );

@@ -3,13 +3,9 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, useWindowDimensions } 
 import { MaterialIcons } from "@expo/vector-icons";
 import ondaTopo from "../assets/ondaTopo.png";
 
-const VoltarHome = ({ navigation, props }) => {
+const VoltarHome = ({ navigation, tela = "Home", titulo = "Título" }) => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.8;
-
-    // Usando props diretamente ou valores padrão
-    const tela = props.tela || "Home";
-    const titulo = props.titulo || "Título";
 
     const voltar = () => {
         navigation.navigate(tela);
@@ -24,14 +20,17 @@ const VoltarHome = ({ navigation, props }) => {
                     resizeMode="contain"
                 />
                 
-                {/* Botão de voltar no canto superior esquerdo */}
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={voltar}
-                >
-                    <MaterialIcons name="arrow-back" style={styles.iconeVoltar} />
-                    <Text style={styles.titleSobreImagem}>{titulo}</Text>
-                </TouchableOpacity>
+                {/* Container principal com flex row */}
+                <View style={[styles.headerContent, { width: contentWidth }]}>
+                    {/* Botão de voltar */}
+                    <TouchableOpacity 
+                        style={styles.backButton}
+                        onPress={voltar}
+                    >
+                        <MaterialIcons name="arrow-back" size={24} color="#fff" />
+                        <Text style={styles.titleSobreImagem}>{titulo}</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
         </View>
     );
@@ -41,46 +40,46 @@ const styles = StyleSheet.create({
     topContainer: {
         position: "relative",
         alignItems: "center",
-        marginBottom: 10,
+        marginBottom: 20,
     },
     image: {
         alignSelf: "center",
         marginTop: -35,
     },
-    titleSobreImagem: {
+    headerContent: {
         position: "absolute",
-        top: "20%",
-        left: "80%",
-        transform: [{ translateX: -100 }, { translateY: -10 }],
-        color: "#fff",
-        fontSize: 20,
-        fontWeight: "bold",
-    },
-    backButton: {
-        position: "absolute",
-        top: "20%",
-        left: "20%",
-        transform: [{ translateX: -100 }, { translateY: -10 }],
+        top: 0,
+        left: 0,
+        right: 0,
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 15,
-        alignSelf: 'flex-start',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingTop: 15,
+        height: 60,
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 8,
     },
     backButtonText: {
-        color: '#2685BF',
+        color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-        marginLeft: 30,
+        marginLeft: 8,
     },
-    iconeVoltar: {
-        position: 'absolute',
-        top: '40%',
-        left: '20%',
-        transform: [{translateX: -100}, {translateY: -10}],
-        size: 100,
-        width: 100,
-        color: "#ffffff"
-    }
-})
+    titleSobreImagem: {
+        color: "#fff",
+        fontSize: 18,
+        fontWeight: "bold",
+        textAlign: 'center',
+        flex: 1, // Ocupa o espaço disponível
+        marginHorizontal: 10, // Pequena margem nas laterais
+    },
+    placeholder: {
+        width: 80, // Largura similar ao botão de voltar para balancear
+    },
+});
 
 export default VoltarHome;

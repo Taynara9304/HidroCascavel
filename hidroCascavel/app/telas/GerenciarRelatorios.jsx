@@ -20,7 +20,6 @@ import { useAuth } from "../contexts/authContext";
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
-import VoltarHome from '../componentes/VoltarHome';
 
 const GerenciarRelatorios = ({ navigation }) => {
     const { width } = useWindowDimensions();
@@ -314,7 +313,6 @@ const GerenciarRelatorios = ({ navigation }) => {
     return (
         <ScrollView style={styles.scrollView}>
             <View style={styles.container}>
-               <VoltarHome tela="HomeAdm" titulo="Gerenciar oi" />
 
                 <View style={[styles.content, { width: contentWidth }]}>
                     {/* Card Principal de Filtros */}
