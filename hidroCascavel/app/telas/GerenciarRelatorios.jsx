@@ -14,12 +14,13 @@ import {
   FlatList
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import Calendario from "../componentes/CalendarioRelatorio"; // Importe seu componente Calendario
+import Calendario from "../componentes/CalendarioRelatorio";
 import ondaTopo from "../assets/ondaTopo.png";
 import { useAuth } from "../contexts/authContext";
 import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
+import VoltarHome from '../componentes/VoltarHome';
 
 const GerenciarRelatorios = ({ navigation }) => {
     const { width } = useWindowDimensions();
@@ -48,6 +49,11 @@ const GerenciarRelatorios = ({ navigation }) => {
 
     // Estados para controles de UI
     const [filtrosExpandidos, setFiltrosExpandidos] = useState(false);
+
+    // Função para voltar para a home
+    const voltarParaHome = () => {
+        navigation.navigate('HomeAdm'); // Altere 'Home' para o nome da sua tela inicial
+    };
 
     // Lista de parâmetros disponíveis
     const parametrosDisponiveis = [
@@ -274,49 +280,41 @@ const GerenciarRelatorios = ({ navigation }) => {
         return opcoesOrdenacao.find(o => o.value === filtros.ordenacao)?.label || 'Selecione';
     };
 
-// No GerenciarRelatorios.jsx, substitua o componente CalendarioModal por este:
+    // Componente CalendarioModal
+    const CalendarioModal = ({ onDateSelect, onClose, selectedDate }) => {
+        const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
+        
+        const handleDayPress = (date) => {
+            console.log('Data selecionada no modal:', date);
+            onDateSelect(date);
+        };
 
-const CalendarioModal = ({ onDateSelect, onClose, selectedDate }) => {
-    const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
-    
-    const handleDayPress = (date) => {
-        console.log('Data selecionada no modal:', date);
-        onDateSelect(date);
-    };
+        const handleMonthChange = (newDate) => {
+            setCurrentDate(newDate);
+        };
 
-    const handleMonthChange = (newDate) => {
-        setCurrentDate(newDate);
-    };
-
-    return (
-        <View style={styles.calendarioModalContent}>
-            <View style={styles.calendarioHeader}>
-                <Text style={styles.calendarioTitle}>Selecionar Data</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                    <MaterialIcons name="close" size={24} color="#666" />
-                </TouchableOpacity>
+        return (
+            <View style={styles.calendarioModalContent}>
+                <View style={styles.calendarioHeader}>
+                    <Text style={styles.calendarioTitle}>Selecionar Data</Text>
+                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                        <MaterialIcons name="close" size={24} color="#666" />
+                    </TouchableOpacity>
+                </View>
+                <Calendario 
+                    currentDate={currentDate}
+                    onDateSelect={handleDayPress}
+                    showHeader={true}
+                    selectedDate={selectedDate}
+                />
             </View>
-            <Calendario 
-                currentDate={currentDate}
-                onDateSelect={handleDayPress}
-                showHeader={true}
-                selectedDate={selectedDate}
-            />
-        </View>
-    );
-};
+        );
+    };
 
     return (
         <ScrollView style={styles.scrollView}>
             <View style={styles.container}>
-                <View style={[styles.topContainer, { width: contentWidth }]}>
-                    <Image
-                        source={ondaTopo}
-                        style={[styles.image, { width: contentWidth }]}
-                        resizeMode="contain"
-                    />
-                    <Text style={styles.titleSobreImagem}>Gerenciar Relatórios</Text>
-                </View>
+               <VoltarHome tela="HomeAdm" titulo="Gerenciar oi" />
 
                 <View style={[styles.content, { width: contentWidth }]}>
                     {/* Card Principal de Filtros */}
@@ -651,6 +649,19 @@ const styles = StyleSheet.create({
         backgroundColor: "#f5f5f5",
         alignItems: "center",
         justifyContent: "flex-start",
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 15,
+        alignSelf: 'flex-start',
+        marginLeft: 10,
+    },
+    backButtonText: {
+        color: '#2685BF',
+        fontSize: 16,
+        fontWeight: '600',
+        marginLeft: 8,
     },
     topContainer: {
         position: "relative",
