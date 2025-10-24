@@ -103,8 +103,9 @@ const CarosselInicial = ({ containerWidth, onScrollToAvaliacoes }) => {
 const styles = StyleSheet.create({
   container: {
     height: 600,
-    marginVertical: 20,
+    marginVertical: 0,
     margin: 0,
+    borderRadius: 0,
   },
   slide: {
     height: 600,
@@ -115,7 +116,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 12,
+    borderRadius: 0,
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -127,7 +128,7 @@ const styles = StyleSheet.create({
     bottom: 80,
     left: 20,
     right: 20,
-    borderRadius: 10,
+    borderRadius: 0,
   },
   textContainer: {
     backgroundColor: '#3D9DD9',

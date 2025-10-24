@@ -12,13 +12,15 @@ const TelaInicial = () => {
   const scrollViewRef = useRef(null);
 
   const scrollToAvaliacoes = () => {
-    // Estimativa da posição Y da seção de avaliações
-    // Ajuste este valor conforme necessário
     scrollViewRef.current?.scrollTo({ y: 1260, animated: true });
   };
 
   return (
-    <ScrollView ref={scrollViewRef}>
+    <ScrollView 
+      ref={scrollViewRef}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.containerApp}>
         <View style={[styles.contentContainer, { width: contentWidth }]}>
           <CarosselInicial 
@@ -36,6 +38,9 @@ const TelaInicial = () => {
 };
 
 const styles = StyleSheet.create({
+  scrollContent: {
+    flexGrow: 1,
+  },
   containerApp: {
     flex: 1,
     backgroundColor: '#fff',

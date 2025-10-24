@@ -81,7 +81,7 @@ const Avaliacoes = () => {
         styles.title,
         isMobile && styles.titleMobile
       ]}>
-        Avaliações e depoimentos
+        AVALIAÇÕES E DEPOIMENTOS
       </Text>
 
       <View style={styles.content}>
@@ -138,12 +138,13 @@ const Avaliacoes = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#2c84be",
     padding: 20,
     paddingTop: 40,
-    marginTop: 10,
-    borderRadius: 10,
+    marginTop: 0,
+    borderRadius: 0,
     width: '100%',
+    marginBottom: 0,
   },
   containerMobile: {
     padding: 16,
@@ -156,9 +157,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 30,
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "bold",
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: 'bold',
   },
   titleMobile: {
     fontSize: 24,
@@ -175,7 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    // Removidas as propriedades de sombra
   },
   cardsGrid: {
     flexDirection: "row",
@@ -187,7 +188,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: '#fff',
-    // Removidas as propriedades de sombra
   },
   paginationContainer: {
     flexDirection: "row",
