@@ -119,11 +119,6 @@ const HomeAdm = () => {
                     <View>
                         <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
                     </View>
-
-                    <TouchableOpacity
-                    onPress={irHome}>
-                        oi
-                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.containerItems}>

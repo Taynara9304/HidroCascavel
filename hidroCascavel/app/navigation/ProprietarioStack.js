@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeProprietario from '../telas/HomeProprietario';
 import MeusDados from '../telas/MeusDados';
 import MinhasVisitas from '../telas/MinhasVisitas';
+import PerfilUsuario from '../telas/PerfilUsuario';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,15 @@ const ProprietarioStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Minhas Visitas" 
+        }}
+      />
+
+      <Stack.Screen 
+        name="PerfilUsuario" 
+        component={PerfilUsuario}
+        options={{ 
+          headerShown: isWeb,
+          title: "Meu Perfil" 
         }}
       />
     </Stack.Navigator>

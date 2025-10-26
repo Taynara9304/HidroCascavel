@@ -1,543 +1,582 @@
-import React, { useState, useEffect } from "react";
+// telas/PerfilUsuario.js
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
   ScrollView,
-  Image,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
+  Alert,
   ActivityIndicator,
-  Platform,
-  Alert
-} from "react-native";
-import ondaTopo from "../assets/ondaTopo.png";
-import Input from "../componentes/Input";
-import LocationPicker from "../componentes/LocationPicker";
-import { useAuth } from "../contexts/authContext";
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+  KeyboardAvoidingView,
+  Platform
+} from 'react-native';
+import { useAuth } from '../contexts/authContext';
+import Input from '../componentes/Input';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
 
 const PerfilUsuario = ({ navigation }) => {
-    const { width } = useWindowDimensions();
-    const contentWidth = width < 800 ? width : width * 0.6;
-    const { user, buscarDadosUsuario } = useAuth();
+  const { user, userData, logout, buscarDadosUsuario } = useAuth();
+  const [editando, setEditando] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [errors, setErrors] = useState({});
 
-    const [editMode, setEditMode] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [updating, setUpdating] = useState(false);
+  // Estados para os dados editáveis
+  const [dados, setDados] = useState({
+    nome: '',
+    sobrenome: '',
+    telefone: '',
+    email: ''
+  });
+
+  // Estados para endereço
+  const [endereco, setEndereco] = useState({
+    rua: '',
+    numero: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+    cep: '',
+    complemento: '',
+    referencia: ''
+  });
+
+  // Carrega os dados do usuário quando a tela abre
+  useEffect(() => {
+    if (userData) {
+      setDados({
+        nome: userData.nome || '',
+        sobrenome: userData.sobrenome || '',
+        telefone: userData.telefone || '',
+        email: userData.email || ''
+      });
+
+      setEndereco({
+        rua: userData.endereco?.rua || '',
+        numero: userData.endereco?.numero || '',
+        bairro: userData.endereco?.bairro || '',
+        cidade: userData.endereco?.cidade || '',
+        estado: userData.endereco?.estado || '',
+        cep: userData.endereco?.cep || '',
+        complemento: userData.endereco?.complemento || '',
+        referencia: userData.endereco?.referencia || ''
+      });
+    }
+  }, [userData]);
+
+  const validarCampos = () => {
+    const novosErrors = {};
+
+    if (!dados.nome.trim()) novosErrors.nome = 'Nome é obrigatório';
+    if (!dados.sobrenome.trim()) novosErrors.sobrenome = 'Sobrenome é obrigatório';
+    if (!dados.telefone.trim()) novosErrors.telefone = 'Telefone é obrigatório';
     
-    // Estados para os dados do usuário
-    const [dadosUsuario, setDadosUsuario] = useState({
-        email: "",
-        nome: "",
-        sobrenome: "",
-        telefone: "",
-        coordenadas: null,
-        endereco: {
-            rua: "",
-            numero: "",
-            bairro: "",
-            cidade: "",
-            estado: "",
-            cep: "",
-            complemento: "",
-            referencia: ""
-        }
-    });
+    if (!endereco.rua.trim()) novosErrors.rua = 'Rua é obrigatória';
+    if (!endereco.bairro.trim()) novosErrors.bairro = 'Bairro é obrigatório';
+    if (!endereco.cidade.trim()) novosErrors.cidade = 'Cidade é obrigatória';
+    if (!endereco.estado.trim()) novosErrors.estado = 'Estado é obrigatório';
+    if (!endereco.cep.trim()) novosErrors.cep = 'CEP é obrigatório';
 
-    // Estados separados para edição
-    const [email, setEmail] = useState("");
-    const [nome, setNome] = useState("");
-    const [sobrenome, setSobrenome] = useState("");
-    const [telefone, setTelefone] = useState("");
-    const [coordenadas, setCoordenadas] = useState(null);
-    const [endereco, setEndereco] = useState({
-        rua: "",
-        numero: "",
-        bairro: "",
-        cidade: "",
-        estado: "",
-        cep: "",
-        complemento: "",
-        referencia: ""
-    });
+    setErrors(novosErrors);
+    return Object.keys(novosErrors).length === 0;
+  };
 
-    const [errors, setErrors] = useState({});
-
-    // Carregar dados do usuário
-    const carregarDadosUsuario = async () => {
-        if (!user?.uid) return;
-        
-        setLoading(true);
-        try {
-            const userDocRef = doc(db, 'users', user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-
-            if (userDocSnap.exists()) {
-                const userData = userDocSnap.data();
-                setDadosUsuario(userData);
-                
-                // Preencher estados de edição
-                setEmail(userData.email || "");
-                setNome(userData.nome || "");
-                setSobrenome(userData.sobrenome || "");
-                setTelefone(userData.telefone || "");
-                setCoordenadas(userData.coordenadas || null);
-                setEndereco(userData.endereco || {
-                    rua: "", numero: "", bairro: "", cidade: "", estado: "", cep: "", complemento: "", referencia: ""
-                });
-            }
-        } catch (error) {
-            console.error('Erro ao carregar dados do usuário:', error);
-            Toast.show({
-                type: 'error',
-                text1: 'Erro',
-                text2: 'Não foi possível carregar os dados do usuário.'
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        carregarDadosUsuario();
-    }, [user]);
-
-    const handleLocationSelect = (coordenadasSelecionadas) => {
-        setCoordenadas(coordenadasSelecionadas);
-        if (errors.coordenadas) {
-            setErrors(prev => ({ ...prev, coordenadas: '' }));
-        }
-    };
-
-    const handleAddressSelect = (enderecoSelecionado) => {
-        setEndereco(prev => ({
-            ...prev,
-            rua: enderecoSelecionado.rua || prev.rua,
-            bairro: enderecoSelecionado.bairro || prev.bairro,
-            cidade: enderecoSelecionado.cidade || prev.cidade,
-            estado: enderecoSelecionado.estado || prev.estado,
-            cep: enderecoSelecionado.cep || prev.cep
-        }));
-    };
-
-    const validateFields = () => {
-        const newErrors = {};
-
-        if (!email) newErrors.email = 'E-mail é obrigatório';
-        else if (!/\S+@\S+\.\S+/.test(email)) newErrors.email = 'E-mail inválido';
-
-        if (!nome) newErrors.nome = 'Nome é obrigatório';
-        if (!sobrenome) newErrors.sobrenome = 'Sobrenome é obrigatório';
-        if (!telefone) newErrors.telefone = 'Telefone é obrigatório';
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSalvarEdicao = async () => {
-        if (!validateFields()) {
-            Toast.show({
-                type: 'error',
-                text1: 'Atenção',
-                text2: 'Por favor, corrija os erros no formulário.'
-            });
-            return;
-        }
-
-        setUpdating(true);
-
-        try {
-            const userDocRef = doc(db, 'users', user.uid);
-            
-            // Criar objeto apenas com os campos que foram alterados
-            const camposAtualizados = {};
-            
-            if (email !== dadosUsuario.email) camposAtualizados.email = email;
-            if (nome !== dadosUsuario.nome) camposAtualizados.nome = nome;
-            if (sobrenome !== dadosUsuario.sobrenome) camposAtualizados.sobrenome = sobrenome;
-            if (telefone !== dadosUsuario.telefone) camposAtualizados.telefone = telefone;
-            if (JSON.stringify(coordenadas) !== JSON.stringify(dadosUsuario.coordenadas)) {
-                camposAtualizados.coordenadas = coordenadas;
-            }
-            
-            // Verificar se algum campo do endereço foi alterado
-            const enderecoAlterado = {};
-            Object.keys(endereco).forEach(key => {
-                if (endereco[key] !== (dadosUsuario.endereco?.[key] || '')) {
-                    enderecoAlterado[key] = endereco[key];
-                }
-            });
-            
-            if (Object.keys(enderecoAlterado).length > 0) {
-                camposAtualizados.endereco = {
-                    ...dadosUsuario.endereco,
-                    ...enderecoAlterado
-                };
-            }
-
-            // Atualizar apenas se houver campos modificados
-            if (Object.keys(camposAtualizados).length > 0) {
-                await updateDoc(userDocRef, camposAtualizados);
-                
-                // Atualizar dados locais
-                const dadosAtualizados = { ...dadosUsuario, ...camposAtualizados };
-                setDadosUsuario(dadosAtualizados);
-                
-                Toast.show({
-                    type: 'success',
-                    text1: 'Sucesso',
-                    text2: 'Dados atualizados com sucesso!'
-                });
-                
-                setEditMode(false);
-            } else {
-                Toast.show({
-                    type: 'info',
-                    text1: 'Info',
-                    text2: 'Nenhuma alteração foi feita.'
-                });
-            }
-
-        } catch (error) {
-            console.error('Erro ao atualizar dados:', error);
-            Toast.show({
-                type: 'error',
-                text1: 'Erro',
-                text2: 'Não foi possível atualizar os dados. Tente novamente.'
-            });
-        } finally {
-            setUpdating(false);
-        }
-    };
-
-    const handleCancelarEdicao = () => {
-        // Reverter para os dados originais
-        setEmail(dadosUsuario.email || "");
-        setNome(dadosUsuario.nome || "");
-        setSobrenome(dadosUsuario.sobrenome || "");
-        setTelefone(dadosUsuario.telefone || "");
-        setCoordenadas(dadosUsuario.coordenadas || null);
-        setEndereco(dadosUsuario.endereco || {
-            rua: "", numero: "", bairro: "", cidade: "", estado: "", cep: "", complemento: "", referencia: ""
-        });
-        setErrors({});
-        setEditMode(false);
-    };
-
-    if (loading) {
-        return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#2685BF" />
-                <Text style={styles.loadingText}>Carregando dados...</Text>
-            </View>
-        );
+  const handleSalvar = async () => {
+    if (!validarCampos()) {
+      Toast.show({
+        type: 'error',
+        text1: 'Atenção',
+        text2: 'Por favor, preencha todos os campos obrigatórios.'
+      });
+      return;
     }
 
-    return(
-        <ScrollView style={styles.scrollView}>
-            <View style={styles.container}>
-                <View style={[styles.content, { width: contentWidth }]}>
-                    {/* Header com botão de editar */}
-                    <View style={styles.header}>
-                        <Text style={styles.tituloPrincipal}>Dados Pessoais</Text>
-                        <TouchableOpacity 
-                            style={styles.botaoEditar}
-                            onPress={() => setEditMode(!editMode)}
-                        >
-                            <Text style={styles.textoBotaoEditar}>
-                                {editMode ? 'Cancelar' : 'Editar'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+    setCarregando(true);
 
-                    <View style={styles.containerDivisao}>
-                        <Text style={styles.titulo}>Informações básicas</Text>
-                        <View style={styles.linhaAzul} />
-                    </View>
+    try {
+      const userRef = doc(db, 'users', user.uid);
+      
+      await updateDoc(userRef, {
+        nome: dados.nome,
+        sobrenome: dados.sobrenome,
+        telefone: dados.telefone,
+        endereco: {
+          rua: endereco.rua,
+          numero: endereco.numero,
+          bairro: endereco.bairro,
+          cidade: endereco.cidade,
+          estado: endereco.estado,
+          cep: endereco.cep,
+          complemento: endereco.complemento,
+          referencia: endereco.referencia
+        },
+        atualizadoEm: new Date()
+      });
 
-                    <View style={styles.inputContainer}>
-                        <Input
-                            label="E-mail"
-                            value={editMode ? email : dadosUsuario.email}
-                            onChangeText={setEmail}
-                            placeholder="Digite seu e-mail"
-                            keyboardType="email-address"
-                            style={styles.input}
-                            editable={editMode}
-                        />
-                        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-                    </View>
+      // Atualiza os dados no contexto
+      await buscarDadosUsuario(user);
 
-                    <View style={styles.inputContainer}>
-                        <Input
-                            label="Nome"
-                            value={editMode ? nome : dadosUsuario.nome}
-                            onChangeText={setNome}
-                            placeholder="Digite seu nome"
-                            style={styles.input}
-                            editable={editMode}
-                        />
-                        {errors.nome && <Text style={styles.errorText}>{errors.nome}</Text>}
-                    </View>
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso',
+        text2: 'Dados atualizados com sucesso!'
+      });
 
-                    <View style={styles.inputContainer}>
-                        <Input
-                            label="Sobrenome"
-                            value={editMode ? sobrenome : dadosUsuario.sobrenome}
-                            onChangeText={setSobrenome}
-                            placeholder="Digite seu sobrenome"
-                            style={styles.input}
-                            editable={editMode}
-                        />
-                        {errors.sobrenome && <Text style={styles.errorText}>{errors.sobrenome}</Text>}
-                    </View>
+      setEditando(false);
+    } catch (error) {
+      console.error('Erro ao atualizar dados:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível atualizar os dados. Tente novamente.'
+      });
+    } finally {
+      setCarregando(false);
+    }
+  };
 
-                    <View style={styles.inputContainer}>
-                        <Input
-                            label="Telefone"
-                            value={editMode ? telefone : dadosUsuario.telefone}
-                            onChangeText={setTelefone}
-                            placeholder="Digite seu telefone"
-                            keyboardType="phone-pad"
-                            style={styles.input}
-                            editable={editMode}
-                        />
-                        {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
-                    </View>
+  const handleCancelar = () => {
+    // Restaura os dados originais
+    setDados({
+      nome: userData.nome || '',
+      sobrenome: userData.sobrenome || '',
+      telefone: userData.telefone || '',
+      email: userData.email || ''
+    });
 
-                    <View style={styles.containerDivisao}>
-                        <Text style={styles.titulo}>Endereço</Text>
-                        <View style={styles.linhaAzul} />
-                    </View>
+    setEndereco({
+      rua: userData.endereco?.rua || '',
+      numero: userData.endereco?.numero || '',
+      bairro: userData.endereco?.bairro || '',
+      cidade: userData.endereco?.cidade || '',
+      estado: userData.endereco?.estado || '',
+      cep: userData.endereco?.cep || '',
+      complemento: userData.endereco?.complemento || '',
+      referencia: userData.endereco?.referencia || ''
+    });
 
-                    {editMode && (
-                        <View style={styles.mapContainer}>
-                            <LocationPicker 
-                                onLocationSelect={handleLocationSelect}
-                                onAddressSelect={handleAddressSelect}
-                                initialLocation={dadosUsuario.coordenadas}
-                            />
-                            {errors.coordenadas && <Text style={styles.errorText}>{errors.coordenadas}</Text>}
-                        </View>
-                    )}
+    setEditando(false);
+    setErrors({});
+  };
 
-                    <View style={styles.containerEndereco}>
-                        <Input
-                            label="Rua"
-                            value={editMode ? endereco.rua : dadosUsuario.endereco?.rua}
-                            onChangeText={(text) => setEndereco({...endereco, rua: text})}
-                            placeholder="Nome da rua"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
+  const confirmarLogout = () => {
+    Alert.alert(
+      'Sair',
+      'Tem certeza que deseja sair da sua conta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sair', onPress: logout, style: 'destructive' }
+      ]
+    );
+  };
 
-                        <Input
-                            label="Número"
-                            value={editMode ? endereco.numero : dadosUsuario.endereco?.numero}
-                            onChangeText={(text) => setEndereco({...endereco, numero: text})}
-                            placeholder="Número"
-                            keyboardType="numeric"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
+  if (!userData) {
+    return (
+      <View style={styles.carregandoContainer}>
+        <ActivityIndicator size="large" color="#2685BF" />
+        <Text style={styles.carregandoTexto}>Carregando dados...</Text>
+      </View>
+    );
+  }
 
-                        <Input
-                            label="Bairro"
-                            value={editMode ? endereco.bairro : dadosUsuario.endereco?.bairro}
-                            onChangeText={(text) => setEndereco({...endereco, bairro: text})}
-                            placeholder="Bairro"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
+  return (
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Cabeçalho */}
+        <View style={styles.header}>
+          <View style={styles.avatar}>
+            <Text style={styles.avatarTexto}>
+              {dados.nome.charAt(0)}{dados.sobrenome.charAt(0)}
+            </Text>
+          </View>
+          <Text style={styles.nomeUsuario}>
+            {dados.nome} {dados.sobrenome}
+          </Text>
+          <Text style={styles.tipoUsuario}>
+            {userData.tipoUsuario === 'proprietario' && 'Proprietário'}
+            {userData.tipoUsuario === 'analista' && 'Analista'}
+            {userData.tipoUsuario === 'administrador' && 'Administrador'}
+          </Text>
+        </View>
 
-                        <Input
-                            label="Cidade"
-                            value={editMode ? endereco.cidade : dadosUsuario.endereco?.cidade}
-                            onChangeText={(text) => setEndereco({...endereco, cidade: text})}
-                            placeholder="Cidade"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
-
-                        <Input
-                            label="Estado"
-                            value={editMode ? endereco.estado : dadosUsuario.endereco?.estado}
-                            onChangeText={(text) => setEndereco({...endereco, estado: text})}
-                            placeholder="Estado"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
-
-                        <Input
-                            label="CEP"
-                            value={editMode ? endereco.cep : dadosUsuario.endereco?.cep}
-                            onChangeText={(text) => setEndereco({...endereco, cep: text})}
-                            placeholder="Digite seu CEP"
-                            keyboardType="numeric"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
-
-                        <Input
-                            label="Complemento"
-                            value={editMode ? endereco.complemento : dadosUsuario.endereco?.complemento}
-                            onChangeText={(text) => setEndereco({...endereco, complemento: text})}
-                            placeholder="Complemento (opcional)"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
-
-                        <Input
-                            label="Referência"
-                            value={editMode ? endereco.referencia : dadosUsuario.endereco?.referencia}
-                            onChangeText={(text) => setEndereco({...endereco, referencia: text})}
-                            placeholder="Ponto de referência"
-                            style={styles.inputEndereco}
-                            editable={editMode}
-                        />
-                    </View>
-
-                    {editMode && (
-                        <View style={styles.botoesContainer}>
-                            <TouchableOpacity 
-                                style={[styles.botao, styles.botaoCancelar]}
-                                onPress={handleCancelarEdicao}
-                                disabled={updating}
-                            >
-                                <Text style={styles.textoBotao}>Cancelar</Text>
-                            </TouchableOpacity>
-
-                            <TouchableOpacity 
-                                style={[styles.botao, updating && styles.botaoDisabled]}
-                                onPress={handleSalvarEdicao}
-                                disabled={updating}
-                            >
-                                {updating ? (
-                                    <ActivityIndicator color="#fff" />
-                                ) : (
-                                    <Text style={styles.textoBotao}>Salvar</Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                </View>
+        {/* Botões de Ação */}
+        <View style={styles.botoesAcao}>
+          {!editando ? (
+            <TouchableOpacity 
+              style={styles.botaoEditar}
+              onPress={() => setEditando(true)}
+            >
+              <Text style={styles.textoBotaoEditar}>Editar Perfil</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.botoesEdicao}>
+              <TouchableOpacity 
+                style={[styles.botao, styles.botaoCancelar]}
+                onPress={handleCancelar}
+                disabled={carregando}
+              >
+                <Text style={styles.textoBotaoCancelar}>Cancelar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.botao, styles.botaoSalvar]}
+                onPress={handleSalvar}
+                disabled={carregando}
+              >
+                {carregando ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.textoBotaoSalvar}>Salvar</Text>
+                )}
+              </TouchableOpacity>
             </View>
-        </ScrollView>
-    )
-}
+          )}
+        </View>
+
+        {/* Dados Pessoais */}
+        <View style={styles.secao}>
+          <Text style={styles.tituloSecao}>Dados Pessoais</Text>
+          <View style={styles.linhaDivisoria} />
+
+          <Input
+            label="Nome"
+            value={dados.nome}
+            onChangeText={(text) => setDados({...dados, nome: text})}
+            placeholder="Seu nome"
+            editable={editando}
+            style={styles.input}
+          />
+          {errors.nome && <Text style={styles.erroTexto}>{errors.nome}</Text>}
+
+          <Input
+            label="Sobrenome"
+            value={dados.sobrenome}
+            onChangeText={(text) => setDados({...dados, sobrenome: text})}
+            placeholder="Seu sobrenome"
+            editable={editando}
+            style={styles.input}
+          />
+          {errors.sobrenome && <Text style={styles.erroTexto}>{errors.sobrenome}</Text>}
+
+          <Input
+            label="Telefone"
+            value={dados.telefone}
+            onChangeText={(text) => setDados({...dados, telefone: text})}
+            placeholder="Seu telefone"
+            keyboardType="phone-pad"
+            editable={editando}
+            style={styles.input}
+          />
+          {errors.telefone && <Text style={styles.erroTexto}>{errors.telefone}</Text>}
+
+          <Input
+            label="E-mail"
+            value={dados.email}
+            placeholder="Seu e-mail"
+            editable={false}
+            style={styles.inputDesabilitado}
+          />
+          <Text style={styles.textoAjuda}>E-mail não pode ser alterado</Text>
+
+          {/* Campos específicos por tipo de usuário */}
+          {userData.matricula && (
+            <Input
+              label="Matrícula"
+              value={userData.matricula}
+              placeholder="Sua matrícula"
+              editable={false}
+              style={styles.inputDesabilitado}
+            />
+          )}
+
+          {userData.siape && (
+            <Input
+              label="SIAPE"
+              value={userData.siape}
+              placeholder="Seu SIAPE"
+              editable={false}
+              style={styles.inputDesabilitado}
+            />
+          )}
+        </View>
+
+        {/* Endereço */}
+        <View style={styles.secao}>
+          <Text style={styles.tituloSecao}>Endereço</Text>
+          <View style={styles.linhaDivisoria} />
+
+          <View style={styles.linhaEndereco}>
+            <View style={styles.campoMetade}>
+              <Input
+                label="Rua"
+                value={endereco.rua}
+                onChangeText={(text) => setEndereco({...endereco, rua: text})}
+                placeholder="Nome da rua"
+                editable={editando}
+                style={styles.input}
+              />
+              {errors.rua && <Text style={styles.erroTexto}>{errors.rua}</Text>}
+            </View>
+
+            <View style={styles.campoMetade}>
+              <Input
+                label="Número"
+                value={endereco.numero}
+                onChangeText={(text) => setEndereco({...endereco, numero: text})}
+                placeholder="Nº"
+                keyboardType="numeric"
+                editable={editando}
+                style={styles.input}
+              />
+            </View>
+          </View>
+
+          <Input
+            label="Bairro"
+            value={endereco.bairro}
+            onChangeText={(text) => setEndereco({...endereco, bairro: text})}
+            placeholder="Seu bairro"
+            editable={editando}
+            style={styles.input}
+          />
+          {errors.bairro && <Text style={styles.erroTexto}>{errors.bairro}</Text>}
+
+          <View style={styles.linhaEndereco}>
+            <View style={styles.campoMetade}>
+              <Input
+                label="Cidade"
+                value={endereco.cidade}
+                onChangeText={(text) => setEndereco({...endereco, cidade: text})}
+                placeholder="Sua cidade"
+                editable={editando}
+                style={styles.input}
+              />
+              {errors.cidade && <Text style={styles.erroTexto}>{errors.cidade}</Text>}
+            </View>
+
+            <View style={styles.campoMetade}>
+              <Input
+                label="Estado"
+                value={endereco.estado}
+                onChangeText={(text) => setEndereco({...endereco, estado: text})}
+                placeholder="UF"
+                editable={editando}
+                style={styles.input}
+              />
+              {errors.estado && <Text style={styles.erroTexto}>{errors.estado}</Text>}
+            </View>
+          </View>
+
+          <Input
+            label="CEP"
+            value={endereco.cep}
+            onChangeText={(text) => setEndereco({...endereco, cep: text})}
+            placeholder="Seu CEP"
+            keyboardType="numeric"
+            editable={editando}
+            style={styles.input}
+          />
+          {errors.cep && <Text style={styles.erroTexto}>{errors.cep}</Text>}
+
+          <Input
+            label="Complemento"
+            value={endereco.complemento}
+            onChangeText={(text) => setEndereco({...endereco, complemento: text})}
+            placeholder="Complemento (opcional)"
+            editable={editando}
+            style={styles.input}
+          />
+
+          <Input
+            label="Ponto de Referência"
+            value={endereco.referencia}
+            onChangeText={(text) => setEndereco({...endereco, referencia: text})}
+            placeholder="Ponto de referência"
+            editable={editando}
+            style={styles.input}
+          />
+        </View>
+
+        {/* Botão de Logout */}
+        <TouchableOpacity 
+          style={styles.botaoLogout}
+          onPress={confirmarLogout}
+        >
+          <Text style={styles.textoBotaoLogout}>Sair da Conta</Text>
+        </TouchableOpacity>
+
+        <View style={styles.espacoFinal} />
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
+};
 
 const styles = StyleSheet.create({
-    scrollView: {
-        flex: 1,
-        backgroundColor: "#fff",
-    },
-    container: {
-        flex: 1,
-        backgroundColor: "#fff",
-        alignItems: "center",
-        justifyContent: "flex-start",
-    },
-    content: {
-        alignItems: "center",
-        paddingBottom: 30,
-    },
-    tituloPrincipal: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        color: '#2685BF',
-    },
-    botaoEditar: {
-        backgroundColor: '#2685BF',
-        paddingHorizontal: 20,
-        paddingVertical: 8,
-        borderRadius: 6,
-    },
-    textoBotaoEditar: {
-        color: '#fff',
-        fontWeight: 'bold',
-    },
-    inputContainer: {
-        width: Platform.OS === 'web' ? "80%" : "90%",
-        marginBottom: 15,
-    },
-    input: {
-        width: '100%',
-    },
-    botao: {
-        backgroundColor: "#2685BF",
-        paddingVertical: 12,
-        borderRadius: 8,
-        width: Platform.OS === 'web' ? "40%" : "45%",
-        alignItems: "center",
-    },
-    botaoCancelar: {
-        backgroundColor: "#6c757d",
-    },
-    botaoDisabled: {
-        backgroundColor: "#99cde0",
-    },
-    textoBotao: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "bold",
-    },
-    botoesContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        width: Platform.OS === 'web' ? "80%" : "90%",
-        marginTop: 20,
-    },
-    containerEndereco: {
-        width: Platform.OS === 'web' ? '80%' : '90%',
-        marginTop: 10,
-    },
-    inputEndereco: {
-        width: '100%',
-        marginBottom: 10,
-    },
-    containerDivisao: {
-        display: 'flex',
-        width: Platform.OS === 'web' ? '80%' : '90%',
-        flexDirection: 'row',
-        gap: 5,
-        alignItems: 'center',
-        marginTop: 20,
-        marginBottom: 10,
-    },
-    titulo: {
-        fontSize: 14,
-        color: '#2196F3',
-        width: Platform.OS === 'web' ? '20%' : '30%',
-        minWidth: 100,
-    },
-    linhaAzul: {
-        height: 2,
-        backgroundColor: '#2196F3',
-        flex: 1,
-    },
-    mapContainer: {
-        width: Platform.OS === 'web' ? '80%' : '90%',
-        marginBottom: 15,
-    },
-    errorText: {
-        color: 'red',
-        fontSize: 12,
-        marginTop: 5,
-        marginLeft: 5,
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-    },
-    loadingText: {
-        marginTop: 10,
-        color: '#2685BF',
-    },
+  container: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  carregandoContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  carregandoTexto: {
+    marginTop: 10,
+    color: '#666',
+    fontSize: 16,
+  },
+  header: {
+    backgroundColor: '#2685BF',
+    paddingVertical: 30,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarTexto: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#2685BF',
+  },
+  nomeUsuario: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  tipoUsuario: {
+    fontSize: 16,
+    color: '#e3f2fd',
+    fontWeight: '500',
+  },
+  botoesAcao: {
+    padding: 20,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  botaoEditar: {
+    backgroundColor: '#2685BF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  textoBotaoEditar: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  botoesEdicao: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  botao: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  botaoCancelar: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  botaoSalvar: {
+    backgroundColor: '#4CAF50',
+  },
+  textoBotaoCancelar: {
+    color: '#666',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  textoBotaoSalvar: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secao: {
+    backgroundColor: '#fff',
+    marginTop: 10,
+    padding: 20,
+  },
+  tituloSecao: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2685BF',
+    marginBottom: 10,
+  },
+  linhaDivisoria: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginBottom: 20,
+  },
+  input: {
+    marginBottom: 5,
+  },
+  inputDesabilitado: {
+    marginBottom: 5,
+    opacity: 0.7,
+  },
+  textoAjuda: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: -5,
+    marginBottom: 15,
+    fontStyle: 'italic',
+  },
+  erroTexto: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: -10,
+    marginBottom: 15,
+    marginLeft: 5,
+  },
+  linhaEndereco: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  campoMetade: {
+    flex: 1,
+  },
+  botaoLogout: {
+    backgroundColor: '#fff',
+    margin: 20,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ff4444',
+  },
+  textoBotaoLogout: {
+    color: '#ff4444',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  espacoFinal: {
+    height: 20,
+  },
 });
 
 export default PerfilUsuario;

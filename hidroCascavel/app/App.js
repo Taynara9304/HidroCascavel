@@ -26,12 +26,6 @@ const Stack = createNativeStackNavigator();
 const AppContent = () => {
   const { user, userData, loading } = useAuth();
 
-  console.log('🚀 AppContent - Estado:', {
-    user: user?.uid,
-    userData: userData?.tipoUsuario,
-    loading
-  });
-
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -40,8 +34,6 @@ const AppContent = () => {
       </View>
     );
   }
-
-  console.log('🎯 AppContent - Renderizando navegação:', user ? 'LOGADO' : 'NÃO LOGADO');
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -55,29 +47,21 @@ const AppContent = () => {
         </>
       ) : (
         // Usuário LOGADO - Redireciona baseado no tipo
-        (() => {
-          console.log('🔀 Usuário logado, verificando tipo:', userData?.tipoUsuario);
-          
+        (() => {          
           if (!userData) {
-            console.log('⚠️ userData está vazio');
             return <Stack.Screen name="TelaInicial" component={TelaInicial} />;
           }
 
           const tipo = userData.tipoUsuario;
-          console.log('🎯 Tipo de usuário encontrado:', tipo);
 
           switch (tipo) {
             case 'proprietario':
-              console.log('🏠 Navegando para ProprietarioStack');
               return <Stack.Screen name="ProprietarioStack" component={ProprietarioStack} />;
             case 'analista':
-              console.log('🔬 Navegando para AnalistaStack');
               return <Stack.Screen name="AnalistaStack" component={AnalistaStack} />;
             case 'administrador':
-              console.log('👨‍💼 Navegando para AdministradorStack');
               return <Stack.Screen name="AdministradorStack" component={AdministradorStack} />;
             default:
-              console.log('❓ Tipo desconhecido:', tipo);
               return <Stack.Screen name="TelaInicial" component={TelaInicial} />;
           }
         })()

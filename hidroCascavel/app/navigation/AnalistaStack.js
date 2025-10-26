@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeAnalista from '../telas/HomeAnalista';
 import MinhasSolicitacoes from '../telas/MinhasSolicitacoes';
 import NovaSolicitacao from '../telas/NovaSolicitacao';
+import PerfilUsuario from '../telas/PerfilUsuario';
 
 const Stack = createNativeStackNavigator();
 
@@ -31,6 +32,14 @@ const AnalistaStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Nova Solicitação" 
+        }}
+      />
+      <Stack.Screen 
+        name="PerfilUsuario" 
+        component={PerfilUsuario}
+        options={{ 
+          headerShown: isWeb,
+          title: "Meu Perfil" 
         }}
       />
     </Stack.Navigator>

@@ -6,6 +6,7 @@ import GerenciarUsuarios from '../telas/GerenciarUsuarios';
 import GerenciarAnalises from '../telas/GerenciarAnalises';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
+import PerfilUsuario from '../telas/PerfilUsuario';
 
 const Stack = createNativeStackNavigator();
 
@@ -49,6 +50,14 @@ const AdminStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Gerenciar Poços" 
+        }}
+      />
+      <Stack.Screen 
+        name="PerfilUsuario" 
+        component={PerfilUsuario}
+        options={{ 
+          headerShown: isWeb,
+          title: "Meu Perfil" 
         }}
       />
     </Stack.Navigator>
