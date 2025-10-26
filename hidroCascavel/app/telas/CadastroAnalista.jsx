@@ -29,6 +29,7 @@ const Cadastro = () => {
     const [nome, setNome] = useState("");
     const [sobrenome, setSobrenome] = useState("");
     const [telefone, setTelefone] = useState("");
+    const [matricula, setMatricula] = useState("");
     const [senha, setSenha] = useState("");
     const [confirmacao, setConfirmacao] = useState("");
     const [coordenadas, setCoordenadas] = useState(null);
@@ -82,6 +83,7 @@ const Cadastro = () => {
       if (!nome) newErrors.nome = 'Nome é obrigatório';
       if (!sobrenome) newErrors.sobrenome = 'Sobrenome é obrigatório';
       if (!telefone) newErrors.telefone = 'Telefone é obrigatório';
+      if (!matricula) newErrors.matricula = 'Matrícula é obrigatória';
       
       if (!senha) newErrors.senha = 'Senha é obrigatória';
       else if (senha.length < 6) newErrors.senha = 'Senha deve ter pelo menos 6 caracteres';
@@ -111,12 +113,13 @@ const Cadastro = () => {
         const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
         const user = userCredential.user;
 
-        const userData = {
+        await setDoc(doc(db, 'users', user.uid), {
           email: email,
           nome: nome,
           sobrenome: sobrenome,
           telefone: telefone,
-          tipoUsuario: USER_TYPES.PROPRIETARIO,
+          matricula: matricula,
+          tipoUsuario: USER_TYPES.ANALISTA,
           coordenadas: coordenadas,
           endereco: {
             ...endereco,
@@ -125,9 +128,7 @@ const Cadastro = () => {
             referencia: endereco.referencia || ''
           },
           createdAt: new Date(),
-        };
-
-        await setDoc(doc(db, 'users', user.uid), userData);
+        });
 
         Toast.show({
           type: 'success',
@@ -135,13 +136,27 @@ const Cadastro = () => {
           text2: 'Cadastro realizado com sucesso!'
         });
 
-        // Redireciona para a home do proprietário
         navigation.reset({
           index: 0,
-          routes: [{ name: 'HomeProprietario' }],
+          routes: [{ name: 'HomeAdm' }],
         });
       } catch (error) {
-        // ... tratamento de erro
+        console.error('Erro ao cadastrar:', error);
+        let errorMessage = 'Ocorreu um erro durante o cadastro. Tente novamente.';
+        
+        if (error.code === 'auth/email-already-in-use') {
+          errorMessage = 'Este e-mail já está em uso.';
+        } else if (error.code === 'auth/invalid-email') {
+          errorMessage = 'E-mail inválido.';
+        } else if (error.code === 'auth/weak-password') {
+          errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
+        }
+        
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: errorMessage
+        });
       } finally {
         setLoading(false);
       }
@@ -185,11 +200,6 @@ const Cadastro = () => {
                 </View>
 
                 <View style={[styles.content, { width: contentWidth }]}>
-                    <TouchableOpacity style={styles.containerLink}
-                      onPress={navigateToTipoUsuario}>
-                        <Text style={styles.link}>Você é parte da equipe do HidroCascavel? Clique aqui!</Text>
-                    </TouchableOpacity>
-
                     <View style={styles.containerDivisao}>
                         <Text style={styles.titulo}>Dados pessoais</Text>
                         <View style={styles.linhaAzul} />
@@ -235,6 +245,18 @@ const Cadastro = () => {
                             value={telefone}
                             onChangeText={setTelefone}
                             placeholder="Digite seu telefone"
+                            keyboardType="phone-pad"
+                            style={styles.input}
+                        />
+                        {errors.telefone && <Text style={styles.errorText}>{errors.telefone}</Text>}
+                    </View>
+
+                    <View style={styles.inputContainer}>
+                        <Input
+                            label="Matrícula"
+                            value={matricula}
+                            onChangeText={setMatricula}
+                            placeholder="Digite sua matrícula"
                             keyboardType="phone-pad"
                             style={styles.input}
                         />

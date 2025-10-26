@@ -15,13 +15,13 @@ import ondaBaixo from "../assets/ondaBaixo.png";
 import Input from "../componentes/Input";
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
-import { AuthProvider, useAuth } from '../contexts/authContext';
+import { useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
 import LogoHidroCvel from '../assets/logoHidroCascavel.png';
 
 const Login = ({ navigation }) => {
   let { width } = useWindowDimensions();
-  const isCellPhone = width < 800; // Define se é celular/tablet menor
+  const isCellPhone = width < 800;
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -30,7 +30,6 @@ const Login = ({ navigation }) => {
   const { buscarDadosUsuario } = useAuth();
 
   const validateFields = () => {
-    // ... (restante da função validateFields permanece o mesmo)
     const newErrors = {};
 
     if (!email) newErrors.email = 'E-mail é obrigatório';
@@ -43,7 +42,6 @@ const Login = ({ navigation }) => {
   };
 
   const handleLogin = async () => {
-    // ... (restante da função handleLogin permanece o mesmo)
     if (!validateFields()) {
       Toast.show({
         type: 'error',
@@ -59,7 +57,11 @@ const Login = ({ navigation }) => {
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userFirebase = userCredential.user;
 
-      await buscarDadosUsuario(userFirebase);
+      console.log('✅ Usuário autenticado no Firebase:', userFirebase.uid);
+
+      // Busca os dados do usuário
+      const userData = await buscarDadosUsuario(userFirebase);
+      console.log('📊 Dados do usuário buscados:', userData);
 
       Toast.show({
         type: 'success',
@@ -67,13 +69,11 @@ const Login = ({ navigation }) => {
         text2: 'Login realizado com sucesso!'
       });
 
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "HomeAdm" }],
-      });
-
+      // ⚠️ NÃO FAÇA REDIRECIONAMENTO AQUI!
+      // O AuthProvider vai lidar com o redirecionamento automaticamente
+      
     } catch (error) {
-      console.error(error);
+      console.error('❌ Erro no login:', error);
       let errorMessage = 'Erro ao fazer login';
 
       if (error.code === 'auth/user-not-found') {
@@ -110,15 +110,12 @@ const Login = ({ navigation }) => {
           <View style={[styles.topContainer]}>
             <Image
               source={ondaTopo}
-              // 💡 Estilo condicional para a onda do topo
               style={[styles.ondaTopo, isCellPhone && styles.ondaTopoCellPhone]}
               resizeMode="cover"
             />
-            {/* 💡 Estilo condicional para o título */}
-            <Text style={[styles.titleSobreImagem, isCellPhone && styles.titleSobreImagemCellPhone]}>OLÁ, VAMOS FAZER LOGIN!</Text>
+            <Text style={[styles.titleSobreImagem, isCellPhone && styles.titleSobreImagemCellPhone]}>Olá, vamos fazer login!</Text>
           </View>
 
-          {/* Conteúdo principal */}
           <View style={[styles.content]}>
             <View style={styles.formContainer}>
               <View style={styles.inputContainer}>
@@ -168,11 +165,9 @@ const Login = ({ navigation }) => {
               </TouchableOpacity>
             </View>
 
-            {/* Onda de baixo */}
             <View style={styles.bottomContainer}>
               <Image
                 source={ondaBaixo}
-                // 💡 Estilo condicional para a onda de baixo
                 style={[styles.ondaBaixo, isCellPhone && styles.ondaBaixoCellPhone]}
                 resizeMode="cover"
               />

@@ -1,148 +1,100 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
+// contexts/authContext.js
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { auth, db } from '../services/firebaseConfig';
 
-const AuthContext = createContext({});
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Salvar dados do usuário no AsyncStorage
-  const saveUserData = async (userData) => {
+  // Função para buscar dados do usuário no Firestore
+  const buscarDadosUsuario = async (userFirebase) => {
     try {
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      setUser(userData);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Erro ao salvar dados do usuário:', error);
-    }
-  };
-
-  // Limpar dados do usuário
-  const clearUserData = async () => {
-    try {
-      await AsyncStorage.removeItem('userData');
-      setUser(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('Erro ao limpar dados do usuário:', error);
-    }
-  };
-
-  // Carregar dados do usuário do AsyncStorage
-  const loadUserData = async () => {
-    try {
-      const userData = await AsyncStorage.getItem('userData');
-      
-      if (userData) {
-        const parsedUserData = JSON.parse(userData);
-        setUser(parsedUserData);
-        setIsAuthenticated(true);
-        return parsedUserData;
-      }
-      return null;
-    } catch (error) {
-      console.error('Erro ao carregar dados do usuário:', error);
-      return null;
-    }
-  };
-
-  // Buscar dados do usuário no Firestore
-  const buscarDadosUsuario = async (firebaseUser) => {
-    try {
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (userDocSnap.exists()) {
-        const userData = { 
-          ...userDocSnap.data(), 
-          uid: firebaseUser.uid,
-          email: firebaseUser.email 
-        };
-
-        await saveUserData(userData);
-        return userData;
-      } else {
-        // Se não encontrou no Firestore, cria um objeto básico
-        const userData = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          nome: firebaseUser.displayName || 'Usuário',
-          dataCriacao: new Date().toISOString()
-        };
+      if (userFirebase) {
+        console.log('🔍 Buscando dados do usuário no Firestore:', userFirebase.uid);
+        const userDoc = await getDoc(doc(db, 'users', userFirebase.uid));
         
-        await saveUserData(userData);
-        return userData;
+        if (userDoc.exists()) {
+          const userDataFromFirestore = userDoc.data();
+          console.log('✅ Dados encontrados:', userDataFromFirestore);
+          setUserData(userDataFromFirestore); // ⚠️ ATUALIZA O ESTADO
+          return userDataFromFirestore;
+        } else {
+          console.log('❌ Documento do usuário não encontrado no Firestore');
+          setUserData(null);
+        }
       }
+      return null;
     } catch (error) {
-      console.error('Erro ao buscar dados do usuário:', error);
-      throw error;
+      console.error('❌ Erro ao buscar dados do usuário:', error);
+      setUserData(null);
+      return null;
     }
   };
 
-  // Fazer logout
+  // Observador de estado de autenticação
+  useEffect(() => {
+    console.log('🔄 Iniciando observador de autenticação...');
+    
+    const unsubscribe = onAuthStateChanged(auth, async (userFirebase) => {
+      console.log('🎯 Estado de autenticação mudou:', userFirebase ? `Usuário logado: ${userFirebase.uid}` : 'Usuário deslogado');
+      
+      if (userFirebase) {
+        console.log('👤 Definindo usuário no estado...');
+        setUser(userFirebase); // ⚠️ ATUALIZA O ESTADO
+        await buscarDadosUsuario(userFirebase);
+      } else {
+        console.log('🚪 Usuário deslogado - limpando estado');
+        setUser(null);
+        setUserData(null);
+      }
+      console.log('✅ Estado atualizado, setLoading(false)');
+      setLoading(false);
+    });
+
+    return unsubscribe;
+  }, []);
+
+  // Função de logout
   const logout = async () => {
     try {
-      await auth.signOut();
-      await clearUserData();
+      await signOut(auth);
+      setUser(null);
+      setUserData(null);
     } catch (error) {
       console.error('Erro ao fazer logout:', error);
-      throw error;
     }
   };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setIsLoading(true);
-      
-      if (firebaseUser) {
-        try {
-          await buscarDadosUsuario(firebaseUser);
-        } catch (error) {
-          console.error('Erro ao processar usuário autenticado:', error);
-          await clearUserData();
-        }
-      } else {
-        await clearUserData();
-      }
-      
-      setIsLoading(false);
-    });
-
-    // Carregar dados salvos enquanto verifica a autenticação do Firebase
-    loadUserData().finally(() => {
-      // Garante que o loading para após um tempo máximo
-      setTimeout(() => setIsLoading(false), 2000);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const value = {
     user,
-    isLoading,
-    isAuthenticated,
-    saveUserData,
-    clearUserData,
+    userData,
+    loading,
     buscarDadosUsuario,
     logout
   };
+
+  console.log('🔄 AuthProvider renderizado - Estado:', { 
+    user: user?.uid, 
+    userData: userData?.tipoUsuario,
+    loading 
+  });
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth deve ser usado dentro de um AuthProvider');
+  }
+  return context;
 };

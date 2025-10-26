@@ -38,3 +38,9 @@ try {
 const db = getFirestore(app);
 
 export { auth, db };
+
+export const USER_TYPES = {
+  PROPRIETARIO: 'proprietario',
+  ANALISTA: 'analista',
+  ADMINISTRADOR: 'administrador'
+};
