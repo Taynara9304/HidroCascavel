@@ -1,4 +1,4 @@
-// components/Cadastro.jsx
+// componentes/Cadastro.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -163,6 +163,10 @@ const Cadastro = () => {
       } else {
         setErrors(prev => ({ ...prev, confirmacao: '' }));
       }
+    };
+
+    const navigateToTipoCadastro = () => {
+      navigation.navigate("TipoCadastro"); // Agora deve funcionar
     };
 
     return(
@@ -388,6 +392,10 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     marginBottom: 10,
+  },
+  link: {
+    color: '#2685BF',
+    textDecorationLine: 'underline',
   },
   image: {
     alignSelf: "center",

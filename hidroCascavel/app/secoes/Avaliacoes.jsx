@@ -16,7 +16,7 @@ const data = [
     image: require("../assets/img1Poco.png"),
     rating: 5,
     comment:
-      "Meninas muito educadas, excelente atendimento. A coleta é rápida e o resultado é detalhado.",
+      "dhibsjfhdsbfjsbdhfhsdbfjshdbfsbdhfsdhfjdbhfbsjsdbhfjsbdfbsjhdbfsdsjhfbsdhfbsdhfbsdjhbfsdjbfjsbdhfjsd",
   },
   {
     id: "2",
@@ -35,19 +35,18 @@ const data = [
 ];
 
 const Avaliacoes = () => {
-  const { width, height } = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const isMobile = width < 600;
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
-  // Margens laterais para o card no mobile
-  const CARD_MARGIN = 20;
-  const cardWidth = width - (CARD_MARGIN * 2);
+  // Tamanho fixo para os cards
+  const cardWidth = isMobile ? width * 0.85 : 280;
+  const cardHeight = 280;
 
   const handleScroll = (event) => {
-    const contentOffset = event.nativeEvent.contentOffset;
-    const viewSize = event.nativeEvent.layoutMeasurement;
-    const index = Math.floor(contentOffset.x / viewSize.width);
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffset / width);
     setCurrentIndex(index);
   };
 
@@ -74,8 +73,16 @@ const Avaliacoes = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Avaliações e depoimentos</Text>
+    <View style={[
+      styles.container,
+      isMobile && styles.containerMobile
+    ]}>
+      <Text style={[
+        styles.title,
+        isMobile && styles.titleMobile
+      ]}>
+        AVALIAÇÕES E DEPOIMENTOS
+      </Text>
 
       <View style={styles.content}>
         {isMobile ? (
@@ -89,19 +96,28 @@ const Avaliacoes = () => {
               showsHorizontalScrollIndicator={false}
               onScroll={handleScroll}
               scrollEventThrottle={16}
+              snapToInterval={width}
+              snapToAlignment="center"
+              decelerationRate="fast"
+              getItemLayout={(data, index) => ({
+                length: width,
+                offset: width * index,
+                index,
+              })}
               renderItem={({ item }) => (
-                <View style={[styles.cardWrapperMobile, { width: cardWidth }]}>
-                  <Card {...item} />
+                <View style={[styles.slide, { width }]}>
+                  <View style={[styles.cardContainer, { width: cardWidth, height: cardHeight }]}>
+                    <Card {...item} />
+                  </View>
                 </View>
               )}
-              contentContainerStyle={styles.flatListContent}
             />
             {renderPagination()}
           </View>
         ) : (
           <View style={styles.cardsGrid}>
             {data.map((item) => (
-              <View key={item.id} style={styles.cardWrapper}>
+              <View key={item.id} style={[styles.cardWrapper, { width: cardWidth }]}>
                 <Card {...item} />
               </View>
             ))}
@@ -109,7 +125,10 @@ const Avaliacoes = () => {
         )}
 
         {/* Formulário */}
-        <View style={styles.formContainer}>
+        <View style={[
+          styles.formContainer,
+          isMobile && styles.formContainerMobile
+        ]}>
           <FormAvaliacoes onSubmit={handleSubmit} />
         </View>
       </View>
@@ -119,12 +138,18 @@ const Avaliacoes = () => {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#2c84be",
     padding: 20,
     paddingTop: 40,
-    marginTop: 10,
-    borderRadius: 10,
+    marginTop: 0,
+    borderRadius: 0,
     width: '100%',
+    marginBottom: 0,
+  },
+  containerMobile: {
+    padding: 16,
+    paddingTop: 30,
+    marginTop: 0,
   },
   content: {
     gap: 20,
@@ -132,19 +157,26 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 30,
-    textAlign: "center",
-    color: "#fff",
-    fontWeight: "bold",
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  titleMobile: {
+    fontSize: 24,
+    marginBottom: 10,
   },
   carouselContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: 'center',
-    minHeight: 300,
+    minHeight: 320,
   },
-  flatListContent: {
-    paddingHorizontal: 20,
+  slide: {
+    justifyContent: 'center',
     alignItems: 'center',
+  },
+  cardContainer: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   cardsGrid: {
     flexDirection: "row",
@@ -153,29 +185,27 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   cardWrapper: {
-    width: 280,
-    elevation: 5,
-  },
-  cardWrapperMobile: {
-    elevation: 5,
-    marginHorizontal: 10,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#fff',
   },
   paginationContainer: {
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
+    paddingHorizontal: 10,
   },
   paginationDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginHorizontal: 6,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginHorizontal: 4,
   },
   paginationDotActive: {
     backgroundColor: "#ffffff",
-    width: 12,
-    height: 12,
+    width: 20,
+    height: 8,
   },
   paginationDotInactive: {
     backgroundColor: "rgba(255, 255, 255, 0.5)",
@@ -184,31 +214,8 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
   },
-  contactSection: {
-    marginTop: 20,
-    padding: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    borderRadius: 12,
-    alignItems: "center",
-  },
-  contactTitle: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 15,
-  },
-  contactText: {
-    fontSize: 16,
-    color: "#fff",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    color: "rgba(255, 255, 255, 0.9)",
-    marginTop: 10,
-    textAlign: "center",
-    fontStyle: "italic",
+  formContainerMobile: {
+    paddingHorizontal: 0,
   },
 });
 

@@ -1,76 +1,86 @@
 import React from "react";
-import {
-    View,
-    Text,
-    TouchableOpacity,
-    Image,
-    StyleSheet,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
 import imgInstagram from '../assets/Instagram.png';
 import imgWhatsApp from '../assets/WhatsApp.png';
 import imgIfpr from '../assets/iconeIfpr2.png';
 
 const Contato = () => {
-
-    return (
-        <View style={styles.container}>
-            <View style={styles.containerContato}>
-                <Text style={styles.titulo}>Contato</Text>
-                <Text style={styles.texto}>(45) 99988-7766</Text>
-                <Text style={styles.texto}>email@gmail.com</Text>
-                <View style={styles.containerImagem}>
-                    <TouchableOpacity><Image style={styles.imagem} source={imgInstagram}/></TouchableOpacity>
-                    <TouchableOpacity><Image style={styles.imagem} source={imgWhatsApp}/></TouchableOpacity>
-                    <TouchableOpacity><Image style={styles.imagem} source={imgIfpr}/></TouchableOpacity>
-                </View>
-            </View>
-
-            <View style={styles.containerRodape}>
-                <Text style={styles.texto}>2025 HidroCascavel</Text>
-                <Text style={styles.texto}>Feito por Lucas e Taynara</Text>
-            </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.containerContato}>
+        <Text style={styles.titulo}>CONTATO</Text>
+        <Text style={styles.texto}>(45) 99988-7766</Text>
+        <Text style={styles.texto}>hidrocascavel.ifpr@gmail.com</Text>
+        <View style={styles.containerImagem}>
+          <TouchableOpacity><Image style={styles.imagem} source={imgInstagram}/></TouchableOpacity>
+          <TouchableOpacity><Image style={styles.imagem} source={imgWhatsApp}/></TouchableOpacity>
+          <TouchableOpacity><Image style={styles.imagem} source={imgIfpr}/></TouchableOpacity>
         </View>
-    )
+      </View>
+
+      {/* Rodapé aprimorado sem a linha preta */}
+      <View style={styles.containerRodape}>
+        <Text style={styles.ano}>2025 © <Text style={styles.bold}>HidroCascavel</Text></Text>
+        <Text style={styles.credito}>
+          Feito por <Text style={styles.nome}>Lucas & Taynara</Text>
+        </Text>
+      </View>
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        display: 'flex',
-        marginTop: 10,
-        width: '100%',
-    },
-    containerContato:{
-        backgroundColor: '#236289',
-        alignItems: 'center',
-        padding: 10,
-        borderRadius: 10,
-        marginBottom: 10,
-    },
-    containerRodape: {
-        backgroundColor: '#192F38',
-        alignItems: 'center',
-        padding: 10,
-    },
-    containerImagem: {
-        display: 'flex',
-        flexDirection: 'row',
-        marginTop: 10,
-        gap: 10,
-    },
-    imagem: {
-        width: 30,
-        height: 30,
-    },
-    titulo: {
-        fontSize: 30,
-        textAlign: "center",
-        color: "#fff",
-        marginBottom: 15,
-    },
-    texto: {
-        color: '#ffffff',   
-        marginBottom: 10,
-    }
+  container: {
+    width: '100%',
+  },
+  containerContato: {
+    backgroundColor: '#266188',
+    alignItems: 'center',
+    padding: 10,
+  },
+  containerImagem: {
+    flexDirection: 'row',
+    marginTop: 10,
+    gap: 10,
+  },
+  imagem: {
+    width: 30,
+    height: 30,
+  },
+  titulo: {
+    fontSize: 30,
+    color: '#FFFFFF',
+    textAlign: 'center',
+    marginBottom: 20,
+    fontWeight: 'bold',
+  },
+  texto: {
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  containerRodape: {
+    backgroundColor: '#192F38',
+    alignItems: 'center',
+    paddingVertical: 12,
+    // removido borderTopWidth que criava a linha preta
+  },
+  ano: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  bold: {
+    fontWeight: 'bold',
+  },
+  credito: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+  nome: {
+    color: '#1da7a7',
+    fontStyle: 'italic',
+  },
 });
 
 export default Contato;

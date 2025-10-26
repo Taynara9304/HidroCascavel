@@ -2,32 +2,30 @@ import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 
 const Card = ({ name, image, rating, comment }) => {
+  // Limita o comentário a 100 caracteres e adiciona reticências se necessário
+  const truncatedComment = comment.length > 100 
+    ? comment.substring(0, 100) + '...' 
+    : comment;
+
   return (
     <View style={styles.card}>
       <Image source={image} style={styles.image} />
       <Text style={styles.name}>{name}</Text>
       <Text style={styles.stars}>{"⭐".repeat(rating)}</Text>
-      <Text style={styles.comment}>{comment}</Text>
+      <Text style={styles.comment}>{truncatedComment}</Text>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    width: 280,
+    width: '100%',
     backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    flex: 1,
+    // Removidas as propriedades de sombra
+    height: '100%', // Para ocupar toda a altura do container
   },
   image: {
     width: 60,
@@ -52,6 +50,8 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     lineHeight: 20,
+    flexWrap: 'wrap',
+    width: '100%',
   },
 });
 

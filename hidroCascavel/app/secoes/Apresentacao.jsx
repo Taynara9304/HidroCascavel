@@ -2,28 +2,26 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions } from "react-native";
 
 const Apresentacao = () => {
-  const [secaoAtiva, setSecaoAtiva] = useState("quemSomos");
+  const [secaoAtiva, setSecaoAtiva] = useState("QUEM SOMOS");
 
   const screenWidth = Dimensions.get("window").width;
-
-  // Define se é mobile (menos que 500px)
   const isMobile = screenWidth < 850;
 
-  // Ajuste proporcional da imagem e fonte
-  const imageSize = Math.min(250, isMobile ? screenWidth * 0.8 : 250);
-  const fontSize = isMobile ? 16 : 20;
+  // Ajustes proporcionais para mobile
+  const imageSize = Math.min(250, isMobile ? screenWidth * 0.7 : 250);
+  const fontSize = isMobile ? 14 : 20;
   const lineHeight = fontSize * 1.4;
   
-  // Defina tamanhos de fonte responsivos para os links
-  const linkFontSize = isMobile ? 15 : 24;
+  // Tamanhos de fonte menores para mobile
+  const linkFontSize = isMobile ? 10 : 16;
 
   const conteudo = {
-    quemSomos: {
+    "QUEM SOMOS": {
       texto:
         "Somos um projeto de extensão do IFPR Campus Cascavel vinculado ao Itaipu Parquetec.\n\nTemos como objetivo a disseminação e promoção do conhecimento sobre a importância da manutenção da qualidade da água de poços entre os habitantes de Cascavel.",
       imagem: require("../assets/imgMembrosGrupo.png"),
     },
-    oQueFazemos: {
+    "O QUE FAZEMOS": {
       lista: [
         "Analisamos a água de poços e nascentes na área urbana e rural que abastecem Cascavel;",
         "Avaliamos as percepções ambientais dos habitantes;",
@@ -32,7 +30,7 @@ const Apresentacao = () => {
       ],
       imagem: require("../assets/imgMembrosGrupo2.png"),
     },
-    nossaMissao: {
+    "NOSSA MISSÃO": {
       texto:
         "Nossa missão é garantir o acesso a informações confiáveis sobre a qualidade da água e promover a conscientização ambiental em Cascavel e região.\n\nPor meio de análises técnicas e ações educativas, buscamos fortalecer a relação entre a comunidade e os recursos hídricos, incentivando práticas sustentáveis que beneficiem as gerações atuais e futuras.",
       imagem: require("../assets/imgMembrosGrupo3.png"),
@@ -41,35 +39,56 @@ const Apresentacao = () => {
 
   return (
     <View style={styles.container}>
-      {/* Menu */}
-      <View style={styles.menu}>
-        <TouchableOpacity onPress={() => setSecaoAtiva("quemSomos")}>
+      {/* Menu - Em mobile vira coluna */}
+      <View style={[styles.menu, { flexDirection: isMobile ? "column" : "row" }]}>
+        <TouchableOpacity 
+          onPress={() => setSecaoAtiva("QUEM SOMOS")}
+          style={[
+            styles.botaoMenu,
+            isMobile && styles.botaoMenuMobile,
+            secaoAtiva === "QUEM SOMOS" && styles.botaoMenuAtivo
+          ]}
+        >
           <Text style={[
             styles.link, 
-            secaoAtiva === "quemSomos" && styles.linkAtivo,
+            secaoAtiva === "QUEM SOMOS" && styles.linkAtivo,
             { fontSize: linkFontSize }
           ]}>
-            Quem Somos
+            QUEM SOMOS
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setSecaoAtiva("oQueFazemos")}>
+        <TouchableOpacity 
+          onPress={() => setSecaoAtiva("O QUE FAZEMOS")}
+          style={[
+            styles.botaoMenu,
+            isMobile && styles.botaoMenuMobile,
+            secaoAtiva === "O QUE FAZEMOS" && styles.botaoMenuAtivo
+          ]}
+        >
           <Text style={[
             styles.link, 
-            secaoAtiva === "oQueFazemos" && styles.linkAtivo,
+            secaoAtiva === "O QUE FAZEMOS" && styles.linkAtivo,
             { fontSize: linkFontSize }
           ]}>
-            O que fazemos
+            O QUE FAZEMOS
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => setSecaoAtiva("nossaMissao")}>
+        <TouchableOpacity 
+          onPress={() => setSecaoAtiva("NOSSA MISSÃO")}
+          style={[
+            styles.botaoMenu,
+            isMobile && styles.botaoMenuMobile,
+            secaoAtiva === "NOSSA MISSÃO" && styles.botaoMenuAtivo
+          ]}
+        >
           <Text style={[
             styles.link, 
-            secaoAtiva === "nossaMissao" && styles.linkAtivo,
+            secaoAtiva === "NOSSA MISSÃO" && styles.linkAtivo,
             { fontSize: linkFontSize }
           ]}>
-            Nossa missão
+            NOSSA MISSÃO
           </Text>
         </TouchableOpacity>
       </View>
@@ -89,13 +108,18 @@ const Apresentacao = () => {
           resizeMode="contain"
         />
 
-        <View style={{ flex: 1 }}>
+        <View style={styles.conteudoTexto}>
           {conteudo[secaoAtiva].lista ? (
-            conteudo[secaoAtiva].lista.map((item, index) => (
-              <Text key={index} style={[styles.itemLista, { fontSize, lineHeight }]}>
-                • {item}
-              </Text>
-            ))
+            <View style={styles.listaContainer}>
+              {conteudo[secaoAtiva].lista.map((item, index) => (
+                <View key={index} style={styles.itemListaContainer}>
+                  <Text style={styles.bullet}>•</Text>
+                  <Text style={[styles.itemLista, { fontSize, lineHeight }]}>
+                    {item}
+                  </Text>
+                </View>
+              ))}
+            </View>
           ) : (
             <Text style={[styles.texto, { fontSize, lineHeight }]}>
               {conteudo[secaoAtiva].texto}
@@ -111,36 +135,86 @@ const styles = StyleSheet.create({
   container: {
     margin: 0,
     padding: 20,
-    backgroundColor: "#3D9DD9",
+    backgroundColor: "#2c84be",
     flex: 1,
     width: "100%",
-    borderRadius: 10,
+    borderRadius: 0,
+    alignItems: "center",
+    marginBottom: 0,
   },
   menu: {
-    flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 20,
+    paddingHorizontal: 5,
+    width: "100%",
+  },
+  botaoMenu: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: "#fff",
+    backgroundColor: "transparent",
+    minWidth: 100,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 4,
+    marginVertical: 2,
+  },
+  botaoMenuMobile: {
+    minWidth: "90%",
+    marginVertical: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  botaoMenuAtivo: {
+    backgroundColor: "#2B7BB9",
+    borderColor: "#fff",
   },
   link: {
     color: "#fff",
-    paddingBottom: 5,
+    textAlign: "center",
+    fontWeight: "bold",
   },
   linkAtivo: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#fff",
+    color: "#fff",
   },
   conteudo: {
     backgroundColor: "#fff",
     padding: 15,
     borderRadius: 10,
-    alignItems: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+  },
+  conteudoTexto: {
+    flex: 1,
+    justifyContent: "center",
   },
   texto: {
     color: "#000",
+    textAlign: "justify",
+    textAlignVertical: "center",
+  },
+  listaContainer: {
+    width: "100%",
+  },
+  itemListaContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: 12,
+    width: "100%",
+  },
+  bullet: {
+    color: "#000",
+    fontSize: 16,
+    marginRight: 8,
+    lineHeight: 20,
   },
   itemLista: {
     color: "#000",
-    marginBottom: 12,
+    flex: 1,
+    textAlign: "left",
   },
 });
 

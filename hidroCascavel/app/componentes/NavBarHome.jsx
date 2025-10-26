@@ -48,6 +48,12 @@ const NavBar = () => {
 
   const isMobile = width <= 800;
 
+  // Função para navegar para o perfil
+  const handlePerfilPress = () => {
+    setMenuOpen(false); // Fecha o menu mobile se estiver aberto
+    navigation.navigate("PerfilUsuario");
+  };
+
   return (
     <View
       style={[
@@ -80,10 +86,13 @@ const NavBar = () => {
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
-              {/* Configurações no mobile */}
-              <TouchableOpacity style={[styles.navItem, styles.configButton]}>
-                <MaterialIcons name="settings" size={20} color="#fff" />
-                <Text style={styles.configText}></Text>
+              {/* Botão Perfil no mobile */}
+              <TouchableOpacity 
+                style={[styles.navItem, styles.perfilButton]}
+                onPress={handlePerfilPress}
+              >
+                <MaterialIcons name="person" size={20} color="#fff" />
+                <Text style={styles.perfilText}>Perfil</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -122,10 +131,13 @@ const NavBar = () => {
           </View>
 
           <View style={styles.rightButtons}>
-            {/* Botão Configurações para Desktop */}
-            <TouchableOpacity style={[styles.navItem, styles.configButton]}>
-              <MaterialIcons name="settings" size={30} color="#fff" />
-              <Text style={styles.configText}></Text>
+            {/* Botão Perfil para Desktop */}
+            <TouchableOpacity 
+              style={[styles.navItem, styles.perfilButton]}
+              onPress={handlePerfilPress}
+            >
+              <MaterialIcons name="person" size={24} color="#fff" />
+              <Text style={styles.perfilText}>Perfil</Text>
             </TouchableOpacity>
 
             {/* Botão Sair para Desktop */}
@@ -133,7 +145,7 @@ const NavBar = () => {
               style={[styles.navItem, styles.loginButton]}
               onPress={() => Deslogar(navigation)}
             >
-              <MaterialIcons name="logout" size={30} color="#fff" />
+              <MaterialIcons name="logout" size={24} color="#fff" />
               <Text style={styles.loginText}>Sair</Text>
             </TouchableOpacity>
           </View>
@@ -201,6 +213,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRightWidth: 1,
     borderRightColor: "#ccc",
+    zIndex: 1001,
   },
   navItem: {
     flexDirection: "row",
@@ -212,17 +225,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#fff",
   },
-  configButton: {
+  perfilButton: {
     backgroundColor: "#1a6fa3",
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 6,
-    left:2,
-    top: 1
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  configText: {
-    marginLeft: 4,
-    fontSize: 16,
+  perfilText: {
+    marginLeft: 6,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#fff",
   },
@@ -230,13 +244,15 @@ const styles = StyleSheet.create({
     marginLeft: 12,
     backgroundColor: "#1a6fa3",
     paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRadius: 6,
-    top: 1
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loginText: {
-    marginLeft: 4,
-    fontSize: 16,
+    marginLeft: 6,
+    fontSize: 14,
     fontWeight: "bold",
     color: "#fff",
   },

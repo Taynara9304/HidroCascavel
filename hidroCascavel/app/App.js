@@ -19,6 +19,7 @@ import Cadastro from './telas/Cadastro';
 import CadastroAnalista from './telas/CadastroAnalista';
 import CadastroAdm from './telas/CadastroAdm';
 import TipoUsuario from './telas/TipoUsuario';
+import TipoCadastro from './telas/TipoCadastro';
 
 const Stack = createNativeStackNavigator();
 
@@ -51,8 +52,6 @@ const AppContent = () => {
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="TipoUsuario" component={TipoUsuario} />
           <Stack.Screen name="Cadastro" component={Cadastro} />
-          <Stack.Screen name="CadastroAnalista" component={CadastroAnalista} />
-          <Stack.Screen name="CadastroAdm" component={CadastroAdm} />
         </>
       ) : (
         // Usuário LOGADO - Redireciona baseado no tipo

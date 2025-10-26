@@ -1,4 +1,4 @@
-// components/Cadastro.jsx
+// componentes/Cadastro.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -47,10 +47,6 @@ const Cadastro = () => {
     const [errors, setErrors] = useState({});
 
     const navigation = useNavigation();
-    
-    const navigateToTipoUsuario = () => {
-      navigation.navigate("TipoUsuario");
-    };
 
     const navigateToLogin = () => {
       navigation.navigate("Login");

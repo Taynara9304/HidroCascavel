@@ -41,6 +41,11 @@ const HomeAdm = () => {
         navigation.navigate("GerenciarUsuarios");
     };
 
+    // NOVA FUNÇÃO: Navegar para Gerenciar Relatórios
+    const navigateToGerenciarRelatorios = () => {
+        navigation.navigate("GerenciarRelatorios");
+    };
+
     // Styles DEFINIDOS DENTRO do componente para acessar isMobile
     const styles = StyleSheet.create({
         scrollView: {
@@ -88,6 +93,10 @@ const HomeAdm = () => {
         }
     });
 
+    const irHome = () => {
+        navigation.navigate("HomeProprietario");
+    }
+
     return (
         <ScrollView style={styles.scrollView}>
             <View style={[styles.container, { width: contentWidth }]}>
@@ -110,6 +119,11 @@ const HomeAdm = () => {
                     <View>
                         <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
                     </View>
+
+                    <TouchableOpacity
+                    onPress={irHome}>
+                        oi
+                    </TouchableOpacity>
                 </View>
 
                 <View style={styles.containerItems}>
@@ -155,8 +169,13 @@ const HomeAdm = () => {
                     </TouchableOpacity>
                 </View>
 
+                {/* BOTÃO GERAR RELATÓRIOS ATUALIZADO */}
                 <View style={styles.containerBotaoRelatorio}>
-                    <BotaoFuncionalidades texto="Gerar relatórios" />
+                    <TouchableOpacity
+                        onPress={navigateToGerenciarRelatorios}
+                    >
+                        <BotaoFuncionalidades texto="Gerar relatórios" />
+                    </TouchableOpacity>
                 </View>
             </View>
         </ScrollView>
