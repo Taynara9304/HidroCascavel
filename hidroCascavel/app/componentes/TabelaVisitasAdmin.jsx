@@ -1,22 +1,23 @@
-// componentes/TabelaVisitas.js - VERSÃO COM CARDS HORIZONTAIS
+// componentes/TabelaVisitasAdmin.js
 import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
-  ScrollView,
   TouchableOpacity,
   FlatList,
   Dimensions,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Modal,
+  TextInput
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3; // Cards mais largos para visitas
+const CARD_WIDTH = screenWidth * 0.3;
 const CARD_MARGIN = 12;
 
-const TabelaVisitas = ({ 
+const TabelaVisitasAdmin = ({ 
   visits = [], 
   onEdit, 
   onDelete, 
@@ -26,15 +27,13 @@ const TabelaVisitas = ({
   loading = false
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(0);
+  const [editandoVisita, setEditandoVisita] = useState(null);
+  const [dadosEdicao, setDadosEdicao] = useState({});
   const flatListRef = useRef(null);
-
-  console.log('📋 TabelaVisitas: visits recebido =', visits);
-  console.log('📋 TabelaVisitas: loading state =', visits.length);
 
   // Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return 'Data não informada';
-    
     try {
       const data = new Date(dataString);
       return data.toLocaleString('pt-BR', {
@@ -54,27 +53,27 @@ const TabelaVisitas = ({
     switch (situacao?.toLowerCase()) {
       case 'concluida':
       case 'aprovada':
-        return '#4CAF50'; // Verde
+        return '#4CAF50';
       case 'pendente':
       case 'solicitada':
-        return '#FFA000'; // Laranja/Amarelo
+        return '#FFA000';
       case 'cancelada':
       case 'recusada':
-        return '#F44336'; // Vermelho
+        return '#F44336';
       case 'em_andamento':
-        return '#2196F3'; // Azul
+        return '#2196F3';
       default:
-        return '#666'; // Cinza
+        return '#666';
     }
   };
 
-  // Função para navegar entre páginas
+  // Navegação entre páginas
   const irParaPagina = (pagina) => {
     setPaginaAtual(pagina);
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // Função para confirmar exclusão
+  // Confirmar exclusão
   const confirmarExclusao = (visit) => {
     Alert.alert(
       'Confirmar Exclusão',
@@ -90,7 +89,33 @@ const TabelaVisitas = ({
     );
   };
 
-  // Renderizar cada card de visita
+  // Abrir modal de edição
+  const abrirEdicao = (visit) => {
+    setEditandoVisita(visit);
+    setDadosEdicao({
+      dataVisita: visit.dataVisita ? new Date(visit.dataVisita) : new Date(),
+      situacao: visit.situacao || 'pendente',
+      observacoes: visit.observacoes || '',
+      resultado: visit.resultado || '',
+      recomendacoes: visit.recomendacoes || ''
+    });
+  };
+
+  // Salvar edição
+  const salvarEdicao = async () => {
+    if (!editandoVisita) return;
+
+    try {
+      await onEdit(editandoVisita.id, dadosEdicao);
+      Alert.alert('Sucesso', 'Visita atualizada com sucesso!');
+      setEditandoVisita(null);
+      setDadosEdicao({});
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível atualizar a visita');
+    }
+  };
+
+  // Renderizar cada card
   const renderItem = ({ item: visit }) => (
     <View style={styles.card}>
       {/* Cabeçalho com Status */}
@@ -115,7 +140,6 @@ const TabelaVisitas = ({
 
       {/* Informações da Visita */}
       <View style={styles.cardContent}>
-        {/* Proprietário */}
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>👤 Proprietário:</Text>
           <Text style={styles.infoValue}>
@@ -123,27 +147,14 @@ const TabelaVisitas = ({
           </Text>
         </View>
 
-        {/* Tipo de Visita */}
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>📋 Tipo:</Text>
           <Text style={styles.infoValue}>
             {visit.tipo === 'solicitacao_proprietario_whatsapp' ? 'WhatsApp' : 
-             visit.tipo === 'solicitacao_analista' ? 'Analista' : 
-             visit.tipo === 'cadastro_admin' ? 'Administrador' : 'Visita'}
+             visit.tipo === 'solicitacao_analista' ? 'Analista' : 'Administrador'}
           </Text>
         </View>
 
-        {/* Canal */}
-        {visit.canal && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📱 Canal:</Text>
-            <Text style={styles.infoValue}>
-              {visit.canal === 'whatsapp' ? 'WhatsApp' : 'Sistema'}
-            </Text>
-          </View>
-        )}
-
-        {/* Observações */}
         {visit.observacoes && (
           <View style={styles.observacoesContainer}>
             <Text style={styles.observacoesLabel}>📝 Observações:</Text>
@@ -153,7 +164,6 @@ const TabelaVisitas = ({
           </View>
         )}
 
-        {/* Resultados (se disponível) */}
         {visit.resultado && (
           <View style={styles.observacoesContainer}>
             <Text style={styles.observacoesLabel}>🔍 Resultados:</Text>
@@ -164,11 +174,11 @@ const TabelaVisitas = ({
         )}
       </View>
 
-      {/* Ações */}
+      {/* Ações do ADMIN */}
       <View style={styles.cardAcoes}>
         <TouchableOpacity 
           style={styles.botaoEditar}
-          onPress={() => onEdit(visit)}
+          onPress={() => abrirEdicao(visit)}
         >
           <Text style={styles.botaoTexto}>✏️ Editar</Text>
         </TouchableOpacity>
@@ -183,7 +193,6 @@ const TabelaVisitas = ({
     </View>
   );
 
-  // Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -196,10 +205,10 @@ const TabelaVisitas = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        Visitas ({visits.length})
+        📊 Gestão de Visitas ({visits.length})
       </Text>
       
-      {/* Ordenação Rápida */}
+      {/* Ordenação */}
       <View style={styles.ordenacaoContainer}>
         <Text style={styles.ordenacaoTitulo}>Ordenar:</Text>
         <TouchableOpacity 
@@ -225,21 +234,9 @@ const TabelaVisitas = ({
             Poço {sortField === 'pocoNome' && (sortDirection === 'asc' ? '↑' : '↓')}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[
-            styles.ordenacaoBotao,
-            sortField === 'situacao' && styles.ordenacaoBotaoAtivo
-          ]}
-          onPress={() => onSort('situacao')}
-        >
-          <Text style={styles.ordenacaoBotaoTexto}>
-            Status {sortField === 'situacao' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Carousel Horizontal de Cards */}
+      {/* Carousel */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -262,7 +259,6 @@ const TabelaVisitas = ({
             contentContainerStyle={styles.carouselContent}
           />
           
-          {/* Indicadores de Página */}
           {visits.length > 1 && (
             <View style={styles.paginacaoContainer}>
               <Text style={styles.paginacaoTexto}>
@@ -288,14 +284,85 @@ const TabelaVisitas = ({
         </View>
       ) : (
         <View style={styles.semDadosContainer}>
-          <Text style={styles.semDados}>
-            📭 Nenhuma visita cadastrada
-          </Text>
-          <Text style={styles.semDadosSubtexto}>
-            Use o formulário abaixo para adicionar a primeira visita
-          </Text>
+          <Text style={styles.semDados}>📭 Nenhuma visita cadastrada</Text>
         </View>
       )}
+
+      {/* Modal de Edição */}
+      <Modal
+        visible={!!editandoVisita}
+        animationType="slide"
+        transparent={true}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitulo}>✏️ Editar Visita</Text>
+            
+            <Text style={styles.modalSubtitulo}>
+              {editandoVisita?.pocoNome}
+            </Text>
+
+            <Text style={styles.inputLabel}>Situação:</Text>
+            <View style={styles.statusOptions}>
+              {['pendente', 'em_andamento', 'concluida', 'cancelada'].map(status => (
+                <TouchableOpacity
+                  key={status}
+                  style={[
+                    styles.statusOption,
+                    dadosEdicao.situacao === status && styles.statusOptionAtivo
+                  ]}
+                  onPress={() => setDadosEdicao(prev => ({ ...prev, situacao: status }))}
+                >
+                  <Text style={[
+                    styles.statusOptionText,
+                    dadosEdicao.situacao === status && styles.statusOptionTextAtivo
+                  ]}>
+                    {status}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.inputLabel}>Observações:</Text>
+            <TextInput
+              style={styles.textInput}
+              value={dadosEdicao.observacoes}
+              onChangeText={(text) => setDadosEdicao(prev => ({ ...prev, observacoes: text }))}
+              placeholder="Observações da visita..."
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <Text style={styles.inputLabel}>Resultados:</Text>
+            <TextInput
+              style={styles.textInput}
+              value={dadosEdicao.resultado}
+              onChangeText={(text) => setDadosEdicao(prev => ({ ...prev, resultado: text }))}
+              placeholder="Resultados das análises..."
+              multiline
+              numberOfLines={3}
+              textAlignVertical="top"
+            />
+
+            <View style={styles.modalAcoes}>
+              <TouchableOpacity 
+                style={styles.modalBotaoCancelar}
+                onPress={() => setEditandoVisita(null)}
+              >
+                <Text style={styles.modalBotaoTexto}>Cancelar</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.modalBotaoSalvar}
+                onPress={salvarEdicao}
+              >
+                <Text style={styles.modalBotaoTexto}>Salvar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -350,7 +417,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  // Carousel e Cards
   carouselContainer: {
     flex: 1,
     minHeight: 300,
@@ -358,18 +424,21 @@ const styles = StyleSheet.create({
   carouselContent: {
     paddingHorizontal: CARD_MARGIN,
   },
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: 'white',
-    padding: 20,
-    marginHorizontal: CARD_MARGIN,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
+  // Nos estilos de ambos os componentes, substitua:
+// Nos estilos de ambos os componentes, substitua por:
+card: {
+  width: CARD_WIDTH,
+  backgroundColor: 'white',
+  padding: 20,
+  marginHorizontal: CARD_MARGIN,
+  borderRadius: 16,
+  // ✅ SOLUÇÃO SIMPLES
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+},
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -475,7 +544,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Paginação
   paginacaoContainer: {
     alignItems: 'center',
     marginTop: 20,
@@ -502,7 +570,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Sem dados
   semDadosContainer: {
     flex: 1,
     alignItems: 'center',
@@ -512,14 +579,98 @@ const styles = StyleSheet.create({
   semDados: {
     fontSize: 18,
     color: '#666',
-    marginBottom: 8,
     textAlign: 'center',
   },
-  semDadosSubtexto: {
-    fontSize: 14,
-    color: '#999',
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitulo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
     textAlign: 'center',
+    color: '#2685BF',
+  },
+  modalSubtitulo: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+    color: '#666',
+  },
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  statusOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+    gap: 8,
+  },
+  statusOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    backgroundColor: '#f1f3f4',
+  },
+  statusOptionAtivo: {
+    backgroundColor: '#2685BF',
+  },
+  statusOptionText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  statusOptionTextAtivo: {
+    color: 'white',
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    minHeight: 80,
+    marginBottom: 16,
+    textAlignVertical: 'top',
+  },
+  modalAcoes: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalBotaoCancelar: {
+    flex: 1,
+    backgroundColor: '#ccc',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalBotaoSalvar: {
+    flex: 1,
+    backgroundColor: '#2685BF',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  modalBotaoTexto: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });
 
-export default TabelaVisitas;
+export default TabelaVisitasAdmin;

@@ -1,10 +1,16 @@
-// navigation/AnalistaStack.js
+// navigation/AnalistaStack.js - VERSÃO COMPLETA
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeAnalista from '../telas/HomeAnalista';
 import MinhasSolicitacoes from '../telas/MinhasSolicitacoes';
 import NovaSolicitacao from '../telas/NovaSolicitacao';
 import PerfilUsuario from '../telas/PerfilUsuario';
+
+// ✅ ADICIONE ESTAS IMPORTACÕES
+import GerenciarPocos from '../telas/GerenciarPocos';
+import GerenciarVisitas from '../telas/GerenciarVisitas';
+import GerenciarAnalises from '../telas/GerenciarAnalises';
+import GerenciarUsuarios from '../telas/GerenciarUsuarios';
 
 const Stack = createNativeStackNavigator();
 
@@ -40,6 +46,40 @@ const AnalistaStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Meu Perfil" 
+        }}
+      />
+      
+      {/* ✅ ADICIONE ESTAS NOVAS ROTAS */}
+      <Stack.Screen 
+        name="GerenciarPocos" 
+        component={GerenciarPocos}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Poços" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarVisitas" 
+        component={GerenciarVisitas}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Visitas" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarAnalises" 
+        component={GerenciarAnalises}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Análises" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarUsuarios" 
+        component={GerenciarUsuarios}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Usuários" 
         }}
       />
     </Stack.Navigator>

@@ -1,10 +1,14 @@
-// navigation/ProprietarioStack.js
+// navigation/ProprietarioStack.js - VERSÃO COMPLETA
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeProprietario from '../telas/HomeProprietario';
 import MeusDados from '../telas/MeusDados';
 import MinhasVisitas from '../telas/MinhasVisitas';
 import PerfilUsuario from '../telas/PerfilUsuario';
+
+// ✅ ADICIONE ESTAS IMPORTACÕES
+import GerenciarPocos from '../telas/GerenciarPocos';
+import GerenciarVisitas from '../telas/GerenciarVisitas';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,13 +38,30 @@ const ProprietarioStack = () => {
           title: "Minhas Visitas" 
         }}
       />
-
       <Stack.Screen 
         name="PerfilUsuario" 
         component={PerfilUsuario}
         options={{ 
           headerShown: isWeb,
           title: "Meu Perfil" 
+        }}
+      />
+      
+      {/* ✅ ADICIONE ESTAS NOVAS ROTAS */}
+      <Stack.Screen 
+        name="GerenciarPocos" 
+        component={GerenciarPocos}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Poços" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarVisitas" 
+        component={GerenciarVisitas}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Visitas" 
         }}
       />
     </Stack.Navigator>

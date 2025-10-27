@@ -1,65 +1,132 @@
-// hooks/useTabelaVisitas.js
-import { useState, useMemo } from 'react';
+// hooks/useTabelaVisitas.js - VERSÃO COMPLETA CORRIGIDA
+import { useState, useEffect } from 'react';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  onSnapshot, 
+  orderBy, 
+  query,
+  serverTimestamp,
+  Timestamp
+} from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
+import { enviarNotificacaoWhatsAppSolicitacao } from '../services/whatsappNotificationService';
 
-// Dados mockados para visitas
-const initialVisitsData = [
-  {
-    id: 1,
-    pocoId: 1,
-    pocoNome: 'Poço A1',
-    localizacao: '-23.5505, -46.6333',
-    proprietario: 'João Silva',
-    dataVisita: '2024-01-15T10:30:00',
-    situacao: 'concluida',
-    observacoes: 'Visita de rotina - tudo em ordem'
-  },
-  {
-    id: 2,
-    pocoId: 2,
-    pocoNome: 'Poço B2',
-    localizacao: '-23.5510, -46.6340',
-    proprietario: 'Maria Santos',
-    dataVisita: '2024-02-20T14:15:00',
-    situacao: 'concluida',
-    observacoes: 'Necessita manutenção preventiva'
-  },
-  {
-    id: 3,
-    pocoId: 3,
-    pocoNome: 'Poço C3',
-    localizacao: '-23.5520, -46.6350',
-    proprietario: 'Pedro Oliveira',
-    dataVisita: '2024-03-25T09:00:00',
-    situacao: 'pendente',
-    observacoes: 'Agendada para vistoria'
-  },
-];
 
-const useTabelaVisitas = (initialVisits = initialVisitsData) => {
-  const [visits, setVisits] = useState(initialVisits || []);
+const useVisitas = () => {
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('dataVisita');
   const [sortDirection, setSortDirection] = useState('desc');
 
-  const sortedVisits = useMemo(() => {
-    if (!visits || !Array.isArray(visits)) return [];
-    
-    const sorted = [...visits].sort((a, b) => {
-      let aValue = a[sortField];
-      let bValue = b[sortField];
-      
-      if (sortField === 'dataVisita') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
-      }
-      
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
-    });
-    
-    return sorted;
-  }, [visits, sortField, sortDirection]);
+  console.log('🔄 useVisitas: Hook inicializado');
 
+  // Buscar visitas em tempo real - VERSÃO SIMPLIFICADA
+  useEffect(() => {
+    console.log('📡 useVisitas: Configurando listener do Firebase...');
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const visitsCollection = collection(db, 'visits');
+      console.log('📡 useVisitas: Coleção referenciada');
+      
+      // Query simples sem filtros complexos por enquanto
+      const q = query(visitsCollection, orderBy('dataVisita', 'desc'));
+      
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          console.log('📡 useVisitas: Snapshot recebido -', snapshot.docs.length, 'documentos');
+          
+          const visitsData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              ...data
+            };
+          });
+          
+          setVisits(visitsData);
+          setLoading(false);
+          console.log('✅ useVisitas: Estado atualizado com', visitsData.length, 'visitas');
+        },
+        (error) => {
+          console.error('❌ useVisitas: Erro no listener:', error);
+          setError('Erro ao carregar visitas: ' + error.message);
+          setLoading(false);
+        }
+      );
+
+      return () => {
+        console.log('📡 useVisitas: Removendo listener');
+        unsubscribe();
+      };
+    } catch (err) {
+      console.error('❌ useVisitas: Erro ao configurar listener:', err);
+      setError('Erro de configuração: ' + err.message);
+      setLoading(false);
+    }
+  }, []);
+
+  const addVisit = async (visitData) => {
+    try {
+      console.log('🎯 useVisitas.addVisit: Iniciando...', visitData);
+      
+      // ✅ ADICIONAR: Enviar notificação para WhatsApp se for do proprietário
+      if (visitData.tipo === 'solicitacao_proprietario_whatsapp') {
+        console.log('📱 Enviando notificação WhatsApp...');
+        await enviarNotificacaoWhatsAppSolicitacao(visitData);
+      }
+
+      const visitsCollection = collection(db, 'visits');
+      const visitWithTimestamp = {
+        ...visitData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      };
+
+      const docRef = await addDoc(visitsCollection, visitWithTimestamp);
+      console.log('✅ Visita adicionada com ID:', docRef.id);
+      
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ Erro ao adicionar visita:', error);
+      throw error;
+    }
+  };
+
+  // Editar visita
+  const editVisit = async (visitId, updatedVisit) => {
+    try {
+      const visitDoc = doc(db, 'visits', visitId);
+      await updateDoc(visitDoc, {
+        ...updatedVisit,
+        atualizadoEm: serverTimestamp()
+      });
+      console.log('✅ useVisitas: Visita editada:', visitId);
+    } catch (error) {
+      console.error('❌ useVisitas: Erro ao editar visita:', error);
+      throw error;
+    }
+  };
+
+  // Deletar visita
+  const deleteVisit = async (visitId) => {
+    try {
+      const visitDoc = doc(db, 'visits', visitId);
+      await deleteDoc(visitDoc);
+      console.log('✅ useVisitas: Visita deletada:', visitId);
+    } catch (error) {
+      console.error('❌ useVisitas: Erro ao deletar visita:', error);
+      throw error;
+    }
+  };
+
+  // Ordenação - AGORA DEFINIDA CORRETAMENTE
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -69,28 +136,30 @@ const useTabelaVisitas = (initialVisits = initialVisitsData) => {
     }
   };
 
-  const addVisit = (visit) => {
-    const newVisit = {
-      ...visit,
-      id: Math.max(...(visits?.map(v => v.id) || [0]), 0) + 1,
-    };
-    setVisits(prev => [...(prev || []), newVisit]);
-  };
-
-  const editVisit = (id, updatedVisit) => {
-    setVisits(prev => (prev || []).map(visit => 
-      visit.id === id ? { ...visit, ...updatedVisit } : visit
-    ));
-  };
-
-  const deleteVisit = (id) => {
-    if (window.confirm('Tem certeza que deseja excluir esta visita?')) {
-      setVisits(prev => (prev || []).filter(visit => visit.id !== id));
+  // Aplicar ordenação client-side
+  const visitsOrdenados = [...visits].sort((a, b) => {
+    if (!a[sortField] || !b[sortField]) return 0;
+    
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+    
+    // Se for Timestamp do Firebase, converter para Date
+    if (aValue.toDate && bValue.toDate) {
+      aValue = aValue.toDate();
+      bValue = bValue.toDate();
     }
-  };
+    
+    if (sortDirection === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
 
   return {
-    visits: sortedVisits,
+    visits: visitsOrdenados,
+    loading,
+    error,
     sortField,
     sortDirection,
     handleSort,
@@ -100,4 +169,4 @@ const useTabelaVisitas = (initialVisits = initialVisitsData) => {
   };
 };
 
-export default useTabelaVisitas;
+export default useVisitas;

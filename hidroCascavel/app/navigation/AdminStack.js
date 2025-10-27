@@ -7,6 +7,8 @@ import GerenciarAnalises from '../telas/GerenciarAnalises';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
 import PerfilUsuario from '../telas/PerfilUsuario';
+import GerenciarSolicitacoesWhatsApp from '../telas/GerenciarSolicitacoesWhatsApp';
+import CadastrarVisitaWhatsApp from '../telas/CadastrarVisitaWhatsApp';
 
 const Stack = createNativeStackNavigator();
 
@@ -59,6 +61,14 @@ const AdminStack = () => {
           headerShown: isWeb,
           title: "Meu Perfil" 
         }}
+      />
+      <Stack.Screen 
+        name="GerenciarSolicitacoesWhatsApp" 
+        component={GerenciarSolicitacoesWhatsApp} 
+      />
+      <Stack.Screen 
+        name="CadastrarVisitaWhatsApp" 
+        component={CadastrarVisitaWhatsApp} 
       />
     </Stack.Navigator>
   );

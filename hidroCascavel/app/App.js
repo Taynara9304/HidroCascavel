@@ -35,25 +35,31 @@ const AppContent = () => {
     );
   }
 
+  console.log('🎯 Estado atual no AppContent:', { 
+    user: user?.uid, 
+    userData: userData,
+    tipoUsuario: userData?.tipoUsuario 
+  });
+
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
-        // Usuário NÃO logado
+        // ✅ CORRIGIDO: Telas de auth como children diretos, não como componente AuthStack
         <>
           <Stack.Screen name="TelaInicial" component={TelaInicial} />
           <Stack.Screen name="Login" component={Login} />
           <Stack.Screen name="TipoUsuario" component={TipoUsuario} />
+          <Stack.Screen name="TipoCadastro" component={TipoCadastro} />
           <Stack.Screen name="Cadastro" component={Cadastro} />
+          <Stack.Screen name="CadastroAnalista" component={CadastroAnalista} />
+          <Stack.Screen name="CadastroAdm" component={CadastroAdm} />
         </>
-      ) : (
-        // Usuário LOGADO - Redireciona baseado no tipo
-        (() => {          
-          if (!userData) {
-            return <Stack.Screen name="TelaInicial" component={TelaInicial} />;
-          }
-
+      ) : userData && userData.tipoUsuario ? (
+        // ✅ CORRIGIDO: Usuário LOGADO com dados e tipoUsuario definido
+        (() => {
           const tipo = userData.tipoUsuario;
-
+          console.log('🎯 Redirecionando para stack do tipo:', tipo);
+          
           switch (tipo) {
             case 'proprietario':
               return <Stack.Screen name="ProprietarioStack" component={ProprietarioStack} />;
@@ -62,9 +68,21 @@ const AppContent = () => {
             case 'administrador':
               return <Stack.Screen name="AdministradorStack" component={AdministradorStack} />;
             default:
-              return <Stack.Screen name="TelaInicial" component={TelaInicial} />;
+              // Fallback para caso o tipo não seja reconhecido
+              return (
+                <>
+                  <Stack.Screen name="TelaInicial" component={TelaInicial} />
+                  <Stack.Screen name="Login" component={Login} />
+                </>
+              );
           }
         })()
+      ) : (
+        // ✅ CORRIGIDO: Usuário logado mas sem dados ou tipoUsuario indefinido
+        <>
+          <Stack.Screen name="TelaInicial" component={TelaInicial} />
+          <Stack.Screen name="Login" component={Login} />
+        </>
       )}
     </Stack.Navigator>
   );

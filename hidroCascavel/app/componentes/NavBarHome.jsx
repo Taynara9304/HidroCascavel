@@ -14,33 +14,6 @@ import { auth } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
 import logo from '../assets/logoHidroCascavel.png';
 
-const Deslogar = (navigation) => {
-  signOut(auth)
-    .then(() => {
-      console.log('Usuário deslogado com sucesso');
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Logout realizado',
-        text2: 'Você saiu da sua conta'
-      });
-      
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "TelaInicial" }],
-      });
-    })
-    .catch((error) => {
-      console.error('Erro ao deslogar:', error);
-      
-      Toast.show({
-        type: 'error',
-        text1: 'Erro',
-        text2: 'Não foi possível fazer logout'
-      });
-    });
-};
-
 const NavBar = () => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
@@ -48,9 +21,37 @@ const NavBar = () => {
 
   const isMobile = width <= 800;
 
+  // Função para deslogar - CORRIGIDA
+  const handleDeslogar = async () => {
+    try {
+      console.log('Iniciando logout...');
+      
+      await signOut(auth);
+      console.log('Usuário deslogado com sucesso');
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Logout realizado',
+        text2: 'Você saiu da sua conta'
+      });
+
+      // ✅ NAVEGAÇÃO CORRIGIDA - Use navigate em vez de reset
+      navigation.navigate("TelaInicial");
+      
+    } catch (error) {
+      console.error('Erro ao deslogar:', error);
+      
+      Toast.show({
+        type: 'error',
+        text1: 'Erro',
+        text2: 'Não foi possível fazer logout'
+      });
+    }
+  };
+
   // Função para navegar para o perfil
   const handlePerfilPress = () => {
-    setMenuOpen(false); // Fecha o menu mobile se estiver aberto
+    setMenuOpen(false);
     navigation.navigate("PerfilUsuario");
   };
 
@@ -70,19 +71,43 @@ const NavBar = () => {
 
           {menuOpen && (
             <View style={styles.sideMenu}>
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity 
+                style={styles.navItem}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("Sobre");
+                }}
+              >
                 <Text style={styles.navText}>Sobre</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity 
+                style={styles.navItem}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("Servicos");
+                }}
+              >
                 <Text style={styles.navText}>Serviços</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity 
+                style={styles.navItem}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("EducacaoAmbiental");
+                }}
+              >
                 <Text style={styles.navText}>Educação Ambiental</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity 
+                style={styles.navItem}
+                onPress={() => {
+                  setMenuOpen(false);
+                  navigation.navigate("Contato");
+                }}
+              >
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
@@ -99,7 +124,7 @@ const NavBar = () => {
                 style={[styles.navItem, styles.loginButton]}
                 onPress={() => {
                   setMenuOpen(false);
-                  Deslogar(navigation);
+                  handleDeslogar();
                 }}
               >
                 <MaterialIcons name="logout" size={20} color="#fff" />
@@ -113,19 +138,31 @@ const NavBar = () => {
           <Image source={logo} style={styles.logo} /> 
 
           <View style={styles.navItemsContainer}>
-            <TouchableOpacity style={styles.navItem}>
+            <TouchableOpacity 
+              style={styles.navItem}
+              onPress={() => navigation.navigate("Sobre")}
+            >
               <Text style={styles.navText}>Sobre</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem}>
+            <TouchableOpacity 
+              style={styles.navItem}
+              onPress={() => navigation.navigate("Servicos")}
+            >
               <Text style={styles.navText}>Serviços</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem}>
+            <TouchableOpacity 
+              style={styles.navItem}
+              onPress={() => navigation.navigate("EducacaoAmbiental")}
+            >
               <Text style={styles.navText}>Educação Ambiental</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.navItem}>
+            <TouchableOpacity 
+              style={styles.navItem}
+              onPress={() => navigation.navigate("Contato")}
+            >
               <Text style={styles.navText}>Contato</Text>
             </TouchableOpacity>
           </View>
@@ -143,7 +180,7 @@ const NavBar = () => {
             {/* Botão Sair para Desktop */}
             <TouchableOpacity
               style={[styles.navItem, styles.loginButton]}
-              onPress={() => Deslogar(navigation)}
+              onPress={handleDeslogar}
             >
               <MaterialIcons name="logout" size={24} color="#fff" />
               <Text style={styles.loginText}>Sair</Text>
@@ -214,12 +251,16 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: "#ccc",
     zIndex: 1001,
+    borderRadius: 8,
   },
   navItem: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 8,
     marginVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
   navText: {
     fontSize: 16,
@@ -227,9 +268,6 @@ const styles = StyleSheet.create({
   },
   perfilButton: {
     backgroundColor: "#1a6fa3",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -241,11 +279,7 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   loginButton: {
-    marginLeft: 12,
-    backgroundColor: "#1a6fa3",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#d32f2f",
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',

@@ -1,10 +1,9 @@
-// componentes/TabelaVisitas.js - VERSÃO COM CARDS HORIZONTAIS
+// componentes/TabelaVisitasAnalista.js
 import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
-  ScrollView,
   TouchableOpacity,
   FlatList,
   Dimensions,
@@ -13,13 +12,12 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3; // Cards mais largos para visitas
+const CARD_WIDTH = screenWidth * 0.3;
 const CARD_MARGIN = 12;
 
-const TabelaVisitas = ({ 
+const TabelaVisitasAnalista = ({ 
   visits = [], 
-  onEdit, 
-  onDelete, 
+  onSolicitarAlteracao,
   sortField, 
   sortDirection, 
   onSort,
@@ -28,13 +26,8 @@ const TabelaVisitas = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const flatListRef = useRef(null);
 
-  console.log('📋 TabelaVisitas: visits recebido =', visits);
-  console.log('📋 TabelaVisitas: loading state =', visits.length);
-
-  // Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return 'Data não informada';
-    
     try {
       const data = new Date(dataString);
       return data.toLocaleString('pt-BR', {
@@ -49,48 +42,61 @@ const TabelaVisitas = ({
     }
   };
 
-  // Função para obter cor do status
   const getCorStatus = (situacao) => {
     switch (situacao?.toLowerCase()) {
       case 'concluida':
       case 'aprovada':
-        return '#4CAF50'; // Verde
+        return '#4CAF50';
       case 'pendente':
       case 'solicitada':
-        return '#FFA000'; // Laranja/Amarelo
+        return '#FFA000';
       case 'cancelada':
       case 'recusada':
-        return '#F44336'; // Vermelho
+        return '#F44336';
       case 'em_andamento':
-        return '#2196F3'; // Azul
+        return '#2196F3';
       default:
-        return '#666'; // Cinza
+        return '#666';
     }
   };
 
-  // Função para navegar entre páginas
   const irParaPagina = (pagina) => {
     setPaginaAtual(pagina);
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // Função para confirmar exclusão
-  const confirmarExclusao = (visit) => {
+  const solicitarAlteracao = (visit) => {
     Alert.alert(
-      'Confirmar Exclusão',
-      `Tem certeza que deseja excluir a visita do poço "${visit.pocoNome}"?`,
+      'Solicitar Alteração',
+      `Deseja solicitar alteração na visita do poço "${visit.pocoNome}"?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         { 
-          text: 'Excluir', 
-          style: 'destructive',
-          onPress: () => onDelete(visit.id)
+          text: 'Solicitar', 
+          onPress: () => {
+            Alert.prompt(
+              'Motivo da Alteração',
+              'Descreva o motivo da solicitação de alteração:',
+              [
+                { text: 'Cancelar', style: 'cancel' },
+                { 
+                  text: 'Enviar', 
+                  onPress: (motivo) => {
+                    if (onSolicitarAlteracao) {
+                      onSolicitarAlteracao(visit.id, motivo);
+                    }
+                    Alert.alert('Sucesso', 'Solicitação de alteração enviada para o administrador!');
+                  }
+                }
+              ],
+              'plain-text'
+            );
+          }
         }
       ]
     );
   };
 
-  // Renderizar cada card de visita
   const renderItem = ({ item: visit }) => (
     <View style={styles.card}>
       {/* Cabeçalho com Status */}
@@ -115,7 +121,6 @@ const TabelaVisitas = ({
 
       {/* Informações da Visita */}
       <View style={styles.cardContent}>
-        {/* Proprietário */}
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>👤 Proprietário:</Text>
           <Text style={styles.infoValue}>
@@ -123,27 +128,14 @@ const TabelaVisitas = ({
           </Text>
         </View>
 
-        {/* Tipo de Visita */}
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>📋 Tipo:</Text>
           <Text style={styles.infoValue}>
             {visit.tipo === 'solicitacao_proprietario_whatsapp' ? 'WhatsApp' : 
-             visit.tipo === 'solicitacao_analista' ? 'Analista' : 
-             visit.tipo === 'cadastro_admin' ? 'Administrador' : 'Visita'}
+             visit.tipo === 'solicitacao_analista' ? 'Analista' : 'Administrador'}
           </Text>
         </View>
 
-        {/* Canal */}
-        {visit.canal && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📱 Canal:</Text>
-            <Text style={styles.infoValue}>
-              {visit.canal === 'whatsapp' ? 'WhatsApp' : 'Sistema'}
-            </Text>
-          </View>
-        )}
-
-        {/* Observações */}
         {visit.observacoes && (
           <View style={styles.observacoesContainer}>
             <Text style={styles.observacoesLabel}>📝 Observações:</Text>
@@ -153,7 +145,6 @@ const TabelaVisitas = ({
           </View>
         )}
 
-        {/* Resultados (se disponível) */}
         {visit.resultado && (
           <View style={styles.observacoesContainer}>
             <Text style={styles.observacoesLabel}>🔍 Resultados:</Text>
@@ -164,26 +155,18 @@ const TabelaVisitas = ({
         )}
       </View>
 
-      {/* Ações */}
+      {/* Ações do ANALISTA - Apenas solicitar alteração */}
       <View style={styles.cardAcoes}>
         <TouchableOpacity 
-          style={styles.botaoEditar}
-          onPress={() => onEdit(visit)}
+          style={styles.botaoSolicitar}
+          onPress={() => solicitarAlteracao(visit)}
         >
-          <Text style={styles.botaoTexto}>✏️ Editar</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.botaoDeletar}
-          onPress={() => confirmarExclusao(visit)}
-        >
-          <Text style={styles.botaoTexto}>🗑️ Excluir</Text>
+          <Text style={styles.botaoTexto}>📝 Solicitar Alteração</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
-  // Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -196,10 +179,9 @@ const TabelaVisitas = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        Visitas ({visits.length})
+        👨‍💼 Visitas - Analista ({visits.length})
       </Text>
       
-      {/* Ordenação Rápida */}
       <View style={styles.ordenacaoContainer}>
         <Text style={styles.ordenacaoTitulo}>Ordenar:</Text>
         <TouchableOpacity 
@@ -225,21 +207,8 @@ const TabelaVisitas = ({
             Poço {sortField === 'pocoNome' && (sortDirection === 'asc' ? '↑' : '↓')}
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[
-            styles.ordenacaoBotao,
-            sortField === 'situacao' && styles.ordenacaoBotaoAtivo
-          ]}
-          onPress={() => onSort('situacao')}
-        >
-          <Text style={styles.ordenacaoBotaoTexto}>
-            Status {sortField === 'situacao' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Carousel Horizontal de Cards */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -262,7 +231,6 @@ const TabelaVisitas = ({
             contentContainerStyle={styles.carouselContent}
           />
           
-          {/* Indicadores de Página */}
           {visits.length > 1 && (
             <View style={styles.paginacaoContainer}>
               <Text style={styles.paginacaoTexto}>
@@ -288,18 +256,14 @@ const TabelaVisitas = ({
         </View>
       ) : (
         <View style={styles.semDadosContainer}>
-          <Text style={styles.semDados}>
-            📭 Nenhuma visita cadastrada
-          </Text>
-          <Text style={styles.semDadosSubtexto}>
-            Use o formulário abaixo para adicionar a primeira visita
-          </Text>
+          <Text style={styles.semDados}>📭 Nenhuma visita cadastrada</Text>
         </View>
       )}
     </View>
   );
 };
 
+// Estilos similares ao Admin, mas com cores diferentes para ações
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -350,7 +314,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  // Carousel e Cards
   carouselContainer: {
     flex: 1,
     minHeight: 300,
@@ -358,18 +321,20 @@ const styles = StyleSheet.create({
   carouselContent: {
     paddingHorizontal: CARD_MARGIN,
   },
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: 'white',
-    padding: 20,
-    marginHorizontal: CARD_MARGIN,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
+  // Nos estilos de ambos os componentes, substitua:
+card: {
+  width: CARD_WIDTH,
+  backgroundColor: 'white',
+  padding: 20,
+  marginHorizontal: CARD_MARGIN,
+  borderRadius: 16,
+  // ✅ SOLUÇÃO SIMPLES
+  elevation: 3,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+},
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -446,28 +411,15 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   cardAcoes: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     marginTop: 16,
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
-    gap: 8,
   },
-  botaoEditar: {
+  botaoSolicitar: {
     backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  botaoDeletar: {
-    backgroundColor: '#FF4444',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    flex: 1,
     alignItems: 'center',
   },
   botaoTexto: {
@@ -475,7 +427,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Paginação
   paginacaoContainer: {
     alignItems: 'center',
     marginTop: 20,
@@ -502,7 +453,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Sem dados
   semDadosContainer: {
     flex: 1,
     alignItems: 'center',
@@ -512,14 +462,8 @@ const styles = StyleSheet.create({
   semDados: {
     fontSize: 18,
     color: '#666',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  semDadosSubtexto: {
-    fontSize: 14,
-    color: '#999',
     textAlign: 'center',
   },
 });
 
-export default TabelaVisitas;
+export default TabelaVisitasAnalista;

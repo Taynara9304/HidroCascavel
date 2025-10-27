@@ -1,109 +1,137 @@
-// componentes/SelectWithSearch.js
-import React, { useState, useEffect } from 'react';
+// componentes/SelecaoBusca.js
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   TextInput,
+  TouchableOpacity,
   FlatList,
-  Modal,
   StyleSheet,
-  Dimensions,
+  Modal,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
 
-const { width } = Dimensions.get('window');
-const isDesktop = width >= 768;
-
-const SelecaoBusca = ({ 
+const SelecaoBuscaSeguro = ({ 
   label, 
   value, 
   onSelect, 
-  options, 
+  options = [], 
   placeholder = "Selecione...",
-  displayKey = 'nome',
-  searchKeys = ['nome']
+  searchKeys = ['nome'],
+  displayKey = 'nome'
 }) => {
-  const [modalVisible, setModalVisible] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [filteredOptions, setFilteredOptions] = useState(options);
+  const [busca, setBusca] = useState('');
+  const [modalVisivel, setModalVisivel] = useState(false);
 
-  useEffect(() => {
-    if (searchText.trim() === '') {
-      setFilteredOptions(options);
-    } else {
-      const filtered = options.filter(option =>
-        searchKeys.some(key => 
-          option[key]?.toString().toLowerCase().includes(searchText.toLowerCase())
-        )
-      );
-      setFilteredOptions(filtered);
-    }
-  }, [searchText, options, searchKeys]);
-
-  const handleSelect = (option) => {
-    onSelect(option);
-    setModalVisible(false);
-    setSearchText('');
+  // Função segura para obter valor de um campo
+  const getSafeValue = (obj, key, defaultValue = '') => {
+    if (!obj || typeof obj !== 'object') return defaultValue;
+    const value = obj[key];
+    return value !== undefined && value !== null ? String(value) : defaultValue;
   };
 
-  const renderOption = ({ item }) => (
-    <TouchableOpacity
-      style={styles.optionItem}
-      onPress={() => handleSelect(item)}
-    >
-      <Text style={styles.optionText}>{item[displayKey]}</Text>
-      {item.tipo && <Text style={styles.optionSubtext}>{item.tipo}</Text>}
-      {item.email && <Text style={styles.optionSubtext}>{item.email}</Text>}
-    </TouchableOpacity>
-  );
+  // Filtrar opções com segurança máxima
+  const opcoesFiltradas = useMemo(() => {
+    if (!Array.isArray(options)) return [];
+
+    if (!busca.trim()) return options;
+
+    const termoBusca = busca.toLowerCase().trim();
+    
+    return options.filter(option => {
+      if (!option || typeof option !== 'object') return false;
+      
+      return searchKeys.some(key => {
+        const fieldValue = getSafeValue(option, key, '');
+        return fieldValue.toLowerCase().includes(termoBusca);
+      });
+    });
+  }, [options, busca, searchKeys]);
+
+  const handleSelecionar = (item) => {
+    if (onSelect && item) {
+      onSelect(item);
+    }
+    setModalVisivel(false);
+    setBusca('');
+  };
+
+  const getDisplayText = (item) => {
+    if (!item) return '';
+    return getSafeValue(item, displayKey) || getSafeValue(item, 'nome') || 'Opção';
+  };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity 
-        style={styles.selectButton}
-        onPress={() => setModalVisible(true)}
+      {label && <Text style={styles.label}>{label}</Text>}
+      
+      <TouchableOpacity
+        style={styles.botaoSelecao}
+        onPress={() => setModalVisivel(true)}
       >
-        <Text style={value ? styles.selectButtonText : styles.placeholder}>
-          {value ? value[displayKey] : placeholder}
+        <Text style={value ? styles.textoSelecionado : styles.textoPlaceholder}>
+          {value ? getDisplayText(value) : placeholder}
         </Text>
       </TouchableOpacity>
 
       <Modal
-        visible={modalVisible}
+        visible={modalVisivel}
         animationType="slide"
-        transparent={false}
+        transparent={true}
+        onRequestClose={() => setModalVisivel(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Selecionar {label}</Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeButton}>✕</Text>
-            </TouchableOpacity>
-          </View>
+        <TouchableWithoutFeedback onPress={() => setModalVisivel(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitulo}>Selecionar {label}</Text>
+                
+                <TextInput
+                  style={styles.inputBusca}
+                  placeholder={`Buscar ${label?.toLowerCase() || 'opções'}...`}
+                  value={busca}
+                  onChangeText={setBusca}
+                  autoFocus={true}
+                />
 
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder={`Buscar ${label.toLowerCase()}...`}
-              value={searchText}
-              onChangeText={setSearchText}
-              autoFocus={true}
-            />
-          </View>
+                <FlatList
+                  data={opcoesFiltradas}
+                  keyExtractor={(item, index) => 
+                    item && item.id ? item.id.toString() : `item-${index}`
+                  }
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      style={styles.itemLista}
+                      onPress={() => handleSelecionar(item)}
+                    >
+                      <Text style={styles.textoItem}>
+                        {getDisplayText(item)}
+                      </Text>
+                      {getSafeValue(item, 'proprietario') && (
+                        <Text style={styles.subtextoItem}>
+                          Proprietário: {getSafeValue(item, 'proprietario')}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
+                  ListEmptyComponent={
+                    <Text style={styles.listaVazia}>
+                      {options.length === 0 ? 'Nenhuma opção disponível' : 'Nenhum resultado encontrado'}
+                    </Text>
+                  }
+                />
 
-          <FlatList
-            data={filteredOptions}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderOption}
-            style={styles.optionsList}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Nenhum resultado encontrado</Text>
+                <TouchableOpacity
+                  style={styles.botaoFechar}
+                  onPress={() => setModalVisivel(false)}
+                >
+                  <Text style={styles.textoBotaoFechar}>Cancelar</Text>
+                </TouchableOpacity>
               </View>
-            }
-          />
-        </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );
@@ -114,92 +142,85 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   label: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
+    color: '#333',
   },
-  selectButton: {
+  botaoSelecao: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
+  textoSelecionado: {
+    fontSize: 16,
+    color: '#333',
+  },
+  textoPlaceholder: {
+    fontSize: 16,
+    color: '#999',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    maxHeight: '80%',
+  },
+  modalTitulo: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: '#333',
+  },
+  inputBusca: {
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#fff',
-    minHeight: 50,
-    justifyContent: 'center',
-  },
-  selectButtonText: {
     fontSize: 16,
-    color: '#333',
+    marginBottom: 16,
   },
-  placeholder: {
-    fontSize: 16,
-    color: '#999',
-  },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#f8f9fa',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  closeButton: {
-    fontSize: 20,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  searchInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 4,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: '#fff',
-  },
-  optionsList: {
-    flex: 1,
-  },
-  optionItem: {
+  itemLista: {
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
-  optionText: {
+  textoItem: {
     fontSize: 16,
-    fontWeight: '500',
     color: '#333',
     marginBottom: 4,
   },
-  optionSubtext: {
+  subtextoItem: {
     fontSize: 14,
     color: '#666',
   },
-  emptyContainer: {
-    padding: 32,
+  listaVazia: {
+    textAlign: 'center',
+    padding: 20,
+    color: '#666',
+    fontStyle: 'italic',
+  },
+  botaoFechar: {
+    marginTop: 16,
+    padding: 12,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
     alignItems: 'center',
   },
-  emptyText: {
+  textoBotaoFechar: {
     fontSize: 16,
-    color: '#999',
-    textAlign: 'center',
+    color: '#333',
+    fontWeight: '500',
   },
 });
 
-export default SelecaoBusca;
+export default SelecaoBuscaSeguro;

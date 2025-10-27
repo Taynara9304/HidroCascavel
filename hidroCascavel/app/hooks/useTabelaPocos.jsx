@@ -1,4 +1,4 @@
-// hooks/useTabelaPocos.js - versão com debug completo
+// hooks/useTabelaPocos.jsx - VERSÃO FINAL COM ÍNDICES
 import { useState, useEffect } from 'react';
 import { 
   collection, 
@@ -9,136 +9,171 @@ import {
   onSnapshot, 
   orderBy, 
   query,
+  where,
   serverTimestamp,
-  GeoPoint 
+  GeoPoint
 } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
+import { useAuth } from '../contexts/authContext';
 
-const useWells = () => {
-  const [wells, setWells] = useState([]);
+const usePocos = () => {
+  const [pocos, setPocos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [sortField, setSortField] = useState('dataCadastro');
-  const [sortDirection, setSortDirection] = useState('desc');
+  const [sortField, setSortField] = useState('nomeProprietario');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const { user, userData } = useAuth();
 
-  console.log('🔄 useWells: Hook inicializado');
+  console.log('🔄 usePocos: Hook inicializado - usuário:', user?.uid);
 
-  // Buscar poços em tempo real
+  // Buscar poços em tempo real - VERSÃO COMPLETA COM ÍNDICES
   useEffect(() => {
-    console.log('📡 useWells: Configurando listener do Firebase...');
+    if (!user) {
+      setPocos([]);
+      setLoading(false);
+      return;
+    }
+
+    console.log('📡 usePocos: Configurando listener do Firebase...');
     setLoading(true);
-    setError(null);
     
     try {
       const wellsCollection = collection(db, 'wells');
-      console.log('📡 useWells: Coleção referenciada:', wellsCollection);
       
-      const q = query(wellsCollection, orderBy(sortField, sortDirection === 'asc' ? 'asc' : 'desc'));
+      let q;
       
+      // ✅ AGORA COM ÍNDICES, PODEMOS USAR QUERIES COMPOSTAS
+      if (userData?.tipoUsuario === 'administrador') {
+        // ADM vê TODOS os poços ordenados por nome
+        q = query(wellsCollection, orderBy('nomeProprietario', 'asc'));
+        console.log('🎯 ADM: Carregando TODOS os poços ordenados por nome');
+      } else if (userData?.tipoUsuario === 'analista') {
+        // Analista vê TODOS os poços ordenados por nome
+        q = query(wellsCollection, orderBy('nomeProprietario', 'asc'));
+        console.log('🎯 Analista: Carregando TODOS os poços ordenados por nome');
+      } else {
+        // ✅ PROPRIETÁRIO: Filtro por userId + ordenação por nome (AGORA FUNCIONA!)
+        q = query(
+          wellsCollection, 
+          where('userId', '==', user.uid),
+          orderBy('nomeProprietario', 'asc')
+        );
+        console.log('🎯 Proprietário: Carregando poços do usuário com ordenação:', user.uid);
+      }
+
       const unsubscribe = onSnapshot(q, 
         (snapshot) => {
-          console.log('📡 useWells: Snapshot recebido -', snapshot.docs.length, 'documentos');
+          console.log('📡 usePocos: Snapshot recebido -', snapshot.docs.length, 'documentos');
           
           const wellsData = snapshot.docs.map(doc => {
             const data = doc.data();
-            console.log('📡 useWells: Documento', doc.id, '=', data);
             return {
               id: doc.id,
-              ...data
+              ...data,
+              dataCadastro: data.dataCadastro?.toDate?.() || data.dataCadastro
             };
           });
           
-          setWells(wellsData);
+          setPocos(wellsData);
           setLoading(false);
-          console.log('✅ useWells: Estado atualizado com', wellsData.length, 'poços');
+          console.log('✅ usePocos: Estado atualizado com', wellsData.length, 'poços');
         },
         (error) => {
-          console.error('❌ useWells: Erro no listener:', error);
-          console.error('❌ useWells: Código do erro:', error.code);
-          console.error('❌ useWells: Mensagem:', error.message);
+          console.error('❌ usePocos: Erro no listener:', error);
           setError('Erro ao carregar poços: ' + error.message);
           setLoading(false);
         }
       );
 
       return () => {
-        console.log('📡 useWells: Removendo listener');
+        console.log('📡 usePocos: Removendo listener');
         unsubscribe();
       };
     } catch (err) {
-      console.error('❌ useWells: Erro ao configurar listener:', err);
+      console.error('❌ usePocos: Erro ao configurar listener:', err);
       setError('Erro de configuração: ' + err.message);
       setLoading(false);
     }
-  }, [sortField, sortDirection]);
+  }, [user, userData]);
 
-  // Adicionar poço
-  const addWell = async (wellData) => {
+  // ✅ FUNÇÃO addPoco 
+  const addPoco = async (wellData) => {
     try {
-      console.log('➕ useWells: Iniciando cadastro...', wellData);
+      console.log('➕ usePocos: Iniciando cadastro do poço...', wellData);
       
-      // Validação detalhada
       if (!wellData.localizacao) {
-        throw new Error('Localização não fornecida');
-      }
-      if (!wellData.proprietario) {
-        throw new Error('Proprietário não fornecido');
+        throw new Error('Localização não informada');
       }
 
       const wellsCollection = collection(db, 'wells');
-      console.log('➕ useWells: Coleção referenciada para escrita');
       
+      let localizacaoGeoPoint;
+      if (wellData.localizacao instanceof GeoPoint) {
+        localizacaoGeoPoint = wellData.localizacao;
+      } else if (wellData.localizacao.latitude && wellData.localizacao.longitude) {
+        localizacaoGeoPoint = new GeoPoint(
+          wellData.localizacao.latitude,
+          wellData.localizacao.longitude
+        );
+      } else {
+        throw new Error('Localização inválida');
+      }
+
       const wellDocument = {
-        localizacao: new GeoPoint(
-          parseFloat(wellData.localizacao.latitude),
-          parseFloat(wellData.localizacao.longitude)
-        ),
-        idProprietario: wellData.proprietario.id,
-        nomeProprietario: wellData.proprietario.nome,
+        // Dados principais
+        idProprietario: wellData.idProprietario || wellData.userId,
+        nomeProprietario: wellData.nomeProprietario,
+        localizacao: localizacaoGeoPoint,
         observacoes: wellData.observacoes || '',
-        dataCadastro: serverTimestamp()
+        
+        // Metadados e controle
+        userId: wellData.userId,
+        dataCadastro: serverTimestamp(),
+        tipoCadastro: wellData.tipoCadastro || 'direto_proprietario',
+        status: wellData.status || 'ativo',
+        criadoPor: wellData.criadoPor
       };
 
-      console.log('➕ useWells: Documento preparado:', wellDocument);
+      console.log('➕ usePocos: Enviando para Firebase...', wellDocument);
       
-      console.log('➕ useWells: Enviando para Firebase...');
       const docRef = await addDoc(wellsCollection, wellDocument);
-      console.log('✅ useWells: Poço cadastrado com sucesso! ID:', docRef.id);
+      console.log('✅ usePocos: Poço cadastrado com sucesso! ID:', docRef.id);
       
       return docRef.id;
     } catch (error) {
-      console.error('❌ useWells: Erro ao adicionar poço:', error);
-      console.error('❌ useWells: Código do erro:', error.code);
-      console.error('❌ useWells: Mensagem:', error.message);
+      console.error('❌ usePocos: Erro ao adicionar poço:', error);
       throw error;
     }
   };
 
   // Editar poço
-  const editWell = async (wellId, updatedWell) => {
+  const editPoco = async (pocoId, updatedPoco) => {
     try {
-      const wellDoc = doc(db, 'wells', wellId);
-      await updateDoc(wellDoc, updatedWell);
-      console.log('useWells: Poço editado:', wellId);
+      const pocoDoc = doc(db, 'wells', pocoId);
+      await updateDoc(pocoDoc, {
+        ...updatedPoco,
+        atualizadoEm: serverTimestamp()
+      });
+      console.log('✅ usePocos: Poço editado:', pocoId);
     } catch (error) {
-      console.error('useWells: Erro ao editar poço:', error);
+      console.error('❌ usePocos: Erro ao editar poço:', error);
       throw error;
     }
   };
 
   // Deletar poço
-  const deleteWell = async (wellId) => {
+  const deletePoco = async (pocoId) => {
     try {
-      const wellDoc = doc(db, 'wells', wellId);
-      await deleteDoc(wellDoc);
-      console.log('useWells: Poço deletado:', wellId);
+      const pocoDoc = doc(db, 'wells', pocoId);
+      await deleteDoc(pocoDoc);
+      console.log('✅ usePocos: Poço deletado:', pocoId);
     } catch (error) {
-      console.error('useWells: Erro ao deletar poço:', error);
+      console.error('❌ usePocos: Erro ao deletar poço:', error);
       throw error;
     }
   };
 
-  // Ordenação
+  // Ordenação client-side para campos adicionais
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -148,46 +183,36 @@ const useWells = () => {
     }
   };
 
+  // Aplicar ordenação client-side (para campos não indexados)
+  const pocosOrdenados = [...pocos].sort((a, b) => {
+    if (!a[sortField] || !b[sortField]) return 0;
+    
+    let aValue = a[sortField];
+    let bValue = b[sortField];
+    
+    if (aValue.toDate && bValue.toDate) {
+      aValue = aValue.toDate();
+      bValue = bValue.toDate();
+    }
+    
+    if (sortDirection === 'asc') {
+      return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+    } else {
+      return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+    }
+  });
+
   return {
-    wells,
+    pocos: pocosOrdenados,
     loading,
     error,
     sortField,
     sortDirection,
     handleSort,
-    addWell,
-    editWell,
-    deleteWell,
+    addPoco,
+    editPoco,
+    deletePoco,
   };
 };
 
-export default useWells;
-
-export const testarFirebase = async () => {
-  try {
-    console.log('🔥 TESTE: Iniciando teste do Firebase...');
-    
-    // Teste 1: Listar coleções
-    const wellsCollection = collection(db, 'wells');
-    const snapshot = await getDocs(wellsCollection);
-    console.log('✅ TESTE: Conexão OK! Poços encontrados:', snapshot.docs.length);
-    
-    // Teste 2: Adicionar um poço de teste
-    const testWell = {
-      localizacao: new GeoPoint(-23.5505, -46.6333),
-      idProprietario: "teste123",
-      nomeProprietario: "Proprietário Teste",
-      observacoes: "Poço de teste",
-      dataCadastro: serverTimestamp()
-    };
-    
-    const docRef = await addDoc(wellsCollection, testWell);
-    console.log('✅ TESTE: Poço de teste adicionado com ID:', docRef.id);
-    
-    return true;
-  } catch (error) {
-    console.error('❌ TESTE: Erro no Firebase:', error);
-    console.error('❌ Mensagem detalhada:', error.message);
-    return false;
-  }
-};
+export default usePocos;

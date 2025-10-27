@@ -1,25 +1,21 @@
-// componentes/TabelaVisitas.js - VERSÃO COM CARDS HORIZONTAIS
+// componentes/TabelaVisitasProprietario.js - VERSÃO SIMPLIFICADA
 import React, { useState, useRef } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
-  ScrollView,
-  TouchableOpacity,
   FlatList,
   Dimensions,
-  Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  TouchableOpacity
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3; // Cards mais largos para visitas
+const CARD_WIDTH = screenWidth * 0.3;
 const CARD_MARGIN = 12;
 
-const TabelaVisitas = ({ 
+const TabelaVisitasProprietario = ({ 
   visits = [], 
-  onEdit, 
-  onDelete, 
   sortField, 
   sortDirection, 
   onSort,
@@ -28,13 +24,8 @@ const TabelaVisitas = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const flatListRef = useRef(null);
 
-  console.log('📋 TabelaVisitas: visits recebido =', visits);
-  console.log('📋 TabelaVisitas: loading state =', visits.length);
-
-  // Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return 'Data não informada';
-    
     try {
       const data = new Date(dataString);
       return data.toLocaleString('pt-BR', {
@@ -49,55 +40,36 @@ const TabelaVisitas = ({
     }
   };
 
-  // Função para obter cor do status
   const getCorStatus = (situacao) => {
     switch (situacao?.toLowerCase()) {
       case 'concluida':
       case 'aprovada':
-        return '#4CAF50'; // Verde
+        return '#4CAF50';
       case 'pendente':
       case 'solicitada':
-        return '#FFA000'; // Laranja/Amarelo
+        return '#FFA000';
       case 'cancelada':
       case 'recusada':
-        return '#F44336'; // Vermelho
+        return '#F44336';
       case 'em_andamento':
-        return '#2196F3'; // Azul
+        return '#2196F3';
       default:
-        return '#666'; // Cinza
+        return '#666';
     }
   };
 
-  // Função para navegar entre páginas
   const irParaPagina = (pagina) => {
     setPaginaAtual(pagina);
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // Função para confirmar exclusão
-  const confirmarExclusao = (visit) => {
-    Alert.alert(
-      'Confirmar Exclusão',
-      `Tem certeza que deseja excluir a visita do poço "${visit.pocoNome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Excluir', 
-          style: 'destructive',
-          onPress: () => onDelete(visit.id)
-        }
-      ]
-    );
-  };
-
-  // Renderizar cada card de visita
   const renderItem = ({ item: visit }) => (
     <View style={styles.card}>
       {/* Cabeçalho com Status */}
       <View style={styles.cardHeader}>
         <View style={styles.headerLeft}>
           <Text style={styles.pocoNome} numberOfLines={1}>
-            {visit.pocoNome || 'Poço não informado'}
+            {visit.pocoNome || 'Meu Poço'}
           </Text>
           <View style={[
             styles.statusBadge,
@@ -115,80 +87,67 @@ const TabelaVisitas = ({
 
       {/* Informações da Visita */}
       <View style={styles.cardContent}>
-        {/* Proprietário */}
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>👤 Proprietário:</Text>
+          <Text style={styles.infoLabel}>📋 Status:</Text>
           <Text style={styles.infoValue}>
-            {visit.proprietarioNome || visit.proprietario || 'Não informado'}
+            {visit.situacao === 'pendente' ? '🕒 Aguardando aprovação' :
+             visit.situacao === 'aprovada' ? '✅ Visita aprovada' :
+             visit.situacao === 'concluida' ? '🎉 Visita concluída' :
+             visit.situacao === 'cancelada' ? '❌ Visita cancelada' :
+             '📋 Em análise'}
           </Text>
         </View>
 
-        {/* Tipo de Visita */}
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📋 Tipo:</Text>
+          <Text style={styles.infoLabel}>📱 Canal:</Text>
           <Text style={styles.infoValue}>
-            {visit.tipo === 'solicitacao_proprietario_whatsapp' ? 'WhatsApp' : 
-             visit.tipo === 'solicitacao_analista' ? 'Analista' : 
-             visit.tipo === 'cadastro_admin' ? 'Administrador' : 'Visita'}
+            {visit.canal === 'whatsapp' ? '💬 Solicitação via WhatsApp' : '📋 Solicitação via Sistema'}
           </Text>
         </View>
 
-        {/* Canal */}
-        {visit.canal && (
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>📱 Canal:</Text>
-            <Text style={styles.infoValue}>
-              {visit.canal === 'whatsapp' ? 'WhatsApp' : 'Sistema'}
-            </Text>
-          </View>
-        )}
-
-        {/* Observações */}
         {visit.observacoes && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>📝 Observações:</Text>
-            <Text style={styles.observacoesText} numberOfLines={3}>
+            <Text style={styles.observacoesLabel}>📝 Minhas Observações:</Text>
+            <Text style={styles.observacoesText} numberOfLines={4}>
               {visit.observacoes}
             </Text>
           </View>
         )}
 
-        {/* Resultados (se disponível) */}
         {visit.resultado && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>🔍 Resultados:</Text>
-            <Text style={styles.observacoesText} numberOfLines={3}>
+            <Text style={styles.observacoesLabel}>🔍 Resultados da Visita:</Text>
+            <Text style={styles.observacoesText} numberOfLines={4}>
               {visit.resultado}
             </Text>
           </View>
         )}
-      </View>
 
-      {/* Ações */}
-      <View style={styles.cardAcoes}>
-        <TouchableOpacity 
-          style={styles.botaoEditar}
-          onPress={() => onEdit(visit)}
-        >
-          <Text style={styles.botaoTexto}>✏️ Editar</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.botaoDeletar}
-          onPress={() => confirmarExclusao(visit)}
-        >
-          <Text style={styles.botaoTexto}>🗑️ Excluir</Text>
-        </TouchableOpacity>
+        {visit.recomendacoes && (
+          <View style={styles.observacoesContainer}>
+            <Text style={styles.observacoesLabel}>💡 Recomendações:</Text>
+            <Text style={styles.observacoesText} numberOfLines={4}>
+              {visit.recomendacoes}
+            </Text>
+          </View>
+        )}
+
+        {visit.situacao === 'pendente' && (
+          <View style={styles.infoAguardando}>
+            <Text style={styles.infoAguardandoText}>
+              ⏳ Sua solicitação está em análise pelo administrador
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
 
-  // Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2685BF" />
-        <Text style={styles.loadingText}>Carregando visitas...</Text>
+        <Text style={styles.loadingText}>Carregando minhas visitas...</Text>
       </View>
     );
   }
@@ -196,10 +155,9 @@ const TabelaVisitas = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        Visitas ({visits.length})
+        🏠 Minhas Visitas ({visits.length})
       </Text>
       
-      {/* Ordenação Rápida */}
       <View style={styles.ordenacaoContainer}>
         <Text style={styles.ordenacaoTitulo}>Ordenar:</Text>
         <TouchableOpacity 
@@ -217,18 +175,6 @@ const TabelaVisitas = ({
         <TouchableOpacity 
           style={[
             styles.ordenacaoBotao,
-            sortField === 'pocoNome' && styles.ordenacaoBotaoAtivo
-          ]}
-          onPress={() => onSort('pocoNome')}
-        >
-          <Text style={styles.ordenacaoBotaoTexto}>
-            Poço {sortField === 'pocoNome' && (sortDirection === 'asc' ? '↑' : '↓')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[
-            styles.ordenacaoBotao,
             sortField === 'situacao' && styles.ordenacaoBotaoAtivo
           ]}
           onPress={() => onSort('situacao')}
@@ -239,7 +185,6 @@ const TabelaVisitas = ({
         </TouchableOpacity>
       </View>
 
-      {/* Carousel Horizontal de Cards */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -262,7 +207,6 @@ const TabelaVisitas = ({
             contentContainerStyle={styles.carouselContent}
           />
           
-          {/* Indicadores de Página */}
           {visits.length > 1 && (
             <View style={styles.paginacaoContainer}>
               <Text style={styles.paginacaoTexto}>
@@ -288,11 +232,9 @@ const TabelaVisitas = ({
         </View>
       ) : (
         <View style={styles.semDadosContainer}>
-          <Text style={styles.semDados}>
-            📭 Nenhuma visita cadastrada
-          </Text>
+          <Text style={styles.semDados}>📭 Nenhuma visita solicitada</Text>
           <Text style={styles.semDadosSubtexto}>
-            Use o formulário abaixo para adicionar a primeira visita
+            Use o formulário abaixo para solicitar sua primeira visita técnica
           </Text>
         </View>
       )}
@@ -350,7 +292,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  // Carousel e Cards
   carouselContainer: {
     flex: 1,
     minHeight: 300,
@@ -364,11 +305,12 @@ const styles = StyleSheet.create({
     padding: 20,
     marginHorizontal: CARD_MARGIN,
     borderRadius: 16,
+    // ✅ SOLUÇÃO SIMPLES: Usar apenas elevation para evitar warnings
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -419,7 +361,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#333',
-    width: 100,
+    width: 80,
     marginRight: 8,
   },
   infoValue: {
@@ -445,37 +387,20 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 18,
   },
-  cardAcoes: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-    gap: 8,
-  },
-  botaoEditar: {
-    backgroundColor: '#FFA500',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+  infoAguardando: {
+    marginTop: 8,
+    padding: 12,
+    backgroundColor: '#FFF3E0',
     borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFA000',
   },
-  botaoDeletar: {
-    backgroundColor: '#FF4444',
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    flex: 1,
-    alignItems: 'center',
-  },
-  botaoTexto: {
-    color: 'white',
+  infoAguardandoText: {
     fontSize: 14,
-    fontWeight: 'bold',
+    color: '#E65100',
+    fontWeight: '500',
+    textAlign: 'center',
   },
-  // Paginação
   paginacaoContainer: {
     alignItems: 'center',
     marginTop: 20,
@@ -502,7 +427,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Sem dados
   semDadosContainer: {
     flex: 1,
     alignItems: 'center',
@@ -512,8 +436,8 @@ const styles = StyleSheet.create({
   semDados: {
     fontSize: 18,
     color: '#666',
-    marginBottom: 8,
     textAlign: 'center',
+    marginBottom: 8,
   },
   semDadosSubtexto: {
     fontSize: 14,
@@ -522,4 +446,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default TabelaVisitas;
+export default TabelaVisitasProprietario;

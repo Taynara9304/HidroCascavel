@@ -1,65 +1,105 @@
-// hooks/useTabelaUsuarios.js
-import { useState, useMemo } from 'react';
+// hooks/useTabelaUsuarios.js - VERSÃO CORRIGIDA
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  collection, 
+  onSnapshot, 
+  orderBy, 
+  query,
+  doc,
+  deleteDoc,
+  updateDoc,
+  serverTimestamp
+} from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
+import { useAuth } from '../contexts/authContext';
 
-// Dados mockados para usuários
-const initialUsersData = [
-  {
-    id: 1,
-    nome: 'João',
-    sobrenome: 'Silva',
-    telefone: '(11) 99999-9999',
-    email: 'joao.silva@email.com',
-    endereco: 'Rua das Flores, 123 - São Paulo, SP'
-  },
-  {
-    id: 2,
-    nome: 'Maria',
-    sobrenome: 'Santos',
-    telefone: '(11) 88888-8888',
-    email: 'maria.santos@email.com',
-    endereco: 'Av. Paulista, 1000 - São Paulo, SP'
-  },
-  {
-    id: 3,
-    nome: 'Pedro',
-    sobrenome: 'Oliveira',
-    telefone: '(11) 77777-7777',
-    email: 'pedro.oliveira@email.com',
-    endereco: 'Rua Augusta, 500 - São Paulo, SP'
-  },
-  {
-    id: 4,
-    nome: 'Ana',
-    sobrenome: 'Costa',
-    telefone: '(11) 66666-6666',
-    email: 'ana.costa@email.com',
-    endereco: 'Alameda Santos, 200 - São Paulo, SP'
-  },
-  {
-    id: 5,
-    nome: 'Carlos',
-    sobrenome: 'Souza',
-    telefone: '(11) 55555-5555',
-    email: 'carlos.souza@email.com',
-    endereco: 'Rua XV de Novembro, 50 - São Paulo, SP'
-  },
-];
-
-const useTabelaUsuarios = (initialUsers = initialUsersData) => {
-  const [users, setUsers] = useState(initialUsers || []);
+const useTabelaUsuarios = () => {
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('nome');
   const [sortDirection, setSortDirection] = useState('asc');
 
+  const { userData } = useAuth();
+
+  console.log('🔄 useTabelaUsuarios: Hook inicializado');
+
+  // Buscar usuários em tempo real do Firebase
+  useEffect(() => {
+    console.log('📡 useTabelaUsuarios: Configurando listener do Firebase...');
+    setLoading(true);
+    setError(null);
+
+    try {
+      const usersCollection = collection(db, 'users');
+      console.log('📡 useTabelaUsuarios: Coleção users referenciada');
+
+      // Query para buscar todos os usuários ordenados por nome
+      const q = query(usersCollection, orderBy('nome', 'asc'));
+      
+      const unsubscribe = onSnapshot(q, 
+        (snapshot) => {
+          console.log('📡 useTabelaUsuarios: Snapshot recebido -', snapshot.docs.length, 'documentos');
+          
+          const usersData = snapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+              id: doc.id,
+              nome: data.nome || '',
+              sobrenome: data.sobrenome || '',
+              telefone: data.telefone || '',
+              email: data.email || '',
+              endereco: data.endereco || '',
+              tipoUsuario: data.tipoUsuario || 'proprietario',
+              status: data.status || 'ativo',
+              dataCriacao: data.dataCriacao?.toDate?.() || data.dataCriacao,
+              dataAtualizacao: data.dataAtualizacao?.toDate?.() || data.dataAtualizacao,
+            };
+          });
+          
+          setUsers(usersData);
+          setLoading(false);
+          console.log('✅ useTabelaUsuarios: Estado atualizado com', usersData.length, 'usuários');
+        },
+        (error) => {
+          console.error('❌ useTabelaUsuarios: Erro no listener:', error);
+          setError('Erro ao carregar usuários: ' + error.message);
+          setLoading(false);
+        }
+      );
+
+      return () => {
+        console.log('📡 useTabelaUsuarios: Removendo listener');
+        unsubscribe();
+      };
+    } catch (err) {
+      console.error('❌ useTabelaUsuarios: Erro ao configurar listener:', err);
+      setError('Erro de configuração: ' + err.message);
+      setLoading(false);
+    }
+  }, []);
+
+  // Ordenação dos usuários
   const sortedUsers = useMemo(() => {
-    if (!users || !Array.isArray(users)) return [];
-    
+    if (!users.length) return [];
+
     const sorted = [...users].sort((a, b) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
       
-      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-      return 0;
+      // Tratamento para campos que podem ser undefined
+      if (aValue === undefined || aValue === null) aValue = '';
+      if (bValue === undefined || bValue === null) bValue = '';
+      
+      // Converter para string para comparação
+      aValue = String(aValue).toLowerCase();
+      bValue = String(bValue).toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;
+      } else {
+        return aValue > bValue ? -1 : aValue < bValue ? 1 : 0;
+      }
     });
     
     return sorted;
@@ -74,34 +114,124 @@ const useTabelaUsuarios = (initialUsers = initialUsersData) => {
     }
   };
 
-  const addUser = (user) => {
-    const newUser = {
-      ...user,
-      id: Math.max(...(users?.map(u => u.id) || [0]), 0) + 1,
-    };
-    setUsers(prev => [...(prev || []), newUser]);
-  };
+  // ✅ CORRIGIDO: Editar usuário
+  const editUser = async (userId, updatedData) => {
+    try {
+      console.log('✏️ useTabelaUsuarios: Editando usuário:', userId, updatedData);
+      
+      if (!userId) {
+        throw new Error('ID do usuário não fornecido');
+      }
 
-  const editUser = (id, updatedUser) => {
-    setUsers(prev => (prev || []).map(user => 
-      user.id === id ? { ...user, ...updatedUser } : user
-    ));
-  };
-
-  const deleteUser = (id) => {
-    if (window.confirm('Tem certeza que deseja excluir este usuário?')) {
-      setUsers(prev => (prev || []).filter(user => user.id !== id));
+      const userDoc = doc(db, 'users', userId);
+      await updateDoc(userDoc, {
+        ...updatedData,
+        dataAtualizacao: serverTimestamp()
+      });
+      
+      console.log('✅ useTabelaUsuarios: Usuário editado com sucesso!');
+      return true;
+    } catch (error) {
+      console.error('❌ useTabelaUsuarios: Erro ao editar usuário:', error);
+      throw new Error(`Erro ao editar usuário: ${error.message}`);
     }
   };
 
+  // ✅ CORRIGIDO: Deletar usuário
+  const deleteUser = async (userId) => {
+    try {
+      console.log('🗑️ useTabelaUsuarios: Deletando usuário:', userId);
+      
+      if (!userId) {
+        throw new Error('ID do usuário não fornecido');
+      }
+
+      const userDoc = doc(db, 'users', userId);
+      await deleteDoc(userDoc);
+      
+      console.log('✅ useTabelaUsuarios: Usuário deletado com sucesso!');
+      return true;
+    } catch (error) {
+      console.error('❌ useTabelaUsuarios: Erro ao deletar usuário:', error);
+      throw new Error(`Erro ao deletar usuário: ${error.message}`);
+    }
+  };
+
+  // ✅ Adicionar usuário (para uso futuro)
+  const addUser = async (userData) => {
+    try {
+      console.log('➕ useTabelaUsuarios: Adicionando usuário...', userData);
+      // Implementar lógica de adicionar usuário ao Firebase se necessário
+      throw new Error('Funcionalidade de adicionar usuário ainda não implementada');
+    } catch (error) {
+      console.error('❌ useTabelaUsuarios: Erro ao adicionar usuário:', error);
+      throw error;
+    }
+  };
+
+  // ✅ Buscar usuário por ID
+  const getUserById = (userId) => {
+    return users.find(user => user.id === userId);
+  };
+
+  // ✅ Filtrar usuários por tipo
+  const getUsersByType = (tipoUsuario) => {
+    return users.filter(user => user.tipoUsuario === tipoUsuario);
+  };
+
+  // ✅ Atualizar status do usuário
+  const updateUserStatus = async (userId, novoStatus) => {
+    try {
+      console.log('🔄 useTabelaUsuarios: Atualizando status do usuário:', userId, novoStatus);
+      
+      if (!userId) {
+        throw new Error('ID do usuário não fornecido');
+      }
+
+      const userDoc = doc(db, 'users', userId);
+      await updateDoc(userDoc, {
+        status: novoStatus,
+        dataAtualizacao: serverTimestamp()
+      });
+      
+      console.log('✅ useTabelaUsuarios: Status atualizado com sucesso!');
+      return true;
+    } catch (error) {
+      console.error('❌ useTabelaUsuarios: Erro ao atualizar status:', error);
+      throw error;
+    }
+  };
+
+  // ✅ Contadores por tipo de usuário
+  const userCounts = useMemo(() => {
+    const counts = {
+      total: users.length,
+      administrador: users.filter(user => user.tipoUsuario === 'administrador').length,
+      analista: users.filter(user => user.tipoUsuario === 'analista').length,
+      proprietario: users.filter(user => user.tipoUsuario === 'proprietario').length,
+      ativo: users.filter(user => user.status === 'ativo').length,
+      inativo: users.filter(user => user.status === 'inativo').length,
+      pendente: users.filter(user => user.status === 'pendente').length,
+    };
+    
+    console.log('📊 useTabelaUsuarios: Contadores atualizados:', counts);
+    return counts;
+  }, [users]);
+
   return {
     users: sortedUsers,
+    loading,
+    error,
     sortField,
     sortDirection,
     handleSort,
     addUser,
     editUser,
     deleteUser,
+    getUserById,
+    getUsersByType,
+    updateUserStatus,
+    userCounts,
   };
 };
 

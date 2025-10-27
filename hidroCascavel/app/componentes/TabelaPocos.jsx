@@ -1,4 +1,4 @@
-// componentes/TabelaPocos.js - VERSÃO COM FONTES MAIORES E EDIÇÃO
+// componentes/TabelaPocos.js - VERSÃO CORRIGIDA
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   View, 
@@ -12,7 +12,8 @@ import {
   Keyboard,
   FlatList,
   Dimensions,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -20,12 +21,13 @@ const CARD_WIDTH = screenWidth * 0.2;
 const CARD_MARGIN = 8;
 
 const TabelaPocos = ({ 
-  wells, 
+  wells = [], // ✅ CORREÇÃO: Valor padrão para array vazio
   onEdit, 
   onDelete, 
   sortField, 
   sortDirection, 
-  onSort 
+  onSort,
+  loading = false // ✅ Adicionado loading state
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroProprietario, setFiltroProprietario] = useState('todos');
@@ -35,13 +37,16 @@ const TabelaPocos = ({
   const [observacoesEdit, setObservacoesEdit] = useState('');
   const flatListRef = useRef(null);
 
+  // ✅ CORREÇÃO: Proteção contra undefined
+  const wellsSeguro = wells || [];
+
   const proprietariosUnicos = useMemo(() => {
-    const proprietarios = wells.map(well => well.nomeProprietario).filter(Boolean);
+    const proprietarios = wellsSeguro.map(well => well.nomeProprietario).filter(Boolean);
     return [...new Set(proprietarios)];
-  }, [wells]);
+  }, [wellsSeguro]);
 
   const poçosFiltrados = useMemo(() => {
-    const filtrados = wells.filter(well => {
+    const filtrados = wellsSeguro.filter(well => {
       const matchBusca = 
         well.nomeProprietario?.toLowerCase().includes(busca.toLowerCase()) ||
         well.observacoes?.toLowerCase().includes(busca.toLowerCase()) ||
@@ -56,7 +61,7 @@ const TabelaPocos = ({
     
     setPaginaAtual(0);
     return filtrados;
-  }, [wells, busca, filtroProprietario]);
+  }, [wellsSeguro, busca, filtroProprietario]);
 
   const formatarData = (timestamp) => {
     if (!timestamp) return 'Nunca';
@@ -115,7 +120,7 @@ const TabelaPocos = ({
         <Text style={styles.infoLabel}>📍</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           {well.localizacao ? 
-            `${well.localizacao.latitude.toFixed(4)}, ${well.localizacao.longitude.toFixed(4)}` 
+            `${well.localizacao.latitude?.toFixed(4) || 'N/A'}, ${well.localizacao.longitude?.toFixed(4) || 'N/A'}` 
             : 'Não informada'
           }
         </Text>
@@ -125,7 +130,7 @@ const TabelaPocos = ({
       <View style={styles.cardInfo}>
         <Text style={styles.infoLabel}>👤</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
-          {well.idProprietario ? `ID: ${well.idProprietario}` : 'N/A'}
+          {well.idProprietario ? `ID: ${well.idProprietario.substring(0, 8)}...` : 'N/A'}
         </Text>
       </View>
       
@@ -157,6 +162,16 @@ const TabelaPocos = ({
       </View>
     </View>
   );
+
+  // ✅ CORREÇÃO: Loading state
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2685BF" />
+        <Text style={styles.loadingText}>Carregando poços...</Text>
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -393,6 +408,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f8f9fa',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   titulo: {
     fontSize: 22, // Aumentado

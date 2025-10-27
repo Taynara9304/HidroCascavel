@@ -1,4 +1,4 @@
-// contexts/authContext.js
+// contexts/authContext.js - VERSÃO CORRIGIDA
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -10,6 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
 
   // Função para buscar dados do usuário no Firestore
   const buscarDadosUsuario = async (userFirebase) => {
@@ -21,11 +22,12 @@ export const AuthProvider = ({ children }) => {
         if (userDoc.exists()) {
           const userDataFromFirestore = userDoc.data();
           console.log('✅ Dados encontrados:', userDataFromFirestore);
-          setUserData(userDataFromFirestore); // ⚠️ ATUALIZA O ESTADO
+          setUserData(userDataFromFirestore);
           return userDataFromFirestore;
         } else {
           console.log('❌ Documento do usuário não encontrado no Firestore');
           setUserData(null);
+          return null;
         }
       }
       return null;
@@ -34,6 +36,12 @@ export const AuthProvider = ({ children }) => {
       setUserData(null);
       return null;
     }
+  };
+
+  // Função para atualizar dados do usuário (para ser usada após login)
+  const atualizarDadosUsuario = async (userFirebase) => {
+    const dados = await buscarDadosUsuario(userFirebase);
+    return dados;
   };
 
   // Observador de estado de autenticação
@@ -45,43 +53,46 @@ export const AuthProvider = ({ children }) => {
       
       if (userFirebase) {
         console.log('👤 Definindo usuário no estado...');
-        setUser(userFirebase); // ⚠️ ATUALIZA O ESTADO
+        setUser(userFirebase);
         await buscarDadosUsuario(userFirebase);
       } else {
         console.log('🚪 Usuário deslogado - limpando estado');
         setUser(null);
         setUserData(null);
       }
-      console.log('✅ Estado atualizado, setLoading(false)');
+      
+      // Marcar como não carregando apenas após a primeira inicialização
+      if (initializing) {
+        setInitializing(false);
+      }
       setLoading(false);
     });
 
     return unsubscribe;
-  }, []);
-
-  // Função de logout
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      setUser(null);
-      setUserData(null);
-    } catch (error) {
-      console.error('Erro ao fazer logout:', error);
-    }
-  };
+  }, [initializing]);
 
   const value = {
     user,
     userData,
     loading,
-    buscarDadosUsuario,
-    logout
+    initializing,
+    buscarDadosUsuario: atualizarDadosUsuario, // Exporta a função atualizada
+    logout: async () => {
+      try {
+        await signOut(auth);
+        setUser(null);
+        setUserData(null);
+      } catch (error) {
+        console.error('Erro ao fazer logout:', error);
+      }
+    }
   };
 
   console.log('🔄 AuthProvider renderizado - Estado:', { 
     user: user?.uid, 
     userData: userData?.tipoUsuario,
-    loading 
+    loading,
+    initializing
   });
 
   return (
