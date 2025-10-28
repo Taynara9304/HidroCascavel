@@ -5,6 +5,7 @@ import HomeAnalista from '../telas/HomeAnalista';
 import MinhasSolicitacoes from '../telas/MinhasSolicitacoes';
 import NovaSolicitacao from '../telas/NovaSolicitacao';
 import PerfilUsuario from '../telas/PerfilUsuario';
+import NotificacoesAnalista from '../telas/NotificacoesAnalista';
 
 // ✅ ADICIONE ESTAS IMPORTACÕES
 import GerenciarPocos from '../telas/GerenciarPocos';
@@ -80,6 +81,14 @@ const AnalistaStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Gerenciar Usuários" 
+        }}
+      />
+      <Stack.Screen 
+        name="NotificacoesAnalista" 
+        component={NotificacoesAnalista}
+        options={{ 
+          headerShown: isWeb,
+          title: "Notificações" 
         }}
       />
     </Stack.Navigator>

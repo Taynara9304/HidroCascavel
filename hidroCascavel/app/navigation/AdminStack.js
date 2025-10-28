@@ -9,6 +9,7 @@ import GerenciarPocos from '../telas/GerenciarPocos';
 import PerfilUsuario from '../telas/PerfilUsuario';
 import GerenciarSolicitacoesWhatsApp from '../telas/GerenciarSolicitacoesWhatsApp';
 import CadastrarVisitaWhatsApp from '../telas/CadastrarVisitaWhatsApp';
+import NotificacoesAdm from '../telas/NotificacoesAdm';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,11 +65,19 @@ const AdminStack = () => {
       />
       <Stack.Screen 
         name="GerenciarSolicitacoesWhatsApp" 
-        component={GerenciarSolicitacoesWhatsApp} 
+        component={GerenciarSolicitacoesWhatsApp}
       />
       <Stack.Screen 
         name="CadastrarVisitaWhatsApp" 
-        component={CadastrarVisitaWhatsApp} 
+        component={CadastrarVisitaWhatsApp}
+      />
+      <Stack.Screen 
+        name="NotificacoesAdm" 
+        component={NotificacoesAdm}
+        options={{ 
+          headerShown: isWeb,
+          title: "Notificações" 
+        }}
       />
     </Stack.Navigator>
   );

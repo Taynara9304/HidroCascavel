@@ -1,361 +1,179 @@
-// telas/GerenciarAnalises.js - VERSÃO COMPLETA COM TODOS ATRIBUTOS
-import React, { useState } from 'react';
-import { 
-  View, 
-  ScrollView, 
-  StyleSheet, 
-  Alert, 
-  ActivityIndicator, 
-  Text, 
-  Modal,
-  TouchableOpacity 
+// telas/GerenciarAnalises.jsx - VERSÃO CORRIGIDA
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
+import { collection, query, where, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
+import { useAuth } from '../contexts/authContext';
 import TabelaAnalises from '../componentes/TabelaAnalises';
-import AnalisesContainer from '../componentes/AnalisesContainer';
-import useAnalyses from '../hooks/useTabelaAnalises';
 
-const GerenciarAnalises = () => {
-  const {
-    analyses,
-    pocos,
-    analistas,
-    loading,
-    error,
-    sortField,
-    sortDirection,
-    handleSort,
-    addAnalysis,
-    deleteAnalysis,
-    approveAnalysis,
-    rejectAnalysis,
-  } = useAnalyses();
+const GerenciarAnalises = ({ navigation }) => {
+  const [analises, setAnalises] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { user } = useAuth();
 
-  // Estados para o modal
-  const [modalVisible, setModalVisible] = useState(false);
-  const [analiseSelecionada, setAnaliseSelecionada] = useState(null);
-
-  const handleAdicionarAnalise = async (novaAnalise) => {
-    try {
-      await addAnalysis(novaAnalise);
-      Alert.alert('Sucesso', 'Análise cadastrada com sucesso!');
-    } catch (error) {
-      Alert.alert('Erro', `Não foi possível cadastrar a análise: ${error.message}`);
+  useEffect(() => {
+    if (user) {
+      carregarAnalises();
     }
-  };
+  }, [user]);
 
-  // Função para visualizar análise
-  const handleVisualizarAnalise = (analysis) => {
-    console.log('👁️ GerenciarAnalises: Abrindo modal para análise:', analysis?.id);
-    
-    if (!analysis) {
-      Alert.alert('Erro', 'Análise não encontrada');
-      return;
-    }
-
-    setAnaliseSelecionada(analysis);
-    setModalVisible(true);
-  };
-
-  // Função para fechar modal
-  const fecharModal = () => {
-    setModalVisible(false);
-    setAnaliseSelecionada(null);
-  };
-
-  // Função para formatar data
-  const formatarData = (timestamp) => {
+  const carregarAnalises = async () => {
     try {
-      if (!timestamp) return 'N/A';
-      if (timestamp.toDate) return timestamp.toDate().toLocaleDateString('pt-BR');
-      return new Date(timestamp).toLocaleDateString('pt-BR');
-    } catch {
-      return 'Data inválida';
-    }
-  };
-
-  // ✅ FUNÇÃO PARA FORMATAR GEOPOINT
-  const formatarGeopoint = (geopoint) => {
-    try {
-      if (!geopoint) return 'N/A';
-      if (geopoint.latitude && geopoint.longitude) {
-        return `${geopoint.latitude.toFixed(4)}° ${geopoint.latitude < 0 ? 'S' : 'N'}, ${geopoint.longitude.toFixed(4)}° ${geopoint.longitude < 0 ? 'W' : 'E'}`;
+      setLoading(true);
+      console.log('🔍 GerenciarAnalises - Carregando análises para:', user.uid);
+      
+      if (!user) {
+        console.log('❌ Usuário não autenticado');
+        return;
       }
-      return 'Localização não disponível';
-    } catch {
-      return 'Erro ao formatar localização';
-    }
-  };
 
-  // ✅ FUNÇÃO PARA FORMATAR VALORES NUMÉRICOS
-  const formatarValor = (valor, unidade = '') => {
-    if (valor === null || valor === undefined) return 'N/A';
-    if (valor === 0) return `0 ${unidade}`.trim();
-    return `${valor} ${unidade}`.trim();
-  };
+      // ✅ CORREÇÃO: Buscar análises onde o analistaId é o usuário logado
+      const q = query(
+        collection(db, 'analysis'),
+        where('idAnalista', '==', user.uid),
+        orderBy('dataCriacao', 'desc')
+      );
 
-  const handleDeleteAnalysis = async (analysisId) => {
-    try {
-      await deleteAnalysis(analysisId);
-      Alert.alert('Sucesso', 'Análise deletada com sucesso!');
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const analisesList = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          analisesList.push({
+            id: doc.id,
+            ...data
+          });
+        });
+        
+        console.log('✅ Análises carregadas:', analisesList.length);
+        console.log('📋 Primeira análise:', analisesList[0]);
+        
+        setAnalises(analisesList);
+        setLoading(false);
+        setRefreshing(false);
+      }, (error) => {
+        console.error('❌ Erro no snapshot:', error);
+        setLoading(false);
+        setRefreshing(false);
+      });
+
+      return unsubscribe;
     } catch (error) {
-      Alert.alert('Erro', 'Não foi possível deletar a análise: ' + error.message);
+      console.error('❌ Erro ao carregar análises:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as análises');
+      setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const handleApproveAnalysis = async (analysisId) => {
-    try {
-      await approveAnalysis(analysisId);
-      Alert.alert('Sucesso', 'Análise aprovada com sucesso!');
-    } catch (error) {
-      Alert.alert('Erro', 'Não foi possível aprovar a análise: ' + error.message);
-    }
+  const onRefresh = () => {
+    setRefreshing(true);
+    carregarAnalises();
   };
 
-  const handleRejectAnalysis = async (analysisId) => {
-    Alert.prompt(
-      'Motivo da Rejeição',
-      'Informe o motivo para rejeitar esta análise:',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Confirmar', 
-          onPress: (motivo) => {
-            if (motivo && motivo.trim()) {
-              rejectAnalysis(analysisId, motivo.trim());
-              Alert.alert('Sucesso', 'Análise rejeitada com sucesso!');
-            }
-          }
-        }
-      ],
-      'plain-text'
-    );
+  const navegarParaNovaSolicitacao = () => {
+    navigation.navigate('NovaSolicitacao');
+  };
+
+  const navegarParaNotificacoes = () => {
+    navigation.navigate('NotificacoesAnalista');
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#2685BF" />
-        <Text style={styles.loadingText}>Carregando análises...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Erro: {error}</Text>
-        <Text style={styles.errorSubtext}>Verifique a conexão com o Firebase</Text>
+        <Text>Carregando análises...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {/* MODAL PARA DETALHES COMPLETOS */}
-      <Modal
-        visible={modalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={fecharModal}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              📊 Análise Completa de Água
-            </Text>
-            
-            {analiseSelecionada && (
-              <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={true}>
-                {/* ✅ SEÇÃO: INFORMAÇÕES GERAIS */}
-                <Text style={styles.modalSectionTitle}>📋 INFORMAÇÕES GERAIS</Text>
-                
-                <View style={styles.infoGrid}>
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Poço</Text>
-                    <Text style={styles.infoValue}>{analiseSelecionada.nomePoco || 'N/A'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Proprietário</Text>
-                    <Text style={styles.infoValue}>{analiseSelecionada.nomeProprietario || 'N/A'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Analista</Text>
-                    <Text style={styles.infoValue}>{analiseSelecionada.nomeAnalista || 'N/A'}</Text>
-                  </View>
-                  
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Data da Análise</Text>
-                    <Text style={styles.infoValue}>{formatarData(analiseSelecionada.dataAnalise)}</Text>
-                  </View>
-                  
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Resultado</Text>
-                    <Text style={[
-                      styles.infoValue, 
-                      analiseSelecionada.resultado === 'Aprovada' ? styles.statusAprovado : styles.statusReprovado
-                    ]}>
-                      {analiseSelecionada.resultado || 'N/A'}
-                    </Text>
-                  </View>
-                  
-                  <View style={styles.infoItem}>
-                    <Text style={styles.infoLabel}>Localização</Text>
-                    <Text style={styles.infoValue}>{formatarGeopoint(analiseSelecionada.localizacaoPoco)}</Text>
-                  </View>
-                </View>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={['#2685BF']}
+        />
+      }
+    >
+      <Text style={styles.title}>Minhas Análises</Text>
+      
+      <View style={styles.infoBox}>
+        <Text style={styles.infoTitle}>ℹ️ Suas Análises</Text>
+        <Text style={styles.infoText}>
+          • Aqui estão todas as análises que você cadastrou{'\n'}
+          • As análises aprovadas pelo admin aparecem automaticamente{'\n'}
+          • Use o botão abaixo para solicitar nova análise
+        </Text>
+      </View>
 
-                {/* ✅ SEÇÃO: PARÂMETROS FÍSICO-QUÍMICOS */}
-                <Text style={styles.modalSectionTitle}>🔬 PARÂMETROS FÍSICO-QUÍMICOS</Text>
-                
-                <View style={styles.parametrosGrid}>
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>pH</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.ph)}</Text>
-                    <Text style={styles.parametroUnidade}>Unidade</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Turbidez</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.turbidez)}</Text>
-                    <Text style={styles.parametroUnidade}>NTU</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Cor</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.cor)}</Text>
-                    <Text style={styles.parametroUnidade}>UPC</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Temperatura da Amostra</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.temperaturaAmostra)}</Text>
-                    <Text style={styles.parametroUnidade}>°C</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Temperatura do Ar</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.temperaturaAr)}</Text>
-                    <Text style={styles.parametroUnidade}>°C</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Condutividade Elétrica</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.condutividadeEletrica)}</Text>
-                    <Text style={styles.parametroUnidade}>μS/cm</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>SDT</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.sdt)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>SST</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.sst)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                </View>
-
-                {/* ✅ SEÇÃO: PARÂMETROS QUÍMICOS */}
-                <Text style={styles.modalSectionTitle}>🧪 PARÂMETROS QUÍMICOS</Text>
-                
-                <View style={styles.parametrosGrid}>
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Alcalinidade</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.alcalinidade)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Acidez</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.acidez)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Cloro Total</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.cloroTotal)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Cloro Livre</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.cloroLivre)}</Text>
-                    <Text style={styles.parametroUnidade}>mg/L</Text>
-                  </View>
-                </View>
-
-                {/* ✅ SEÇÃO: PARÂMETROS MICROBIOLÓGICOS */}
-                <Text style={styles.modalSectionTitle}>🦠 PARÂMETROS MICROBIOLÓGICOS</Text>
-                
-                <View style={styles.parametrosGrid}>
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>Coliformes Totais</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.coliformesTotais)}</Text>
-                    <Text style={styles.parametroUnidade}>UFC/100mL</Text>
-                  </View>
-                  
-                  <View style={styles.parametroCard}>
-                    <Text style={styles.parametroLabel}>E. coli</Text>
-                    <Text style={styles.parametroValue}>{formatarValor(analiseSelecionada.Ecoli || analiseSelecionada.ecoli)}</Text>
-                    <Text style={styles.parametroUnidade}>UFC/100mL</Text>
-                  </View>
-                </View>
-
-                {/* ✅ MOTIVO DA REJEIÇÃO (se houver) */}
-                {analiseSelecionada.motivoRejeicao && (
-                  <>
-                    <Text style={styles.modalSectionTitle}>❌ MOTIVO DA REJEIÇÃO</Text>
-                    <View style={styles.motivoRejeicaoCard}>
-                      <Text style={styles.motivoRejeicaoText}>
-                        {analiseSelecionada.motivoRejeicao}
-                      </Text>
-                    </View>
-                  </>
-                )}
-              </ScrollView>
-            )}
-            
-            <TouchableOpacity 
-              style={styles.modalCloseButton}
-              onPress={fecharModal}
-            >
-              <Text style={styles.modalCloseText}>Fechar Detalhes</Text>
-            </TouchableOpacity>
-          </View>
+      {/* Estatísticas */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{analises.length}</Text>
+          <Text style={styles.statLabel}>Total de Análises</Text>
         </View>
-      </Modal>
-
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={true}
-      >
-        <View style={styles.tableSection}>
-          <TabelaAnalises
-            analyses={analyses}
-            onEdit={handleVisualizarAnalise}
-            onDelete={handleDeleteAnalysis}
-            onApprove={handleApproveAnalysis}
-            onReject={handleRejectAnalysis}
-            sortField={sortField}
-            sortDirection={sortDirection}
-            onSort={handleSort}
-          />
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {analises.filter(a => a.resultado === 'Aprovada').length}
+          </Text>
+          <Text style={styles.statLabel}>Aprovadas</Text>
         </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>
+            {analises.filter(a => a.resultado === 'Reprovada').length}
+          </Text>
+          <Text style={styles.statLabel}>Reprovadas</Text>
+        </View>
+      </View>
+
+      {/* Botões de Ação */}
+      <View style={styles.actionsContainer}>
+        <TouchableOpacity 
+          style={styles.primaryButton}
+          onPress={navegarParaNovaSolicitacao}
+        >
+          <Text style={styles.primaryButtonText}>+ Nova Solicitação</Text>
+        </TouchableOpacity>
         
-        <View style={styles.formSection}>
-          <AnalisesContainer 
-            onAdicionarAnalise={handleAdicionarAnalise}
-            pocos={pocos}
-            analistas={analistas}
-          />
+        <TouchableOpacity 
+          style={styles.secondaryButton}
+          onPress={navegarParaNotificacoes}
+        >
+          <Text style={styles.secondaryButtonText}>🔔 Notificações</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Tabela de Análises */}
+      {analises.length > 0 ? (
+        <TabelaAnalises analises={analises} />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Nenhuma análise encontrada</Text>
+          <Text style={styles.emptySubText}>
+            Suas análises aprovadas aparecerão aqui automaticamente
+          </Text>
+          <TouchableOpacity 
+            style={styles.emptyButton}
+            onPress={navegarParaNovaSolicitacao}
+          >
+            <Text style={styles.emptyButtonText}>Solicitar Primeira Análise</Text>
+          </TouchableOpacity>
         </View>
-      </ScrollView>
-    </View>
+      )}
+    </ScrollView>
   );
 };
 
@@ -363,191 +181,119 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+    padding: 16,
   },
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexGrow: 1,
-  },
-  tableSection: {
-    marginBottom: 8,
-  },
-  formSection: {
-    flex: 1,
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#2685BF',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
   },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#666',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#FF4444',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  errorSubtext: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-  },
-  // ESTILOS DO MODAL - VERSÃO COMPLETA
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    padding: 10,
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    width: '95%',
-    maxHeight: '90%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 10,
-  },
-  modalTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 24,
-    color: '#2685BF',
-  },
-  modalScrollView: {
-    maxHeight: '80%',
-    marginBottom: 16,
-  },
-  modalSectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2C5530',
-    marginTop: 20,
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: '#E8F5E8',
-  },
-  // Grid de Informações Gerais
-  infoGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  infoItem: {
-    width: '48%',
-    marginBottom: 12,
-  },
-  infoLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
-  },
-  infoValue: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#333',
-  },
-  infoValueSmall: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'monospace',
-  },
-  statusAprovado: {
-    color: '#2E7D32',
-    fontWeight: 'bold',
-  },
-  statusReprovado: {
-    color: '#D32F2F',
-    fontWeight: 'bold',
-  },
-  // Grid de Parâmetros
-  parametrosGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-  },
-  parametroCard: {
-    width: '48%',
-    backgroundColor: '#F8F9FA',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E9ECEF',
-  },
-  parametroLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#495057',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  parametroValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#212529',
-    textAlign: 'center',
-  },
-  parametroUnidade: {
-    fontSize: 10,
-    color: '#6C757D',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  // Motivo da Rejeição
-  motivoRejeicaoCard: {
-    backgroundColor: '#FFEBEE',
+  infoBox: {
+    backgroundColor: '#E3F2FD',
     padding: 16,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#F44336',
-    marginBottom: 16,
+    borderLeftColor: '#2685BF',
+    marginBottom: 20,
   },
-  motivoRejeicaoText: {
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2685BF',
+    marginBottom: 8,
+  },
+  infoText: {
     fontSize: 14,
-    color: '#C62828',
-    fontStyle: 'italic',
+    color: '#333',
     lineHeight: 20,
   },
-  // Botão Fechar
-  modalCloseButton: {
-    backgroundColor: '#2685BF',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  modalCloseText: {
+  statCard: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2685BF',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 20,
+  },
+  primaryButton: {
+    flex: 2,
+    backgroundColor: '#2685BF',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  secondaryButton: {
+    flex: 1,
+    backgroundColor: '#6c757d',
+    padding: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  secondaryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  emptyContainer: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#666',
+    marginBottom: 8,
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  emptyButton: {
+    backgroundColor: '#2685BF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 6,
+  },
+  emptyButtonText: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

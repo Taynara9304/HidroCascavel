@@ -1,4 +1,4 @@
-// componentes/AddAnalisesAnalista.js
+// componentes/AddAnalisesAnalista.js - CORREÇÃO COM idProprietario
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import SelecaoBuscaSeguro from './SelecaoBusca';
 import { useAuth } from '../contexts/authContext';
+import { AnalistaNotifications } from '../services/notificacaoService';
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
@@ -63,26 +64,55 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
     try {
       setEnviando(true);
 
-      const analysisData = {
-        ...formData,
-        pocoId: formData.poco.id,
-        pocoNome: formData.poco.nomeProprietario || formData.poco.nome,
-        pocoLocalizacao: formData.poco.localizacao,
-        proprietario: formData.poco.nomeProprietario,
-        proprietarioId: formData.poco.userId,
+      // ✅ CORREÇÃO: Verificar e garantir que todos os campos necessários existam
+      const pocoSelecionado = formData.poco;
+      
+      // ✅ CORREÇÃO: Verificar se o poço tem idProprietario
+      if (!pocoSelecionado.idProprietario) {
+        console.warn('⚠️ Poço sem idProprietario:', pocoSelecionado);
+        throw new Error('Poço selecionado não possui proprietário definido');
+      }
+
+      // ✅ CORREÇÃO: Preparar dados para a notificação com idProprietario
+      const dadosAnalise = {
+        pocoId: pocoSelecionado.id,
+        pocoNome: pocoSelecionado.nomeProprietario || pocoSelecionado.nome,
+        pocoLocalizacao: pocoSelecionado.localizacao,
+        proprietario: pocoSelecionado.nomeProprietario,
+        // ✅ CORREÇÃO CRÍTICA: Usar idProprietario
+        proprietarioId: pocoSelecionado.idProprietario,
         analistaId: user.uid,
         analistaNome: userData.nome,
         dataAnalise: formData.dataAnalise.toISOString(),
-        tipoCadastro: 'solicitacao_analista',
-        status: 'pendente_aprovacao',
-        criadoPor: user.uid,
-        dataSolicitacao: new Date().toISOString()
+        resultado: formData.resultado,
+        // Parâmetros da análise (garantir que não sejam undefined)
+        ph: formData.ph || '',
+        turbidez: formData.turbidez || '',
+        temperaturaAr: formData.temperaturaAr || '',
+        temperaturaAmostra: formData.temperaturaAmostra || '',
+        alcalinidade: formData.alcalinidade || '',
+        acidez: formData.acidez || '',
+        cor: formData.cor || '',
+        condutividadeEletrica: formData.condutividadeEletrica || '',
+        sdt: formData.sdt || '',
+        sst: formData.sst || '',
+        cloroTotal: formData.cloroTotal || '',
+        cloroLivre: formData.cloroLivre || '',
+        coliformesTotais: formData.coliformesTotais || '',
+        ecoli: formData.ecoli || ''
       };
 
-      console.log('📤 AddAnalisesAnalista: Enviando solicitação:', analysisData);
-      await onAdicionarAnalise(analysisData);
-      
-      // Reset form
+      console.log('📤 AddAnalisesAnalista: Enviando solicitação de análise...', dadosAnalise);
+
+      // ✅ CORREÇÃO: Enviar solicitação via notificação
+      const notificationId = await AnalistaNotifications.solicitarCadastroAnalise(
+        user,
+        dadosAnalise
+      );
+
+      console.log('✅ Solicitação de análise enviada com ID:', notificationId);
+
+      // ✅ CORREÇÃO: Reset do formulário
       setFormData({
         poco: null,
         dataAnalise: new Date(),
@@ -104,14 +134,18 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
       });
 
       Alert.alert(
-        'Solicitação Enviada!', 
-        'Sua análise foi enviada para aprovação do administrador.',
+        '✅ Solicitação Enviada!', 
+        'Sua análise foi enviada para aprovação do administrador. Você receberá uma notificação quando for aprovada.',
         [{ text: 'OK' }]
       );
       
     } catch (error) {
-      console.error('❌ AddAnalisesAnalista: Erro na solicitação:', error);
-      Alert.alert('Erro', `Não foi possível enviar a solicitação: ${error.message}`);
+      console.error('❌ AddAnalisesAnalista: Erro ao enviar solicitação:', error);
+      Alert.alert(
+        'Erro', 
+        `Não foi possível enviar a solicitação: ${error.message}`,
+        [{ text: 'OK' }]
+      );
     } finally {
       setEnviando(false);
     }
@@ -136,14 +170,24 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
     </View>
   );
 
+  // ✅ CORREÇÃO: Garantir que os poços tenham idProprietario
   const opcoesPocos = pocos?.map(poco => ({
     id: poco.id,
     nome: poco.nomeProprietario || poco.nome,
     nomeProprietario: poco.nomeProprietario,
     localizacao: poco.localizacao,
-    userId: poco.userId,
+    // ✅ CORREÇÃO: Usar idProprietario
+    idProprietario: poco.idProprietario,
     ...poco
   })) || [];
+
+  // ✅ Adicionar log para debug
+  useEffect(() => {
+    if (pocos && pocos.length > 0) {
+      console.log('📋 Estrutura do primeiro poço:', pocos[0]);
+      console.log('🔍 idProprietario disponível:', pocos[0].idProprietario);
+    }
+  }, [pocos]);
 
   return (
     <ScrollView style={styles.container}>
@@ -155,9 +199,9 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
           <Text style={styles.infoTitle}>ℹ️ Fluxo do Analista:</Text>
           <Text style={styles.infoText}>
             • Preencha os dados da análise{'\n'}
-            • Solicitação enviada para aprovação do admin{'\n'}
+            • Solicitação será enviada para aprovação do admin{'\n'}
             • Após aprovada, a análise aparecerá no sistema{'\n'}
-            • Você receberá uma notificação quando aprovada
+            • Você receberá uma notificação quando for aprovada
           </Text>
         </View>
 
@@ -170,7 +214,11 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
               <Text style={styles.label}>Poço *</Text>
               <SelecaoBuscaSeguro
                 value={formData.poco}
-                onSelect={(poco) => updateFormData('poco', poco)}
+                onSelect={(poco) => {
+                  console.log('✅ Poço selecionado:', poco);
+                  console.log('🔍 idProprietario do poço:', poco.idProprietario);
+                  updateFormData('poco', poco);
+                }}
                 options={opcoesPocos}
                 placeholder="Selecione o poço"
                 searchKeys={['nome', 'nomeProprietario']}
@@ -242,7 +290,50 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
           </View>
         </View>
 
-        {/* ... (mantenha as mesmas seções de parâmetros do AddAnalisesAdmin) */}
+        {/* Resto do componente permanece igual */}
+        {/* SEÇÃO PARÂMETROS FÍSICOS */}
+        <Text style={styles.sectionTitle}>Parâmetros Físicos</Text>
+        
+        <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
+          <View style={styles.column}>
+            {renderInput('Temperatura do Ar (°C)', 'temperaturaAr', 'Ex: 25.5', 'decimal')}
+            {renderInput('Temperatura da Amostra (°C)', 'temperaturaAmostra', 'Ex: 22.0', 'decimal')}
+            {renderInput('pH', 'ph', 'Ex: 7.0', 'decimal')}
+            {renderInput('Alcalinidade (mg/L)', 'alcalinidade', 'Ex: 120', 'decimal')}
+          </View>
+          <View style={styles.column}>
+            {renderInput('Acidez (mg/L)', 'acidez', 'Ex: 15', 'decimal')}
+            {renderInput('Cor (UC)', 'cor', 'Ex: 5', 'decimal')}
+            {renderInput('Turbidez (NTU)', 'turbidez', 'Ex: 1.0', 'decimal')}
+            {renderInput('Condutividade Elétrica (µS/cm)', 'condutividadeEletrica', 'Ex: 250', 'decimal')}
+          </View>
+        </View>
+
+        {/* SEÇÃO PARÂMETROS QUÍMICOS */}
+        <Text style={styles.sectionTitle}>Parâmetros Químicos</Text>
+        
+        <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
+          <View style={styles.column}>
+            {renderInput('SDT (mg/L)', 'sdt', 'Ex: 350', 'decimal')}
+            {renderInput('SST (mg/L)', 'sst', 'Ex: 25', 'decimal')}
+          </View>
+          <View style={styles.column}>
+            {renderInput('Cloro Total (mg/L)', 'cloroTotal', 'Ex: 2.0', 'decimal')}
+            {renderInput('Cloro Livre (mg/L)', 'cloroLivre', 'Ex: 1.5', 'decimal')}
+          </View>
+        </View>
+
+        {/* SEÇÃO PARÂMETROS MICROBIOLÓGICOS */}
+        <Text style={styles.sectionTitle}>Parâmetros Microbiológicos</Text>
+        
+        <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
+          <View style={styles.column}>
+            {renderInput('Coliformes Totais (UFC/100mL)', 'coliformesTotais', 'Ex: 0', 'number-pad')}
+          </View>
+          <View style={styles.column}>
+            {renderInput('E. coli (UFC/100mL)', 'ecoli', 'Ex: 0', 'number-pad')}
+          </View>
+        </View>
 
         {/* BOTÃO SOLICITAR */}
         <View style={styles.fullWidth}>
@@ -257,7 +348,9 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
             {enviando ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <Text style={styles.submitButtonText}>SOLICITAR CADASTRO</Text>
+              <Text style={styles.submitButtonText}>
+                📤 SOLICITAR CADASTRO DE ANÁLISE
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -266,6 +359,7 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, proprietarios, analist
   );
 };
 
+// Estilos permanecem os mesmos
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -335,6 +429,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
     minHeight: 50,
+  },
+  disabledInput: {
+    backgroundColor: '#f5f5f5',
+    color: '#666',
   },
   dateButton: {
     borderWidth: 1,

@@ -44,7 +44,7 @@ const AppContent = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!user ? (
-        // ✅ CORRIGIDO: Telas de auth como children diretos, não como componente AuthStack
+        // Usuário NÃO logado
         <>
           <Stack.Screen name="TelaInicial" component={TelaInicial} />
           <Stack.Screen name="Login" component={Login} />
@@ -55,20 +55,19 @@ const AppContent = () => {
           <Stack.Screen name="CadastroAdm" component={CadastroAdm} />
         </>
       ) : userData && userData.tipoUsuario ? (
-        // ✅ CORRIGIDO: Usuário LOGADO com dados e tipoUsuario definido
+        // ✅ CORREÇÃO: Usuário LOGADO - Redirecionamento por tipo
         (() => {
           const tipo = userData.tipoUsuario;
           console.log('🎯 Redirecionando para stack do tipo:', tipo);
           
           switch (tipo) {
             case 'proprietario':
-              return <Stack.Screen name="ProprietarioStack" component={ProprietarioStack} />;
+              return <Stack.Screen name="MainApp" component={ProprietarioStack} />;
             case 'analista':
-              return <Stack.Screen name="AnalistaStack" component={AnalistaStack} />;
+              return <Stack.Screen name="MainApp" component={AnalistaStack} />;
             case 'administrador':
-              return <Stack.Screen name="AdministradorStack" component={AdministradorStack} />;
+              return <Stack.Screen name="MainApp" component={AdministradorStack} />;
             default:
-              // Fallback para caso o tipo não seja reconhecido
               return (
                 <>
                   <Stack.Screen name="TelaInicial" component={TelaInicial} />
@@ -78,7 +77,7 @@ const AppContent = () => {
           }
         })()
       ) : (
-        // ✅ CORRIGIDO: Usuário logado mas sem dados ou tipoUsuario indefinido
+        // Usuário logado mas sem dados
         <>
           <Stack.Screen name="TelaInicial" component={TelaInicial} />
           <Stack.Screen name="Login" component={Login} />

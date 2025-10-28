@@ -11,17 +11,40 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
+import { useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
 import logo from '../assets/logoHidroCascavel.png';
 
 const NavBar = () => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
+  const { userData } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState(null);
 
   const isMobile = width <= 800;
 
-  // Função para deslogar - CORRIGIDA
+  // Função para navegar para a tela de notificações correta
+  const handleNotificacoesPress = () => {
+    setMenuOpen(false);
+    
+    console.log('🔔 Navegando para notificações. Tipo de usuário:', userData?.tipoUsuario);
+    
+    // ✅ CORREÇÃO: Navegação SIMPLES - cada stack já tem sua própria tela
+    // Não precisa especificar o stack, só o nome da tela dentro do stack atual
+    if (userData?.tipoUsuario === 'administrador') {
+      navigation.navigate("NotificacoesAdm"); // ✅ Nome EXATO como está no AdminStack
+    } else if (userData?.tipoUsuario === 'analista') {
+      navigation.navigate("NotificacoesAnalista"); // ✅ Nome EXATO como está no AnalistaStack
+    } else if (userData?.tipoUsuario === 'proprietario') {
+      navigation.navigate("NotificacoesProprietario"); // ✅ Nome EXATO como está no ProprietarioStack
+    } else {
+      // Fallback
+      navigation.navigate("NotificacoesAnalista");
+    }
+  };
+
+  // Função para deslogar
   const handleDeslogar = async () => {
     try {
       console.log('Iniciando logout...');
@@ -35,7 +58,6 @@ const NavBar = () => {
         text2: 'Você saiu da sua conta'
       });
 
-      // ✅ NAVEGAÇÃO CORRIGIDA - Use navigate em vez de reset
       navigation.navigate("TelaInicial");
       
     } catch (error) {
@@ -53,6 +75,40 @@ const NavBar = () => {
   const handlePerfilPress = () => {
     setMenuOpen(false);
     navigation.navigate("PerfilUsuario");
+  };
+
+  // Tooltip component
+  const Tooltip = ({ text, visible }) => {
+    if (!visible) return null;
+    
+    return (
+      <View style={styles.tooltip}>
+        <Text style={styles.tooltipText}>{text}</Text>
+      </View>
+    );
+  };
+
+  // Botão com ícone e tooltip
+  const IconButton = ({ icon, label, onPress, buttonStyle }) => {
+    const [isHovered, setIsHovered] = useState(false);
+
+    return (
+      <View style={styles.iconButtonContainer}>
+        <TouchableOpacity
+          style={[
+            styles.iconButton,
+            buttonStyle,
+            isHovered && styles.iconButtonHovered
+          ]}
+          onPress={onPress}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
+          <MaterialIcons name={icon} size={24} color="#fff" />
+        </TouchableOpacity>
+        <Tooltip text={label} visible={isHovered} />
+      </View>
+    );
   };
 
   return (
@@ -111,25 +167,35 @@ const NavBar = () => {
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
-              {/* Botão Perfil no mobile */}
-              <TouchableOpacity 
-                style={[styles.navItem, styles.perfilButton]}
-                onPress={handlePerfilPress}
-              >
-                <MaterialIcons name="person" size={20} color="#fff" />
-                <Text style={styles.perfilText}>Perfil</Text>
-              </TouchableOpacity>
+              {/* Botões com ícones no mobile */}
+              <View style={styles.mobileIconButtons}>
+                <TouchableOpacity 
+                  style={[styles.mobileIconButton, styles.notificacoesButton]}
+                  onPress={handleNotificacoesPress}
+                >
+                  <MaterialIcons name="notifications" size={20} color="#fff" />
+                  <Text style={styles.mobileIconText}>Notificações</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.navItem, styles.loginButton]}
-                onPress={() => {
-                  setMenuOpen(false);
-                  handleDeslogar();
-                }}
-              >
-                <MaterialIcons name="logout" size={20} color="#fff" />
-                <Text style={styles.loginText}>Sair</Text>
-              </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.mobileIconButton, styles.perfilButton]}
+                  onPress={handlePerfilPress}
+                >
+                  <MaterialIcons name="person" size={20} color="#fff" />
+                  <Text style={styles.mobileIconText}>Perfil</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.mobileIconButton, styles.loginButton]}
+                  onPress={() => {
+                    setMenuOpen(false);
+                    handleDeslogar();
+                  }}
+                >
+                  <MaterialIcons name="logout" size={20} color="#fff" />
+                  <Text style={styles.mobileIconText}>Sair</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         </>
@@ -168,23 +234,27 @@ const NavBar = () => {
           </View>
 
           <View style={styles.rightButtons}>
-            {/* Botão Perfil para Desktop */}
-            <TouchableOpacity 
-              style={[styles.navItem, styles.perfilButton]}
-              onPress={handlePerfilPress}
-            >
-              <MaterialIcons name="person" size={24} color="#fff" />
-              <Text style={styles.perfilText}>Perfil</Text>
-            </TouchableOpacity>
+            {/* Botões com ícones para Desktop */}
+            <IconButton
+              icon="notifications"
+              label="Notificações"
+              onPress={handleNotificacoesPress}
+              buttonStyle={styles.notificacoesButton}
+            />
 
-            {/* Botão Sair para Desktop */}
-            <TouchableOpacity
-              style={[styles.navItem, styles.loginButton]}
+            <IconButton
+              icon="person"
+              label="Perfil"
+              onPress={handlePerfilPress}
+              buttonStyle={styles.perfilButton}
+            />
+
+            <IconButton
+              icon="logout"
+              label="Sair"
               onPress={handleDeslogar}
-            >
-              <MaterialIcons name="logout" size={24} color="#fff" />
-              <Text style={styles.loginText}>Sair</Text>
-            </TouchableOpacity>
+              buttonStyle={styles.loginButton}
+            />
           </View>
         </View>
       )}
@@ -207,6 +277,8 @@ const styles = StyleSheet.create({
     zIndex: 1000,
     alignSelf: "center",
     borderRadius: 10,
+    // Corrigindo o warning do shadow
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   },
   logo: {
     width: 80,
@@ -239,6 +311,7 @@ const styles = StyleSheet.create({
   rightButtons: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 8,
   },
   sideMenu: {
     position: "absolute",
@@ -252,6 +325,8 @@ const styles = StyleSheet.create({
     borderRightColor: "#ccc",
     zIndex: 1001,
     borderRadius: 8,
+    // Corrigindo o warning do shadow
+    boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
   },
   navItem: {
     flexDirection: "row",
@@ -266,28 +341,66 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#fff",
   },
-  perfilButton: {
-    backgroundColor: "#1a6fa3",
+  // Estilos para botões de ícone no desktop
+  iconButtonContainer: {
+    position: 'relative',
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+    transition: 'all 0.2s ease',
+  },
+  iconButtonHovered: {
+    transform: [{ scale: 1.1 }],
+  },
+  tooltip: {
+    position: 'absolute',
+    top: 50,
+    left: '50%',
+    transform: [{ translateX: -50 }],
+    backgroundColor: '#333',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+    zIndex: 1002,
+  },
+  tooltipText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  // Estilos para botões no mobile
+  mobileIconButtons: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#1a6fa3',
+    paddingTop: 10,
+  },
+  mobileIconButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginVertical: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
   },
-  perfilText: {
-    marginLeft: 6,
+  mobileIconText: {
+    marginLeft: 8,
     fontSize: 14,
     fontWeight: "bold",
     color: "#fff",
+  },
+  // Cores dos botões
+  notificacoesButton: {
+    backgroundColor: "#FF9800",
+  },
+  perfilButton: {
+    backgroundColor: "#1a6fa3",
   },
   loginButton: {
     backgroundColor: "#d32f2f",
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  loginText: {
-    marginLeft: 6,
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#fff",
   },
 });

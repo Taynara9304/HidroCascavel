@@ -1,90 +1,409 @@
-// componentes/TabelaAnalises.js - VERSÃO CORRIGIDA
-import React, { useState, useMemo, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+// componentes/TabelaAnalises.jsx - VERSÃO COM DETALHES DA SOLICITAÇÃO
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
   ScrollView,
+  TouchableOpacity,
+  Alert,
+  Dimensions,
+  ActivityIndicator,
   TextInput,
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
-  FlatList,
-  Dimensions,
-  Alert
+  FlatList
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.2;
+const CARD_WIDTH = screenWidth * 0.3;
 const CARD_MARGIN = 8;
 
+// ✅ Componente de Detalhes integrado
+const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
+  if (!solicitacao) {
+    return (
+      <View style={styles.detalhesContainer}>
+        <Text style={styles.textoVazio}>Nenhuma análise selecionada</Text>
+      </View>
+    );
+  }
+
+  // ✅ Funções de formatação
+  const formatarLocalizacao = (localizacao) => {
+    if (!localizacao) return 'Não informada';
+    
+    try {
+      if (localizacao._lat && localizacao._long) {
+        return `${localizacao._lat.toFixed(6)}°, ${localizacao._long.toFixed(6)}°`;
+      }
+      
+      if (Array.isArray(localizacao)) {
+        return `${localizacao[0]}, ${localizacao[1]}`;
+      }
+      
+      if (typeof localizacao === 'string') {
+        return localizacao;
+      }
+      
+      return 'Formato não reconhecido';
+    } catch (error) {
+      return 'Erro ao carregar localização';
+    }
+  };
+
+  const formatarData = (data) => {
+    if (!data) return 'Não informada';
+    
+    try {
+      if (data.toDate) {
+        return data.toDate().toLocaleDateString('pt-BR');
+      }
+      
+      const date = new Date(data);
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+      
+      return date.toLocaleDateString('pt-BR');
+    } catch (error) {
+      return 'Erro ao carregar data';
+    }
+  };
+
+  const formatarValor = (valor, unidade = '') => {
+    if (valor === '' || valor === null || valor === undefined || valor === 'undefined') {
+      return 'Não informado';
+    }
+    
+    if (typeof valor === 'number') {
+      return `${valor} ${unidade}`.trim();
+    }
+    
+    const num = parseFloat(valor);
+    if (!isNaN(num)) {
+      return `${num} ${unidade}`.trim();
+    }
+    
+    return `${valor} ${unidade}`.trim();
+  };
+
+  const renderCampo = (label, valor, unidade = '') => {
+    const valorFormatado = formatarValor(valor, unidade);
+    
+    return (
+      <View style={styles.campo}>
+        <Text style={styles.label}>{label}:</Text>
+        <Text style={styles.valor}>{valorFormatado}</Text>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.detalhesContainer}>
+      <View style={styles.detalhesHeader}>
+        <Text style={styles.detalhesTitulo}>Detalhes da Análise</Text>
+        <TouchableOpacity style={styles.fecharBotao} onPress={onClose}>
+          <Text style={styles.fecharTexto}>×</Text>
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.detalhesContent}>
+        {/* Informações Básicas */}
+        <View style={styles.secao}>
+          <Text style={styles.subtitulo}>📋 Informações Básicas</Text>
+          {renderCampo('Poço', solicitacao.pocoNome)}
+          {renderCampo('Proprietário', solicitacao.proprietario)}
+          {renderCampo('Analista', solicitacao.analistaNome)}
+          {renderCampo('Data da Análise', formatarData(solicitacao.dataAnalise))}
+          {renderCampo('Resultado', solicitacao.resultado)}
+          {renderCampo('Status', solicitacao.status)}
+        </View>
+
+        {/* Parâmetros Físico-Químicos */}
+        <View style={styles.secao}>
+          <Text style={styles.subtitulo}>🧪 Parâmetros Físico-Químicos</Text>
+          <View style={styles.parametrosGrid}>
+            <View style={styles.coluna}>
+              {renderCampo('pH', solicitacao.ph)}
+              {renderCampo('Turbidez', solicitacao.turbidez, 'NTU')}
+              {renderCampo('Temperatura Ar', solicitacao.temperaturaAr, '°C')}
+              {renderCampo('Temperatura Amostra', solicitacao.temperaturaAmostra, '°C')}
+            </View>
+            <View style={styles.coluna}>
+              {renderCampo('Condutividade', solicitacao.condutividade, 'µS/cm')}
+              {renderCampo('Oxigênio Dissolvido', solicitacao.oxigenioDissolvido, 'mg/L')}
+              {renderCampo('DBO', solicitacao.dbo, 'mg/L')}
+              {renderCampo('DQO', solicitacao.dqo, 'mg/L')}
+            </View>
+          </View>
+        </View>
+
+        {/* Metais Pesados */}
+        {(solicitacao.aluminio || solicitacao.arsenio || solicitacao.chumbo || solicitacao.cromo || solicitacao.mercurio) && (
+          <View style={styles.secao}>
+            <Text style={styles.subtitulo}>⚠️ Metais Pesados (mg/L)</Text>
+            <View style={styles.parametrosGrid}>
+              <View style={styles.coluna}>
+                {renderCampo('Alumínio', solicitacao.aluminio)}
+                {renderCampo('Arsênio', solicitacao.arsenio)}
+                {renderCampo('Chumbo', solicitacao.chumbo)}
+              </View>
+              <View style={styles.coluna}>
+                {renderCampo('Cromo', solicitacao.cromo)}
+                {renderCampo('Mercúrio', solicitacao.mercurio)}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Parâmetros Microbiológicos */}
+        {(solicitacao.coliformesTermotolerantes || solicitacao.escherichiaColi) && (
+          <View style={styles.secao}>
+            <Text style={styles.subtitulo}>🔬 Parâmetros Microbiológicos</Text>
+            <View style={styles.parametrosGrid}>
+              <View style={styles.coluna}>
+                {renderCampo('Coliformes Termotolerantes', solicitacao.coliformesTermotolerantes, 'UFC/100mL')}
+              </View>
+              <View style={styles.coluna}>
+                {renderCampo('E. coli', solicitacao.escherichiaColi, 'UFC/100mL')}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* Outros Parâmetros */}
+        <View style={styles.secao}>
+          <Text style={styles.subtitulo}>📊 Outros Parâmetros</Text>
+          <View style={styles.parametrosGrid}>
+            <View style={styles.coluna}>
+              {renderCampo('Nitrogênio', solicitacao.nitrogenio, 'mg/L')}
+              {renderCampo('Fósforo', solicitacao.fosforo, 'mg/L')}
+              {renderCampo('Sólidos Totais', solicitacao.solidosTotais, 'mg/L')}
+            </View>
+            <View style={styles.coluna}>
+              {renderCampo('Cloro Residual', solicitacao.cloroResidual, 'mg/L')}
+            </View>
+          </View>
+        </View>
+
+        {/* Observações */}
+        {solicitacao.observacoes && solicitacao.observacoes !== '-' && (
+          <View style={styles.secao}>
+            <Text style={styles.subtitulo}>📝 Observações</Text>
+            <Text style={styles.observacoesTexto}>{solicitacao.observacoes}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
 const TabelaAnalises = ({ 
-  analyses = [], 
+  analises, 
+  readOnly = false, 
   onEdit, 
-  onDelete, 
-  onApprove,
-  onReject,
-  sortField, 
-  sortDirection, 
-  onSort 
+  onDelete,
+  onDetails,
+  loading = false 
 }) => {
+  const [analisesProcessadas, setAnalisesProcessadas] = useState([]);
   const [busca, setBusca] = useState('');
-  const [filtroResultado, setFiltroResultado] = useState('todos');
   const [filtroStatus, setFiltroStatus] = useState('todos');
+  const [filtroResultado, setFiltroResultado] = useState('todos');
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(0);
+  const [detalhesAnalise, setDetalhesAnalise] = useState(null);
   const flatListRef = useRef(null);
 
-  console.log('📊 TabelaAnalises: analyses recebido =', analyses.length);
-  console.log('🔍 TabelaAnalises: Funções disponíveis:', {
-    onEdit: typeof onEdit,
-    onDelete: typeof onDelete,
-    onApprove: typeof onApprove,
-    onReject: typeof onReject
-  });
-
-  const resultadosUnicos = useMemo(() => {
-    const resultados = analyses.map(analysis => analysis.resultado).filter(Boolean);
-    return [...new Set(resultados)];
-  }, [analyses]);
-
-  const statusUnicos = useMemo(() => {
-    const status = analyses.map(analysis => analysis.status).filter(Boolean);
-    return [...new Set(status)];
-  }, [analyses]);
-
-  const analisesFiltradas = useMemo(() => {
-    const filtradas = analyses.filter(analysis => {
-      const matchBusca = 
-        analysis.nomePoco?.toLowerCase().includes(busca.toLowerCase()) ||
-        analysis.nomeProprietario?.toLowerCase().includes(busca.toLowerCase()) ||
-        analysis.nomeAnalista?.toLowerCase().includes(busca.toLowerCase());
+  useEffect(() => {
+    if (analises && analises.length > 0) {
+      const processadas = analises.map(analise => {
+        return {
+          id: analise.id,
+          pocoNome: converterParaString(analise.pocoNome || analise.nomePoco),
+          dataAnalise: converterDataParaString(analise.dataAnalise),
+          resultado: converterParaString(analise.resultado),
+          ph: converterNumeroParaString(analise.ph),
+          turbidez: converterNumeroParaString(analise.turbidez),
+          temperaturaAr: converterNumeroParaString(analise.temperaturaAr),
+          temperaturaAmostra: converterNumeroParaString(analise.temperaturaAmostra),
+          condutividade: converterNumeroParaString(analise.condutividade),
+          oxigenioDissolvido: converterNumeroParaString(analise.oxigenioDissolvido),
+          dbo: converterNumeroParaString(analise.dbo),
+          dqo: converterNumeroParaString(analise.dqo),
+          nitrogenio: converterNumeroParaString(analise.nitrogenio),
+          fosforo: converterNumeroParaString(analise.fosforo),
+          coliformesTermotolerantes: converterNumeroParaString(analise.coliformesTermotolerantes),
+          escherichiaColi: converterNumeroParaString(analise.escherichiaColi),
+          solidosTotais: converterNumeroParaString(analise.solidosTotais),
+          cloroResidual: converterNumeroParaString(analise.cloroResidual),
+          aluminio: converterNumeroParaString(analise.aluminio),
+          arsenio: converterNumeroParaString(analise.arsenio),
+          chumbo: converterNumeroParaString(analise.chumbo),
+          cromo: converterNumeroParaString(analise.cromo),
+          mercurio: converterNumeroParaString(analise.mercurio),
+          observacoes: converterParaString(analise.observacoes),
+          status: converterParaString(analise.status),
+          podeEditar: analise.status !== 'aprovada'
+        };
+      });
       
-      const matchFiltroResultado = 
-        filtroResultado === 'todos' || 
-        analysis.resultado === filtroResultado;
+      setAnalisesProcessadas(processadas);
+    } else {
+      setAnalisesProcessadas([]);
+    }
+  }, [analises]);
+
+  // ✅ Funções de conversão (mantidas)
+  const converterParaString = (valor) => {
+    if (valor === null || valor === undefined) return '-';
+    if (typeof valor === 'string') return valor;
+    if (typeof valor === 'number') return valor.toString();
+    if (typeof valor === 'boolean') return valor ? 'Sim' : 'Não';
+    if (valor && typeof valor === 'object') {
+      if ('seconds' in valor && 'nanoseconds' in valor) {
+        try {
+          const date = new Date(valor.seconds * 1000);
+          return date.toLocaleDateString('pt-BR');
+        } catch (error) {
+          return 'Data inválida';
+        }
+      }
+      if (typeof valor.toDate === 'function') {
+        try {
+          const date = valor.toDate();
+          return date.toLocaleDateString('pt-BR');
+        } catch (error) {
+          return 'Data inválida';
+        }
+      }
+      return JSON.stringify(valor);
+    }
+    return String(valor);
+  };
+
+  const converterDataParaString = (data) => {
+    if (!data) return 'Data não informada';
+    try {
+      if (data && typeof data === 'object') {
+        if ('seconds' in data && 'nanoseconds' in data) {
+          const date = new Date(data.seconds * 1000);
+          return date.toLocaleDateString('pt-BR');
+        }
+        if (typeof data.toDate === 'function') {
+          const date = data.toDate();
+          return date.toLocaleDateString('pt-BR');
+        }
+      }
+      const date = new Date(data);
+      if (!isNaN(date.getTime())) {
+        return date.toLocaleDateString('pt-BR');
+      }
+      return 'Data inválida';
+    } catch (error) {
+      return 'Erro na data';
+    }
+  };
+
+  const converterNumeroParaString = (numero) => {
+    if (numero === null || numero === undefined || numero === '') return '-';
+    if (typeof numero === 'string') {
+      const num = parseFloat(numero);
+      return isNaN(num) ? numero : num.toFixed(2);
+    }
+    if (typeof numero === 'number') {
+      return numero.toFixed(2);
+    }
+    return String(numero);
+  };
+
+  // ✅ Filtragem
+  const analisesFiltradas = useMemo(() => {
+    const filtradas = analisesProcessadas.filter(analise => {
+      const matchBusca = 
+        analise.pocoNome?.toLowerCase().includes(busca.toLowerCase()) ||
+        analise.dataAnalise?.toLowerCase().includes(busca.toLowerCase()) ||
+        analise.observacoes?.toLowerCase().includes(busca.toLowerCase());
       
       const matchFiltroStatus = 
         filtroStatus === 'todos' || 
-        analysis.status === filtroStatus;
+        analise.status === filtroStatus;
       
-      return matchBusca && matchFiltroResultado && matchFiltroStatus;
+      const matchFiltroResultado = 
+        filtroResultado === 'todos' || 
+        analise.resultado === filtroResultado;
+      
+      return matchBusca && matchFiltroStatus && matchFiltroResultado;
     });
     
     setPaginaAtual(0);
     return filtradas;
-  }, [analyses, busca, filtroResultado, filtroStatus]);
+  }, [analisesProcessadas, busca, filtroStatus, filtroResultado]);
 
-  const formatarData = (timestamp) => {
-    if (!timestamp) return 'N/A';
-    try {
-      if (timestamp.toDate) {
-        return timestamp.toDate().toLocaleDateString('pt-BR');
-      }
-      return new Date(timestamp).toLocaleDateString('pt-BR');
-    } catch (error) {
-      return 'Data inválida';
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'aprovada': return '#4CAF50';
+      case 'reprovada': return '#F44336';
+      case 'pendente': return '#FFA500';
+      case 'ativa': return '#4CAF50';
+      case 'inativa': return '#F44336';
+      default: return '#757575';
+    }
+  };
+
+  const getResultadoColor = (resultado) => {
+    switch (resultado?.toLowerCase()) {
+      case 'aprovada': return '#4CAF50';
+      case 'reprovada': return '#F44336';
+      case 'própria': return '#4CAF50';
+      case 'imprópria': return '#F44336';
+      default: return '#757575';
+    }
+  };
+
+  // ✅ Handlers
+  const handleEdit = (analise) => {
+    if (analise.podeEditar === false) {
+      Alert.alert('Ação não permitida', 'Análises aprovadas não podem ser editadas.');
+      return;
+    }
+    
+    if (onEdit) {
+      onEdit(analise);
+    }
+  };
+
+  const handleDelete = (analise) => {
+    if (analise.podeEditar === false) {
+      Alert.alert('Ação não permitida', 'Análises aprovadas não podem ser excluídas.');
+      return;
+    }
+
+    Alert.alert(
+      'Confirmar Exclusão',
+      `Tem certeza que deseja excluir a análise do poço ${analise.pocoNome}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Excluir', 
+          style: 'destructive',
+          onPress: () => {
+            if (onDelete) {
+              onDelete(analise.id);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleDetails = (analise) => {
+    if (onDetails) {
+      onDetails(analise);
+    } else {
+      setDetalhesAnalise(analise);
     }
   };
 
@@ -93,260 +412,128 @@ const TabelaAnalises = ({
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // ✅ CORRIGIDO: Função de visualizar
-  const handleVisualizar = (analysis) => {
-    console.log('👁️ Visualizando análise:', analysis.id);
-    
-    const detalhes = `
-📊 **ANÁLISE DETALHADA**
-
-**Poço:** ${analysis.nomePoco || 'N/A'}
-**Proprietário:** ${analysis.nomeProprietario || 'N/A'}
-**Analista:** ${analysis.nomeAnalista || 'N/A'}
-**Data da Análise:** ${formatarData(analysis.dataAnalise)}
-**Resultado:** ${analysis.resultado || 'N/A'}
-**Status:** ${getStatusTexto(analysis.status, analysis.resultado)}
-
-🔬 **PARÂMETROS FÍSICO-QUÍMICOS:**
-• pH: ${analysis.ph || 'N/A'}
-• Turbidez: ${analysis.turbidez || 'N/A'} NTU
-• Cor: ${analysis.cor || 'N/A'} UPC
-• Temperatura da Amostra: ${analysis.temperaturaAmostra || 'N/A'}°C
-• Temperatura do Ar: ${analysis.temperaturaAr || 'N/A'}°C
-• Condutividade Elétrica: ${analysis.condutividadeEletrica || 'N/A'} μS/cm
-• SDT: ${analysis.sdt || 'N/A'} mg/L
-• SST: ${analysis.sst || 'N/A'} mg/L
-
-🧪 **PARÂMETROS QUÍMICOS:**
-• Alcalinidade: ${analysis.alcalinidade || 'N/A'} mg/L
-• Acidez: ${analysis.acidez || 'N/A'} mg/L
-• Cloro Total: ${analysis.cloroTotal || 'N/A'} mg/L
-• Cloro Livre: ${analysis.cloroLivre || 'N/A'} mg/L
-
-🦠 **PARÂMETROS MICROBIOLÓGICOS:**
-• Coliformes Totais: ${analysis.coliformesTotais || 'N/A'} UFC/100mL
-• E. coli: ${analysis.Ecoli || analysis.ecoli || 'N/A'} UFC/100mL
-
-${analysis.motivoRejeicao ? `**Motivo da Rejeição:** ${analysis.motivoRejeicao}` : ''}
-    `.trim();
-
-    Alert.alert('Detalhes da Análise', detalhes, [
-      { text: 'Fechar', style: 'cancel' },
-      analysis.status === 'pendente_aprovacao' && {
-        text: 'Aprovar', 
-        onPress: () => handleAprovar(analysis),
-        style: 'default'
-      },
-      analysis.status === 'pendente_aprovacao' && {
-        text: 'Rejeitar', 
-        onPress: () => handleRejeitar(analysis),
-        style: 'destructive'
-      }
-    ].filter(Boolean));
-  };
-
-  // ✅ CORRIGIDO: Função de deletar
-  const handleDeletar = (analysis) => {
-    console.log('🗑️ Tentando deletar análise:', analysis.id);
-    if (!onDelete) {
-      console.error('❌ onDelete não está definido');
-      Alert.alert('Erro', 'Função de exclusão não disponível');
-      return;
-    }
-
-    Alert.alert(
-      'Confirmar Exclusão',
-      `Tem certeza que deseja excluir a análise do poço "${analysis.nomePoco}"?\n\nEsta ação não pode ser desfeita.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Excluir', 
-          style: 'destructive',
-          onPress: () => onDelete(analysis.id)
-        }
-      ]
-    );
-  };
-
-  // ✅ CORRIGIDO: Função de aprovar
-  const handleAprovar = (analysis) => {
-    console.log('✅ Tentando aprovar análise:', analysis.id);
-    if (!onApprove) {
-      console.error('❌ onApprove não está definido');
-      Alert.alert('Erro', 'Função de aprovação não disponível');
-      return;
-    }
-    
-    Alert.alert(
-      'Aprovar Análise',
-      `Deseja aprovar a análise do poço "${analysis.nomePoco}"?\n\nApós a aprovação, a análise ficará visível para todos os usuários.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Aprovar', 
-          style: 'default',
-          onPress: () => onApprove(analysis.id)
-        }
-      ]
-    );
-  };
-
-  // ✅ CORRIGIDO: Função de rejeitar
-  const handleRejeitar = (analysis) => {
-    console.log('❌ Tentando rejeitar análise:', analysis.id);
-    if (!onReject) {
-      console.error('❌ onReject não está definido');
-      Alert.alert('Erro', 'Função de rejeição não disponível');
-      return;
-    }
-    
-    Alert.alert(
-      'Rejeitar Análise',
-      `Deseja rejeitar a análise do poço "${analysis.nomePoco}"?\n\nSerá necessário informar o motivo da rejeição.`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Rejeitar', 
-          style: 'destructive',
-          onPress: () => {
-            Alert.prompt(
-              'Motivo da Rejeição',
-              'Informe o motivo para rejeitar esta análise:',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                { 
-                  text: 'Confirmar', 
-                  onPress: (motivo) => onReject(analysis.id, motivo || 'Motivo não informado')
-                }
-              ],
-              'plain-text'
-            );
-          }
-        }
-      ]
-    );
-  };
-
-  const getStatusColor = (status, resultado) => {
-    if (status === 'pendente_aprovacao') return '#FFA500';
-    if (resultado === 'Aprovada') return '#4CAF50';
-    if (resultado === 'Reprovada') return '#F44336';
-    return '#666';
-  };
-
-  const getStatusTexto = (status, resultado) => {
-    if (status === 'pendente_aprovacao') return 'Pendente';
-    if (resultado === 'Aprovada') return 'Aprovada';
-    if (resultado === 'Reprovada') return 'Reprovada';
-    return status || 'N/A';
-  };
-
-  const renderItem = ({ item: analysis }) => (
+  // ✅ Renderização do Card
+  const renderItem = ({ item: analise }) => (
     <View style={styles.card}>
       {/* Cabeçalho Compacto */}
       <View style={styles.cardHeader}>
         <Text style={styles.pocoNome} numberOfLines={1}>
-          {analysis.nomePoco || 'Poço não informado'}
+          {analise.pocoNome || 'Poço não informado'}
         </Text>
-        <View style={[
-          styles.statusBadge,
-          { backgroundColor: getStatusColor(analysis.status, analysis.resultado) }
-        ]}>
-          <Text style={styles.statusTexto}>
-            {getStatusTexto(analysis.status, analysis.resultado)}
-          </Text>
-        </View>
-      </View>
-      
-      {/* Informações da Análise */}
-      <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>👤 Proprietário:</Text>
-        <Text style={styles.infoValue} numberOfLines={1}>
-          {analysis.nomeProprietario || 'N/A'}
+        <Text style={styles.data}>
+          {analise.dataAnalise}
         </Text>
       </View>
       
+      {/* Resultado e Status */}
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>🔬 Analista:</Text>
-        <Text style={styles.infoValue} numberOfLines={1}>
-          {analysis.nomeAnalista || 'N/A'}
+        <Text style={styles.infoLabel}>📊</Text>
+        <Text 
+          style={[
+            styles.infoValue, 
+            { color: getResultadoColor(analise.resultado) }
+          ]}
+          numberOfLines={1}
+        >
+          {analise.resultado}
         </Text>
       </View>
-      
+
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>📅 Data:</Text>
-        <Text style={styles.infoValue}>
-          {formatarData(analysis.dataAnalise)}
+        <Text style={styles.infoLabel}>🔍</Text>
+        <Text 
+          style={[
+            styles.infoValue, 
+            { color: getStatusColor(analise.status) }
+          ]}
+          numberOfLines={1}
+        >
+          {analise.status}
         </Text>
       </View>
       
       {/* Parâmetros Principais */}
-      <View style={styles.parametrosContainer}>
-        <View style={styles.parametro}>
-          <Text style={styles.parametroLabel}>pH</Text>
-          <Text style={styles.parametroValue}>
-            {analysis.ph || analysis.ph === 0 ? analysis.ph : 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.parametro}>
-          <Text style={styles.parametroLabel}>Turbidez</Text>
-          <Text style={styles.parametroValue}>
-            {analysis.turbidez || analysis.turbidez === 0 ? analysis.turbidez : 'N/A'}
-          </Text>
-        </View>
-        <View style={styles.parametro}>
-          <Text style={styles.parametroLabel}>Cloro</Text>
-          <Text style={styles.parametroValue}>
-            {analysis.cloroLivre || analysis.cloroLivre === 0 ? analysis.cloroLivre : 'N/A'}
-          </Text>
-        </View>
+      <View style={styles.cardInfo}>
+        <Text style={styles.infoLabel}>🧪</Text>
+        <Text style={styles.infoValue} numberOfLines={1}>
+          pH: {analise.ph} | Turb: {analise.turbidez}
+        </Text>
       </View>
       
-      {/* Ações Condicionais */}
+      {/* Temperaturas */}
+      <View style={styles.cardInfo}>
+        <Text style={styles.infoLabel}>🌡️</Text>
+        <Text style={styles.infoValue} numberOfLines={1}>
+          Ar: {analise.temperaturaAr}°C | Amostra: {analise.temperaturaAmostra}°C
+        </Text>
+      </View>
+      
+      {/* Observações Condicional */}
+      {analise.observacoes && analise.observacoes !== '-' && (
+        <View style={styles.cardInfo}>
+          <Text style={styles.infoLabel}>📝</Text>
+          <Text style={styles.infoValue} numberOfLines={2}>
+            {analise.observacoes}
+          </Text>
+        </View>
+      )}
+      
+      {/* Ações Compactas */}
       <View style={styles.cardAcoes}>
         <TouchableOpacity 
           style={styles.botaoDetalhes}
-          onPress={() => {
-            console.log('🟡 BOTÃO DETALHES: Clicado, chamando onEdit...');
-            onEdit(analysis); // ✅ DEVE passar o objeto analysis COMPLETO
-          }}
+          onPress={() => handleDetails(analise)}
         >
-          <Text style={styles.botaoTexto}>👁️ Detalhes</Text>
+          <Text style={styles.botaoTexto}>🔍 Detalhes</Text>
         </TouchableOpacity>
         
-        {analysis.status === 'pendente_aprovacao' && (
+        {!readOnly && (
           <>
             <TouchableOpacity 
-              style={styles.botaoAprovar}
-              onPress={() => handleAprovar(analysis)}
+              style={[
+                styles.botaoEditar,
+                !analise.podeEditar && styles.botaoDesabilitado
+              ]}
+              onPress={() => handleEdit(analise)}
+              disabled={!analise.podeEditar}
             >
-              <Text style={styles.botaoTexto}>✅ Aprovar</Text>
+              <Text style={styles.botaoTexto}>
+                {analise.podeEditar ? '✏️ Editar' : '🔒 Bloqueado'}
+              </Text>
             </TouchableOpacity>
-
+            
             <TouchableOpacity 
-              style={styles.botaoRejeitar}
-              onPress={() => handleRejeitar(analysis)}
+              style={[
+                styles.botaoDeletar,
+                !analise.podeEditar && styles.botaoDesabilitado
+              ]}
+              onPress={() => handleDelete(analise)}
+              disabled={!analise.podeEditar}
             >
-              <Text style={styles.botaoTexto}>❌ Rejeitar</Text>
+              <Text style={styles.botaoTexto}>
+                {analise.podeEditar ? '🗑️ Excluir' : '🔒 Bloqueado'}
+              </Text>
             </TouchableOpacity>
           </>
         )}
-        
-        <TouchableOpacity 
-          style={styles.botaoDeletar}
-          onPress={() => onDelete(analysis.id)} // ✅ Deve chamar onDelete com o ID
-        >
-          <Text style={styles.botaoTexto}>🗑️ Excluir</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2685BF" />
+        <Text style={styles.loadingText}>Carregando análises...</Text>
+      </View>
+    );
+  }
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <Text style={styles.titulo}>
-          Análises de Água ({analisesFiltradas.length})
+          Análises ({analisesFiltradas.length})
         </Text>
         
         {/* Barra de Busca e Filtros */}
@@ -354,7 +541,7 @@ ${analysis.motivoRejeicao ? `**Motivo da Rejeição:** ${analysis.motivoRejeicao
           <View style={styles.buscaInputContainer}>
             <TextInput
               style={styles.buscaInput}
-              placeholder="🔍 Buscar por poço, proprietário ou analista..."
+              placeholder="🔍 Buscar por poço, data ou observações..."
               value={busca}
               onChangeText={setBusca}
             />
@@ -373,50 +560,23 @@ ${analysis.motivoRejeicao ? `**Motivo da Rejeição:** ${analysis.motivoRejeicao
             onPress={() => setMostrarFiltros(true)}
           >
             <Text style={styles.botaoFiltrosTexto}>⚙️</Text>
-            {(filtroResultado !== 'todos' || filtroStatus !== 'todos') && (
+            {(filtroStatus !== 'todos' || filtroResultado !== 'todos') && (
               <View style={styles.filtroAtivo} />
             )}
           </TouchableOpacity>
         </View>
 
-        {/* Ordenação Rápida */}
-        <View style={styles.ordenacaoContainer}>
-          <Text style={styles.ordenacaoTitulo}>Ordenar:</Text>
-          <TouchableOpacity 
-            style={[
-              styles.ordenacaoBotao,
-              sortField === 'nomePoco' && styles.ordenacaoBotaoAtivo
-            ]}
-            onPress={() => onSort('nomePoco')}
-          >
-            <Text style={styles.ordenacaoBotaoTexto}>
-              Poço {sortField === 'nomePoco' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.ordenacaoBotao,
-              sortField === 'dataAnalise' && styles.ordenacaoBotaoAtivo
-            ]}
-            onPress={() => onSort('dataAnalise')}
-          >
-            <Text style={styles.ordenacaoBotaoTexto}>
-              Data {sortField === 'dataAnalise' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[
-              styles.ordenacaoBotao,
-              sortField === 'resultado' && styles.ordenacaoBotaoAtivo
-            ]}
-            onPress={() => onSort('resultado')}
-          >
-            <Text style={styles.ordenacaoBotaoTexto}>
-              Resultado {sortField === 'resultado' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Text>
-          </TouchableOpacity>
+        {/* Resumo Rápido */}
+        <View style={styles.resumoContainer}>
+          <Text style={styles.resumoItem}>
+            ✅ Aprovadas: {analisesFiltradas.filter(a => a.resultado === 'Aprovada').length}
+          </Text>
+          <Text style={styles.resumoItem}>
+            ❌ Reprovadas: {analisesFiltradas.filter(a => a.resultado === 'Reprovada').length}
+          </Text>
+          <Text style={styles.resumoItem}>
+            ⏳ Pendentes: {analisesFiltradas.filter(a => a.status === 'pendente').length}
+          </Text>
         </View>
 
         {/* Grid Horizontal de Cards */}
@@ -469,18 +629,17 @@ ${analysis.motivoRejeicao ? `**Motivo da Rejeição:** ${analysis.motivoRejeicao
         ) : (
           <View style={styles.semDadosContainer}>
             <Text style={styles.semDados}>
-              {busca || filtroResultado !== 'todos' || filtroStatus !== 'todos' 
+              {busca || filtroStatus !== 'todos' || filtroResultado !== 'todos' 
                 ? '🔍 Nenhuma análise encontrada' 
-                : '📊 Nenhuma análise cadastrada'
-              }
+                : '📭 Nenhuma análise cadastrada'}
             </Text>
-            {(busca || filtroResultado !== 'todos' || filtroStatus !== 'todos') && (
+            {(busca || filtroStatus !== 'todos' || filtroResultado !== 'todos') && (
               <TouchableOpacity 
                 style={styles.limparFiltros}
                 onPress={() => {
                   setBusca('');
-                  setFiltroResultado('todos');
                   setFiltroStatus('todos');
+                  setFiltroResultado('todos');
                 }}
               >
                 <Text style={styles.limparFiltrosTexto}>Limpar filtros</Text>
@@ -489,79 +648,95 @@ ${analysis.motivoRejeicao ? `**Motivo da Rejeição:** ${analysis.motivoRejeicao
           </View>
         )}
 
+        {/* ✅ Modal de Detalhes Integrado */}
+        <Modal
+          visible={!!detalhesAnalise}
+          animationType="slide"
+          transparent={true}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <DetalhesSolicitacaoAnalise 
+                solicitacao={detalhesAnalise}
+                onClose={() => setDetalhesAnalise(null)}
+              />
+            </View>
+          </View>
+        </Modal>
+
         {/* Modal de Filtros */}
         <Modal
           visible={mostrarFiltros}
           animationType="slide"
           transparent={true}
         >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitulo}>Filtros de Análises</Text>
-              
-              <Text style={styles.filtroLabel}>Resultado:</Text>
-              <ScrollView style={styles.filtroLista}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filtroItem,
-                    filtroResultado === 'todos' && styles.filtroItemAtivo
-                  ]}
-                  onPress={() => setFiltroResultado('todos')}
-                >
-                  <Text style={styles.filtroItemTexto}>Todos os resultados</Text>
-                </TouchableOpacity>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitulo}>Filtros</Text>
                 
-                {resultadosUnicos.map(resultado => (
+                <Text style={styles.filtroLabel}>Status:</Text>
+                <ScrollView style={styles.filtroLista}>
                   <TouchableOpacity 
-                    key={resultado}
                     style={[
                       styles.filtroItem,
-                      filtroResultado === resultado && styles.filtroItemAtivo
+                      filtroStatus === 'todos' && styles.filtroItemAtivo
                     ]}
-                    onPress={() => setFiltroResultado(resultado)}
+                    onPress={() => setFiltroStatus('todos')}
                   >
-                    <Text style={styles.filtroItemTexto}>{resultado}</Text>
+                    <Text style={styles.filtroItemTexto}>Todos os status</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
+                  
+                  {['pendente', 'aprovada', 'reprovada'].map(status => (
+                    <TouchableOpacity 
+                      key={status}
+                      style={[
+                        styles.filtroItem,
+                        filtroStatus === status && styles.filtroItemAtivo
+                      ]}
+                      onPress={() => setFiltroStatus(status)}
+                    >
+                      <Text style={styles.filtroItemTexto}>
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
 
-              <Text style={styles.filtroLabel}>Status:</Text>
-              <ScrollView style={styles.filtroLista}>
-                <TouchableOpacity 
-                  style={[
-                    styles.filtroItem,
-                    filtroStatus === 'todos' && styles.filtroItemAtivo
-                  ]}
-                  onPress={() => setFiltroStatus('todos')}
-                >
-                  <Text style={styles.filtroItemTexto}>Todos os status</Text>
-                </TouchableOpacity>
-                
-                {statusUnicos.map(status => (
+                <Text style={styles.filtroLabel}>Resultado:</Text>
+                <ScrollView style={styles.filtroLista}>
                   <TouchableOpacity 
-                    key={status}
                     style={[
                       styles.filtroItem,
-                      filtroStatus === status && styles.filtroItemAtivo
+                      filtroResultado === 'todos' && styles.filtroItemAtivo
                     ]}
-                    onPress={() => setFiltroStatus(status)}
+                    onPress={() => setFiltroResultado('todos')}
                   >
-                    <Text style={styles.filtroItemTexto}>
-                      {status === 'pendente_aprovacao' ? 'Pendente' : 
-                       status === 'ativa' ? 'Ativa' : 
-                       status === 'rejeitada' ? 'Rejeitada' : status}
-                    </Text>
+                    <Text style={styles.filtroItemTexto}>Todos os resultados</Text>
                   </TouchableOpacity>
-                ))}
-              </ScrollView>
-              
-              <View style={styles.modalAcoes}>
-                <TouchableOpacity 
-                  style={styles.modalBotao}
-                  onPress={() => setMostrarFiltros(false)}
-                >
-                  <Text style={styles.modalBotaoTexto}>Aplicar Filtros</Text>
-                </TouchableOpacity>
+                  
+                  {['Aprovada', 'Reprovada'].map(resultado => (
+                    <TouchableOpacity 
+                      key={resultado}
+                      style={[
+                        styles.filtroItem,
+                        filtroResultado === resultado && styles.filtroItemAtivo
+                      ]}
+                      onPress={() => setFiltroResultado(resultado)}
+                    >
+                      <Text style={styles.filtroItemTexto}>{resultado}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+                
+                <View style={styles.modalAcoes}>
+                  <TouchableOpacity 
+                    style={styles.modalBotao}
+                    onPress={() => setMostrarFiltros(false)}
+                  >
+                    <Text style={styles.modalBotaoTexto}>Aplicar</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           </View>
@@ -576,6 +751,17 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     backgroundColor: '#f8f9fa',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f9fa',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   titulo: {
     fontSize: 22,
@@ -645,31 +831,23 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FF4444',
   },
-  ordenacaoContainer: {
+  resumoContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-around',
     marginBottom: 16,
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  ordenacaoTitulo: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-  ordenacaoBotao: {
-    backgroundColor: '#f1f3f4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    padding: 12,
+    backgroundColor: 'white',
     borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
-  ordenacaoBotaoAtivo: {
-    backgroundColor: '#2685BF',
-  },
-  ordenacaoBotaoTexto: {
+  resumoItem: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
+    color: '#666',
   },
   // Carousel e Cards
   carouselContainer: {
@@ -693,7 +871,7 @@ const styles = StyleSheet.create({
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginBottom: 12,
     paddingBottom: 12,
     borderBottomWidth: 1,
@@ -706,18 +884,10 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    minWidth: 70,
-    alignItems: 'center',
-  },
-  statusTexto: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
+  data: {
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   cardInfo: {
     flexDirection: 'row',
@@ -726,87 +896,57 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
     marginRight: 8,
-    minWidth: 80,
+    marginTop: 1,
   },
   infoValue: {
     fontSize: 14,
     color: '#555',
     flex: 1,
     lineHeight: 18,
-  },
-  parametrosContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  parametro: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  parametroLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#666',
-    marginBottom: 4,
-  },
-  parametroValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
+    fontWeight: '500',
   },
   cardAcoes: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    gap: 4,
   },
   botaoDetalhes: {
-    backgroundColor: '#17A2B8',
-    paddingVertical: 6,
+    backgroundColor: '#2685BF',
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     flex: 1,
-    minWidth: 80,
     alignItems: 'center',
   },
-  botaoAprovar: {
-    backgroundColor: '#28A745',
-    paddingVertical: 6,
+  botaoEditar: {
+    backgroundColor: '#FFA500',
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     flex: 1,
-    minWidth: 80,
-    alignItems: 'center',
-  },
-  botaoRejeitar: {
-    backgroundColor: '#FFC107',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    flex: 1,
-    minWidth: 80,
     alignItems: 'center',
   },
   botaoDeletar: {
-    backgroundColor: '#DC3545',
-    paddingVertical: 6,
+    backgroundColor: '#FF4444',
+    paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 8,
     flex: 1,
-    minWidth: 80,
     alignItems: 'center',
+  },
+  botaoDesabilitado: {
+    backgroundColor: '#ccc',
+    opacity: 0.6,
   },
   botaoTexto: {
     color: 'white',
     fontSize: 12,
     fontWeight: 'bold',
-    textAlign: 'center',
   },
   // Paginação
   paginacaoContainer: {
@@ -834,41 +974,113 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Estados vazios
-  semDadosContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  semDados: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  limparFiltros: {
-    backgroundColor: '#2685BF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  limparFiltrosTexto: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  // Modal
-  modalContainer: {
+  // Modal Overlay
+  modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     padding: 20,
   },
-  modalContent: {
+  modalContainer: {
     backgroundColor: 'white',
     borderRadius: 20,
+    maxHeight: '90%',
+    overflow: 'hidden',
+  },
+  // Estilos do Componente de Detalhes
+  detalhesContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  detalhesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 20,
-    maxHeight: '80%',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: '#2685BF',
+  },
+  detalhesTitulo: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  fecharBotao: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fecharTexto: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  detalhesContent: {
+    flex: 1,
+    padding: 16,
+  },
+  secao: {
+    marginBottom: 20,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2685BF',
+  },
+  subtitulo: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  parametrosGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  coluna: {
+    flex: 1,
+  },
+  campo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+    paddingVertical: 4,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    flex: 1,
+  },
+  valor: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#333',
+    flex: 1,
+    textAlign: 'right',
+  },
+  observacoesTexto: {
+    fontSize: 14,
+    color: '#333',
+    lineHeight: 20,
+    padding: 8,
+    backgroundColor: 'white',
+    borderRadius: 6,
+  },
+  textoVazio: {
+    textAlign: 'center',
+    color: '#666',
+    fontSize: 16,
+    padding: 20,
+  },
+  // Estilos dos modais de filtro
+  modalContent: {
+    padding: 20,
   },
   modalTitulo: {
     fontSize: 20,
@@ -880,12 +1092,12 @@ const styles = StyleSheet.create({
   filtroLabel: {
     fontSize: 16,
     fontWeight: '600',
+    marginTop: 16,
     marginBottom: 8,
     color: '#333',
   },
   filtroLista: {
     maxHeight: 150,
-    marginBottom: 16,
   },
   filtroItem: {
     paddingVertical: 12,
@@ -894,26 +1106,51 @@ const styles = StyleSheet.create({
     borderBottomColor: '#f0f0f0',
   },
   filtroItemAtivo: {
-    backgroundColor: '#E3F2FD',
-    borderLeftWidth: 4,
-    borderLeftColor: '#2685BF',
+    backgroundColor: '#e3f2fd',
   },
   filtroItemTexto: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#333',
   },
   modalAcoes: {
+    flexDirection: 'row',
+    justifyContent: 'center',
     marginTop: 20,
   },
   modalBotao: {
     backgroundColor: '#2685BF',
     paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: 8,
     alignItems: 'center',
   },
   modalBotaoTexto: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Estados vazios
+  semDadosContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  semDados: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  limparFiltros: {
+    backgroundColor: '#2685BF',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  limparFiltrosTexto: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

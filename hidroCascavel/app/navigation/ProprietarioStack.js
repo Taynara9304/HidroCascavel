@@ -5,6 +5,7 @@ import HomeProprietario from '../telas/HomeProprietario';
 import MeusDados from '../telas/MeusDados';
 import MinhasVisitas from '../telas/MinhasVisitas';
 import PerfilUsuario from '../telas/PerfilUsuario';
+import NotificacoesProprietario from '../telas/NotificacoesProprietario';
 
 // ✅ ADICIONE ESTAS IMPORTACÕES
 import GerenciarPocos from '../telas/GerenciarPocos';
@@ -62,6 +63,14 @@ const ProprietarioStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Gerenciar Visitas" 
+        }}
+      />
+      <Stack.Screen 
+        name="NotificacoesProprietario" 
+        component={NotificacoesProprietario}
+        options={{ 
+          headerShown: isWeb,
+          title: "Notificações" 
         }}
       />
     </Stack.Navigator>

@@ -93,8 +93,8 @@ const HomeAdm = () => {
         }
     });
 
-    const irHome = () => {
-        navigation.navigate("HomeProprietario");
+    const navigateToNotificacoes = () => {
+        navigation.navigate("NotificacoesAdm");
     }
 
     return (
@@ -135,6 +135,13 @@ const HomeAdm = () => {
                 </View>
 
                 <View style={styles.containerPopUps}>
+                    <TouchableOpacity
+                        style={styles.navItem}
+                        onPress={navigateToNotificacoes}
+                    >
+                        Notificacoes
+                    </TouchableOpacity>
+
                     <TouchableOpacity
                         style={styles.navItem}
                         onPress={navigateToGerenciarPocos}
