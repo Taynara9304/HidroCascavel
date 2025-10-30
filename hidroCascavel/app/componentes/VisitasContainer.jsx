@@ -11,7 +11,9 @@ import TabelaVisitasProprietario from './TabelaVisitasProprietario';
 
 const VisitasContainer = ({ 
   onAdicionarVisita, 
-  enviarVisitaParaAprovacao, // ✅ ADICIONE ESTA PROP
+  enviarVisitaParaAprovacao,
+  aprovarVisita, // ✅ NOVA PROP
+  rejeitarVisita, // ✅ NOVA PROP
   visits, 
   loading, 
   error, 
@@ -87,7 +89,7 @@ const VisitasContainer = ({
         return (
           <AddVisitasAnalista 
             onAdicionarVisita={onAdicionarVisita}
-            enviarVisitaParaAprovacao={enviarVisitaParaAprovacao} // ✅ AGORA ESTÁ DEFINIDA
+            enviarVisitaParaAprovacao={enviarVisitaParaAprovacao}
           />
         );
       
