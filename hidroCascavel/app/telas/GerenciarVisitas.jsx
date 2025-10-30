@@ -1,13 +1,16 @@
-// screens/GerenciarVisitas.js - VERSÃO CORRIGIDA
-import React from 'react';
-import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
+// telas/GerenciarVisitas.js - VERSÃO FINAL COMPLETA
+import React, { useState } from 'react';
+import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import TabelaVisitas from '../componentes/TabelaVisitas';
 import VisitasContainer from '../componentes/VisitasContainer';
+import GerenciarSolicitacoesVisitas from '../componentes/GerenciarSolicitacoesVisitas'; // ✅ NOVO COMPONENTE
 import useVisitas from '../hooks/useTabelaVisitas';
 import { useAuth } from '../contexts/authContext';
 
 const GerenciarVisitas = () => {
   const { userData } = useAuth();
+  const [abaAtiva, setAbaAtiva] = useState('visitas'); // ✅ CONTROLE DE ABAS
+  
   const {
     visits,
     loading,
@@ -18,18 +21,12 @@ const GerenciarVisitas = () => {
     addVisit,
     editVisit,
     deleteVisit,
-    enviarVisitaParaAprovacao
+    enviarVisitaParaAprovacao,
+    aprovarVisita,
+    rejeitarVisita
   } = useVisitas();
 
-  console.log('🎯 GerenciarVisitas: Estado do hook -', { 
-    visitsCount: visits?.length, 
-    loading, 
-    error,
-    sortField,
-    sortDirection
-  });
-
-  // ✅ ADICIONE ESTA FUNÇÃO QUE ESTAVA FALTANDO
+  // ✅ ADICIONE AS FUNÇÕES DE APROVAÇÃO AO CONTEXTO DO HOOK
   const handleDeleteVisit = async (visitId) => {
     try {
       await deleteVisit(visitId);
@@ -44,12 +41,10 @@ const GerenciarVisitas = () => {
     try {
       console.log('🎯 GerenciarVisitas: Recebendo nova visita', novaVisita);
       
-      // Se for analista, usar sistema de aprovação
       if (userData?.tipoUsuario === 'analista') {
         await enviarVisitaParaAprovacao(novaVisita);
         Alert.alert('Sucesso', 'Visita enviada para aprovação!');
       } else {
-        // Admin e proprietário cadastram diretamente
         await addVisit(novaVisita);
         Alert.alert('Sucesso', 'Visita cadastrada com sucesso!');
       }
@@ -59,47 +54,90 @@ const GerenciarVisitas = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2685BF" />
-        <Text style={styles.loadingText}>Carregando visitas...</Text>
-      </View>
-    );
-  }
+  // ✅ RENDERIZAR ABAS APENAS PARA ADMIN
+  const renderAbas = () => {
+    if (userData?.tipoUsuario !== 'administrador') {
+      return null;
+    }
 
-  if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>Erro: {error}</Text>
-        <Text style={styles.errorSubtext}>Verifique a conexão com o Firebase</Text>
+      <View style={styles.abasContainer}>
+        <TouchableOpacity
+          style={[styles.aba, abaAtiva === 'visitas' && styles.abaAtiva]}
+          onPress={() => setAbaAtiva('visitas')}
+        >
+          <Text style={[styles.abaTexto, abaAtiva === 'visitas' && styles.abaTextoAtivo]}>
+            📋 Todas as Visitas
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.aba, abaAtiva === 'solicitacoes' && styles.abaAtiva]}
+          onPress={() => setAbaAtiva('solicitacoes')}
+        >
+          <Text style={[styles.abaTexto, abaAtiva === 'solicitacoes' && styles.abaTextoAtivo]}>
+            ⏳ Solicitações
+            {/* Poderia adicionar badge com contador aqui */}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
-  }
+  };
+
+  // ✅ RENDERIZAR CONTEÚDO BASEADO NA ABA
+  const renderConteudo = () => {
+    if (abaAtiva === 'solicitacoes' && userData?.tipoUsuario === 'administrador') {
+      return <GerenciarSolicitacoesVisitas />;
+    }
+
+    // Conteúdo padrão (visitas)
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2685BF" />
+          <Text style={styles.loadingText}>Carregando visitas...</Text>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Erro: {error}</Text>
+          <Text style={styles.errorSubtext}>Verifique a conexão com o Firebase</Text>
+        </View>
+      );
+    }
+
+    return (
+      <VisitasContainer 
+        onAdicionarVisita={handleAdicionarVisita}
+        enviarVisitaParaAprovacao={enviarVisitaParaAprovacao}
+        visits={visits}
+        loading={loading}
+        error={error}
+        sortField={sortField}
+        sortDirection={sortDirection}
+        handleSort={handleSort}
+        editVisit={editVisit}
+        deleteVisit={handleDeleteVisit}
+        onSolicitarAlteracao={(visitId, motivo) => {
+          console.log('Solicitar alteração:', visitId, motivo);
+          Alert.alert('Solicitação Enviada', 'Sua solicitação foi enviada para o administrador');
+        }}
+      />
+    );
+  };
 
   return (
     <View style={styles.container}>
+      {renderAbas()}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <VisitasContainer 
-          onAdicionarVisita={handleAdicionarVisita}
-          enviarVisitaParaAprovacao={enviarVisitaParaAprovacao}
-          visits={visits}
-          loading={loading}
-          error={error}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          handleSort={handleSort}
-          editVisit={editVisit}
-          deleteVisit={handleDeleteVisit} // ✅ AGORA ESTÁ DEFINIDA
-          onSolicitarAlteracao={(visitId, motivo) => {
-            console.log('Solicitar alteração:', visitId, motivo);
-            Alert.alert('Solicitação Enviada', 'Sua solicitação foi enviada para o administrador');
-          }}
-        />
+        {renderConteudo()}
       </ScrollView>
     </View>
   );
@@ -110,31 +148,38 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
+  abasContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+  aba: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    borderBottomWidth: 3,
+    borderBottomColor: 'transparent',
+  },
+  abaAtiva: {
+    borderBottomColor: '#2685BF',
+  },
+  abaTexto: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+  },
+  abaTextoAtivo: {
+    color: '#2685BF',
+    fontWeight: 'bold',
+  },
   scrollView: {
     flex: 1,
   },
   contentContainer: {
     flexGrow: 1,
     paddingBottom: 16,
-  },
-  debugContainer: {
-    backgroundColor: '#E3F2FD',
-    padding: 12,
-    marginHorizontal: 16,
-    marginTop: 8,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2685BF',
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#2685BF',
-    fontWeight: 'bold',
-  },
-  debugSubtext: {
-    fontSize: 11,
-    color: '#666',
-    marginTop: 2,
   },
   loadingContainer: {
     flex: 1,

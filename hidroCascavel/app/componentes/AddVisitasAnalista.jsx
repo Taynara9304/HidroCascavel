@@ -1,4 +1,4 @@
-// componentes/AddVisitasAnalista.js - VERSÃO ATUALIZADA
+// componentes/AddVisitasAnalista.js - VERSÃO CORRIGIDA
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -47,6 +47,8 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
           ...doc.data()
         }));
         
+        console.log('✅ Poços carregados:', pocosData.length);
+        console.log('🔍 Primeiro poço:', pocosData[0]); // Debug
         setPocos(pocosData);
         setCarregandoPocos(false);
       },
@@ -74,23 +76,38 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
     try {
       setEnviando(true);
 
+      // ✅ CORREÇÃO: Garantir que todos os campos estejam definidos
       const visitData = {
-        ...formData,
+        // Dados do poço
         pocoId: formData.poco.id,
-        pocoNome: formData.poco.nomeProprietario,
-        pocoLocalizacao: formData.poco.localizacao,
-        proprietario: formData.poco.nomeProprietario,
+        pocoNome: formData.poco.nomeProprietario || formData.poco.nome || 'Poço não identificado',
+        pocoLocalizacao: formData.poco.localizacao || 'Localização não informada',
+        proprietario: formData.poco.nomeProprietario || formData.poco.proprietario || 'Proprietário não identificado',
+        
+        // ✅ CORREÇÃO CRÍTICA: Garantir que userId existe
+        userId: formData.poco.userId || formData.poco.proprietarioId || 'unknown', // Fallback seguro
+        
+        // Dados da visita
         dataVisita: formData.dataHora.toISOString(),
-        tipo: 'registro_analista',
-        status: 'pendente_aprovacao',
-        criadoPor: user.uid,
+        situacao: formData.situacao || 'concluida',
+        observacoes: formData.observacoes.trim(),
+        resultado: formData.resultado || '',
+        recomendacoes: formData.recomendacoes || '',
+        
+        // Informações do analista
         analistaId: user.uid,
         analistaNome: userData?.nome || 'Analista',
         tipoUsuario: userData?.tipoUsuario || 'analista',
-        userId: formData.poco.userId,
-        dataSolicitacao: new Date().toISOString()
+        
+        // Metadados para aprovação
+        dataSolicitacao: new Date().toISOString(),
+        criadoPor: user.uid
       };
 
+      console.log('📤 Enviando dados da visita:', visitData);
+      console.log('🔍 userId do poço:', formData.poco.userId);
+      console.log('🔍 Poço completo:', formData.poco);
+      
       // ✅ USAR A NOVA FUNÇÃO de envio para aprovação
       await enviarVisitaParaAprovacao(visitData);
       
@@ -127,12 +144,12 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
     nomeProprietario: poco.nomeProprietario,
     localizacao: poco.localizacao,
     proprietario: poco.nomeProprietario,
-    userId: poco.userId,
+    userId: poco.userId, // ✅ Garantir que este campo existe
     ...poco
   }));
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Registrar Visita Técnica</Text>
       <Text style={styles.subtitle}>Analista - Sistema de Aprovação</Text>
       
@@ -151,7 +168,11 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
               ) : (
                 <SelecaoBuscaSeguro
                   value={formData.poco}
-                  onSelect={(poco) => updateFormData('poco', poco)}
+                  onSelect={(poco) => {
+                    console.log('🎯 Poço selecionado:', poco);
+                    console.log('🔍 userId do poço selecionado:', poco?.userId);
+                    updateFormData('poco', poco);
+                  }}
                   options={opcoesPocos}
                   placeholder="Selecione qualquer poço"
                   searchKeys={['nome', 'proprietario']}
@@ -252,7 +273,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
           </Text>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 
@@ -390,31 +411,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Estilos específicos para admin (radio buttons)
-  radioGroup: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  radioButton: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-  },
-  radioButtonSelected: {
-    backgroundColor: '#2685BF',
-    borderColor: '#2685BF',
-  },
-  radioText: {
-    fontSize: 14,
+  helperText: {
+    fontSize: 12,
     color: '#666',
-    fontWeight: '500',
-  },
-  radioTextSelected: {
-    color: 'white',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
 
