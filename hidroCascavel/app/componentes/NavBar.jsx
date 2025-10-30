@@ -11,12 +11,24 @@ import { MaterialIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import logo from '../assets/logoHidroCascavel.png';
 
-const NavBar = () => {
+const NavBar = ({
+  onScrollToApresentacao,
+  onScrollToEducacao,
+  onScrollToContato,
+  onScrollToServicos, 
+}) => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const isMobile = width <= 800;
+
+  const handleMobilePress = (scrollFunction) => {
+    if (scrollFunction) {
+      scrollFunction();
+    }
+    setMenuOpen(false); // Fecha o menu
+  };
 
   return (
     <View
@@ -34,19 +46,19 @@ const NavBar = () => {
 
           {menuOpen && (
             <View style={styles.sideMenu}>
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity style={styles.navItem} onPress={() => handleMobilePress(onScrollToApresentacao)}>
                 <Text style={styles.navText}>Sobre</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity style={styles.navItem} onPress={() => handleMobilePress(onScrollToServicos)}>
                 <Text style={styles.navText}>Serviços</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity style={styles.navItem} onPress={() => handleMobilePress(onScrollToEducacao)}>
                 <Text style={styles.navText}>Educação Ambiental</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.navItem}>
+              <TouchableOpacity style={styles.navItem} onPress={() => handleMobilePress(onScrollToContato)}>
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
@@ -67,19 +79,19 @@ const NavBar = () => {
         <View style={styles.navRow}>
           <Image source={logo} style={styles.logo} /> 
 
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={onScrollToApresentacao}>
             <Text style={styles.navText}>Sobre</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={onScrollToServicos}>
             <Text style={styles.navText}>Serviços</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={onScrollToEducacao}>
             <Text style={styles.navText}>Educação Ambiental</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.navItem}>
+          <TouchableOpacity style={styles.navItem} onPress={onScrollToContato}>
             <Text style={styles.navText}>Contato</Text>
           </TouchableOpacity>
 
@@ -98,6 +110,7 @@ const NavBar = () => {
 
 export default NavBar;
 
+// ... (Estilos não mudam) ...
 const styles = StyleSheet.create({
   navBar: {
     marginTop: 20,

@@ -94,8 +94,6 @@ const CarosselInicial = ({ containerWidth, onScrollToAvaliacoes }) => {
           index,
         })}
       />
-
-      <NavBar/>
     </View>
   );
 };

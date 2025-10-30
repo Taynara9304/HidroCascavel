@@ -26,26 +26,25 @@ const NavBar = () => {
 
   // Função para navegar para a tela de notificações correta
   const handleNotificacoesPress = () => {
+    // ... (seu código original, está correto)
     setMenuOpen(false);
     
     console.log('🔔 Navegando para notificações. Tipo de usuário:', userData?.tipoUsuario);
     
-    // ✅ CORREÇÃO: Navegação SIMPLES - cada stack já tem sua própria tela
-    // Não precisa especificar o stack, só o nome da tela dentro do stack atual
     if (userData?.tipoUsuario === 'administrador') {
-      navigation.navigate("NotificacoesAdm"); // ✅ Nome EXATO como está no AdminStack
+      navigation.navigate("NotificacoesAdm"); 
     } else if (userData?.tipoUsuario === 'analista') {
-      navigation.navigate("NotificacoesAnalista"); // ✅ Nome EXATO como está no AnalistaStack
+      navigation.navigate("NotificacoesAnalista"); 
     } else if (userData?.tipoUsuario === 'proprietario') {
-      navigation.navigate("NotificacoesProprietario"); // ✅ Nome EXATO como está no ProprietarioStack
+      navigation.navigate("NotificacoesProprietario"); 
     } else {
-      // Fallback
       navigation.navigate("NotificacoesAnalista");
     }
   };
 
   // Função para deslogar
   const handleDeslogar = async () => {
+    // ... (seu código original, está correto)
     try {
       console.log('Iniciando logout...');
       
@@ -73,10 +72,12 @@ const NavBar = () => {
 
   // Função para navegar para o perfil
   const handlePerfilPress = () => {
+    // ... (seu código original, está correto)
     setMenuOpen(false);
     navigation.navigate("PerfilUsuario");
   };
 
+  // ... (Componentes Tooltip e IconButton originais, estão corretos)
   // Tooltip component
   const Tooltip = ({ text, visible }) => {
     if (!visible) return null;
@@ -127,47 +128,51 @@ const NavBar = () => {
 
           {menuOpen && (
             <View style={styles.sideMenu}>
+              {/* === MUDANÇA AQUI === */}
               <TouchableOpacity 
                 style={styles.navItem}
                 onPress={() => {
                   setMenuOpen(false);
-                  navigation.navigate("Sobre");
+                  navigation.navigate("TelaInicial");
                 }}
               >
                 <Text style={styles.navText}>Sobre</Text>
               </TouchableOpacity>
 
+              {/* === MUDANÇA AQUI === */}
               <TouchableOpacity 
                 style={styles.navItem}
                 onPress={() => {
                   setMenuOpen(false);
-                  navigation.navigate("Servicos");
+                  navigation.navigate("TelaInicial");
                 }}
               >
                 <Text style={styles.navText}>Serviços</Text>
               </TouchableOpacity>
 
+              {/* === MUDANÇA AQUI === */}
               <TouchableOpacity 
                 style={styles.navItem}
                 onPress={() => {
                   setMenuOpen(false);
-                  navigation.navigate("EducacaoAmbiental");
+                  navigation.navigate("TelaInicial");
                 }}
               >
                 <Text style={styles.navText}>Educação Ambiental</Text>
               </TouchableOpacity>
 
+              {/* === MUDANÇA AQUI === */}
               <TouchableOpacity 
                 style={styles.navItem}
                 onPress={() => {
                   setMenuOpen(false);
-                  navigation.navigate("Contato");
+                  navigation.navigate("TelaInicial");
                 }}
               >
                 <Text style={styles.navText}>Contato</Text>
               </TouchableOpacity>
 
-              {/* Botões com ícones no mobile */}
+              {/* Botões com ícones no mobile (originais) */}
               <View style={styles.mobileIconButtons}>
                 <TouchableOpacity 
                   style={[styles.mobileIconButton, styles.notificacoesButton]}
@@ -204,37 +209,41 @@ const NavBar = () => {
           <Image source={logo} style={styles.logo} /> 
 
           <View style={styles.navItemsContainer}>
+            {/* === MUDANÇA AQUI === */}
             <TouchableOpacity 
               style={styles.navItem}
-              onPress={() => navigation.navigate("Sobre")}
+              onPress={() => navigation.navigate("TelaInicial")}
             >
               <Text style={styles.navText}>Sobre</Text>
             </TouchableOpacity>
 
+            {/* === MUDANÇA AQUI === */}
             <TouchableOpacity 
               style={styles.navItem}
-              onPress={() => navigation.navigate("Servicos")}
+              onPress={() => navigation.navigate("TelaInicial")}
             >
               <Text style={styles.navText}>Serviços</Text>
             </TouchableOpacity>
 
+            {/* === MUDANÇA AQUI === */}
             <TouchableOpacity 
               style={styles.navItem}
-              onPress={() => navigation.navigate("EducacaoAmbiental")}
+              onPress={() => navigation.navigate("TelaInicial")}
             >
               <Text style={styles.navText}>Educação Ambiental</Text>
             </TouchableOpacity>
 
+            {/* === MUDANÇA AQUI === */}
             <TouchableOpacity 
               style={styles.navItem}
-              onPress={() => navigation.navigate("Contato")}
+              onPress={() => navigation.navigate("TelaInicial")}
             >
               <Text style={styles.navText}>Contato</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.rightButtons}>
-            {/* Botões com ícones para Desktop */}
+            {/* Botões com ícones para Desktop (originais) */}
             <IconButton
               icon="notifications"
               label="Notificações"
@@ -264,6 +273,7 @@ const NavBar = () => {
 
 export default NavBar;
 
+// ... (Seus estilos originais)
 const styles = StyleSheet.create({
   navBar: {
     marginTop: 20,

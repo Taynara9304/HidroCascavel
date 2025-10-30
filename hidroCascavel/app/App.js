@@ -1,10 +1,10 @@
-// App.js - VERSÃO CORRIGIDA
+// App.js - VERSÃO CORRIGIDA E FUNCIONAL
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthProvider, useAuth } from './contexts/authContext';
+import { AuthProvider, useAuth } from './contexts/authContext'; // Verifique o caminho
 import Toast from 'react-native-toast-message';
-import { toastConfig } from './services/toastConfig';
+import { toastConfig } from './services/toastConfig'; // Verifique o caminho
 import { ActivityIndicator, View, Text } from 'react-native';
 
 // Stacks
@@ -35,61 +35,56 @@ const AppContent = () => {
     );
   }
 
-  console.log('🎯 Estado atual no AppContent:', { 
-    user: user?.uid, 
-    userData: userData,
-    tipoUsuario: userData?.tipoUsuario 
-  });
+  // 1. Determinar qual é a ROTA INICIAL
+  let initialRoute = "TelaInicial"; // Padrão: usuário deslogado
+
+  if (user && userData?.tipoUsuario) {
+    // Usuário está logado, vamos definir a rota inicial correta
+    switch (userData.tipoUsuario) {
+      case 'proprietario':
+        initialRoute = "ProprietarioStack"; // <-- Nome da tela do stack
+        break;
+      case 'analista':
+        initialRoute = "AnalistaStack";
+        break;
+      case 'administrador':
+        initialRoute = "AdministradorStack";
+        break;
+      default:
+        initialRoute = "TelaInicial"; // Fallback
+    }
+  }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!user ? (
-        // Usuário NÃO logado
-        <>
-          <Stack.Screen name="TelaInicial" component={TelaInicial} />
-          <Stack.Screen name="Login" component={Login} />
-          <Stack.Screen name="TipoUsuario" component={TipoUsuario} />
-          <Stack.Screen name="TipoCadastro" component={TipoCadastro} />
-          <Stack.Screen name="Cadastro" component={Cadastro} />
-          <Stack.Screen name="CadastroAnalista" component={CadastroAnalista} />
-          <Stack.Screen name="CadastroAdm" component={CadastroAdm} />
-        </>
-      ) : userData && userData.tipoUsuario ? (
-        // ✅ CORREÇÃO: Usuário LOGADO - Redirecionamento por tipo
-        (() => {
-          const tipo = userData.tipoUsuario;
-          console.log('🎯 Redirecionando para stack do tipo:', tipo);
-          
-          switch (tipo) {
-            case 'proprietario':
-              return <Stack.Screen name="MainApp" component={ProprietarioStack} />;
-            case 'analista':
-              return <Stack.Screen name="MainApp" component={AnalistaStack} />;
-            case 'administrador':
-              return <Stack.Screen name="MainApp" component={AdministradorStack} />;
-            default:
-              return (
-                <>
-                  <Stack.Screen name="TelaInicial" component={TelaInicial} />
-                  <Stack.Screen name="Login" component={Login} />
-                </>
-              );
-          }
-        })()
-      ) : (
-        // Usuário logado mas sem dados
-        <>
-          <Stack.Screen name="TelaInicial" component={TelaInicial} />
-          <Stack.Screen name="Login" component={Login} />
-        </>
-      )}
+    // 2. Definir a rota inicial DINAMICAMENTE
+    <Stack.Navigator 
+      screenOptions={{ headerShown: false }}
+      initialRouteName={initialRoute} // <--- A MÁGICA ACONTECE AQUI
+    >
+      {/* 3. DEFINIR TODAS AS TELAS SEMPRE 
+           Não usamos mais "if/else" ou ternário aqui dentro 
+      */}
+
+      {/* === TELAS PÚBLICAS (Sempre existem) === */}
+      <Stack.Screen name="TelaInicial" component={TelaInicial} />
+      <Stack.Screen name="Login" component={Login} />
+      <Stack.Screen name="TipoUsuario" component={TipoUsuario} />
+      <Stack.Screen name="TipoCadastro" component={TipoCadastro} />
+      <Stack.Screen name="Cadastro" component={Cadastro} />
+      <Stack.Screen name="CadastroAnalista" component={CadastroAnalista} />
+      <Stack.Screen name="CadastroAdm" component={CadastroAdm} />
+
+      {/* === TELAS/STACKS PRIVADAS (Sempre existem) === */}
+      {/* Damos a elas um nome único */}
+      <Stack.Screen name="ProprietarioStack" component={ProprietarioStack} />
+      <Stack.Screen name="AnalistaStack" component={AnalistaStack} />
+      <Stack.Screen name="AdministradorStack" component={AdministradorStack} />
+      
     </Stack.Navigator>
   );
 };
 
 const App = () => {
-  console.log('🚀 App.js executando');
-  
   return (
     <AuthProvider>
       <NavigationContainer>
