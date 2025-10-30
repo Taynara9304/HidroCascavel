@@ -1,4 +1,4 @@
-// componentes/VisitasContainer.js - VERSÃO COMPLETA
+// componentes/VisitasContainer.js - VERSÃO CORRIGIDA
 import React from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useAuth } from '../contexts/authContext';
@@ -11,6 +11,7 @@ import TabelaVisitasProprietario from './TabelaVisitasProprietario';
 
 const VisitasContainer = ({ 
   onAdicionarVisita, 
+  enviarVisitaParaAprovacao, // ✅ ADICIONE ESTA PROP
   visits, 
   loading, 
   error, 
@@ -83,7 +84,12 @@ const VisitasContainer = ({
         return <AddVisitasAdmin onAdicionarVisita={onAdicionarVisita} />;
       
       case 'analista':
-        return <AddVisitasAnalista onAdicionarVisita={onAdicionarVisita} />;
+        return (
+          <AddVisitasAnalista 
+            onAdicionarVisita={onAdicionarVisita}
+            enviarVisitaParaAprovacao={enviarVisitaParaAprovacao} // ✅ AGORA ESTÁ DEFINIDA
+          />
+        );
       
       case 'proprietario':
       default:

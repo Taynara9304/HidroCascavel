@@ -3,7 +3,7 @@ import React from 'react';
 import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
 import TabelaPocos from '../componentes/TabelaPocos';
 import PocosContainer from '../componentes/PocosContainer';
-import usePocos from '../hooks/useTabelaPocos'; // ✅ Certifique-se que está importando usePocos
+import usePocos from '../hooks/useTabelaPocos';
 import { useAuth } from '../contexts/authContext';
 
 const GerenciarPocos = () => {

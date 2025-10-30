@@ -1,4 +1,4 @@
-// componentes/AddVisitasAnalista.js - ATUALIZADO
+// componentes/AddVisitasAnalista.js - VERSÃO ATUALIZADA
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,7 +19,7 @@ import { useAuth } from '../contexts/authContext';
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
 
-const AddVisitasAnalista = ({ onAdicionarVisita }) => {
+const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) => {
   const { user, userData } = useAuth();
   const [formData, setFormData] = useState({
     poco: null,
@@ -31,6 +31,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
   });
   const [pocos, setPocos] = useState([]);
   const [carregandoPocos, setCarregandoPocos] = useState(true);
+  const [enviando, setEnviando] = useState(false);
 
   // Analista pode ver TODOS os poços
   useEffect(() => {
@@ -65,7 +66,14 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
       return;
     }
 
+    if (!formData.observacoes.trim()) {
+      Alert.alert('Erro', 'Por favor, informe as observações da visita');
+      return;
+    }
+
     try {
+      setEnviando(true);
+
       const visitData = {
         ...formData,
         pocoId: formData.poco.id,
@@ -76,13 +84,17 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
         tipo: 'registro_analista',
         status: 'pendente_aprovacao',
         criadoPor: user.uid,
-        tipoUsuario: userData?.tipoUsuario || 'analista', // ← Use tipoUsuario
+        analistaId: user.uid,
+        analistaNome: userData?.nome || 'Analista',
+        tipoUsuario: userData?.tipoUsuario || 'analista',
         userId: formData.poco.userId,
         dataSolicitacao: new Date().toISOString()
       };
 
-      await onAdicionarVisita(visitData);
+      // ✅ USAR A NOVA FUNÇÃO de envio para aprovação
+      await enviarVisitaParaAprovacao(visitData);
       
+      // Limpar formulário
       setFormData({
         poco: null,
         dataHora: new Date(),
@@ -93,13 +105,15 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
       });
 
       Alert.alert(
-        'Registro Enviado!', 
-        'Seu registro de visita foi enviado para aprovação do administrador.',
+        '✅ Registro Enviado!', 
+        'Sua visita técnica foi enviada para aprovação do administrador.\n\nVocê receberá uma notificação quando for aprovada.',
         [{ text: 'OK' }]
       );
     } catch (error) {
       console.error('❌ Erro ao enviar registro:', error);
-      Alert.alert('Erro', 'Não foi possível enviar o registro de visita');
+      Alert.alert('Erro', 'Não foi possível enviar o registro de visita: ' + error.message);
+    } finally {
+      setEnviando(false);
     }
   };
 
@@ -120,7 +134,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Registrar Visita Técnica</Text>
-      <Text style={styles.subtitle}>Analista</Text>
+      <Text style={styles.subtitle}>Analista - Sistema de Aprovação</Text>
       
       <View style={styles.form}>
         <Text style={styles.sectionTitle}>Informações da Visita</Text>
@@ -161,14 +175,14 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
 
         <View style={styles.fullWidth}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Observações da Visita</Text>
+            <Text style={styles.label}>Observações da Visita *</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={formData.observacoes}
               onChangeText={(text) => updateFormData('observacoes', text)}
-              placeholder="Descreva as condições do poço, problemas encontrados..."
+              placeholder="Descreva as condições do poço, problemas encontrados, atividades realizadas..."
               multiline={true}
-              numberOfLines={3}
+              numberOfLines={4}
               textAlignVertical="top"
             />
           </View>
@@ -181,7 +195,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
               style={[styles.input, styles.textArea]}
               value={formData.resultado}
               onChangeText={(text) => updateFormData('resultado', text)}
-              placeholder="Resultados das análises, medições, etc..."
+              placeholder="Resultados das análises, medições, parâmetros avaliados..."
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
@@ -196,7 +210,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
               style={[styles.input, styles.textArea]}
               value={formData.recomendacoes}
               onChangeText={(text) => updateFormData('recomendacoes', text)}
-              placeholder="Recomendações para o proprietário..."
+              placeholder="Recomendações para o proprietário, próximos passos..."
               multiline={true}
               numberOfLines={3}
               textAlignVertical="top"
@@ -205,12 +219,13 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
         </View>
 
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>ℹ️ Fluxo do Analista:</Text>
+          <Text style={styles.infoTitle}>📋 Fluxo do Analista:</Text>
           <Text style={styles.infoText}>
             • Selecione QUALQUER poço do sistema{'\n'}
-            • Registre os dados da visita realizada{'\n'}
-            • Registro enviado para aprovação do admin{'\n'}
-            • Após aprovado, aparecerá no histórico
+            • Preencha os dados da visita realizada{'\n'}
+            • Registro enviado para APROVAÇÃO do admin{'\n'}
+            • Após aprovado, aparecerá no seu histórico{'\n'}
+            • Você receberá uma notificação quando aprovado
           </Text>
         </View>
 
@@ -218,22 +233,29 @@ const AddVisitasAnalista = ({ onAdicionarVisita }) => {
           <TouchableOpacity 
             style={[
               styles.submitButton,
-              !formData.poco && styles.submitButtonDisabled
+              (!formData.poco || !formData.observacoes.trim() || enviando) && styles.submitButtonDisabled
             ]} 
             onPress={handleSubmit}
-            disabled={!formData.poco}
+            disabled={!formData.poco || !formData.observacoes.trim() || enviando}
           >
-            <Text style={styles.submitButtonText}>
-              📋 ENVIAR PARA APROVAÇÃO
-            </Text>
+            {enviando ? (
+              <ActivityIndicator size="small" color="white" />
+            ) : (
+              <Text style={styles.submitButtonText}>
+                📤 ENVIAR PARA APROVAÇÃO
+              </Text>
+            )}
           </TouchableOpacity>
+          
+          <Text style={styles.helperText}>
+            * Campos obrigatórios
+          </Text>
         </View>
       </View>
     </ScrollView>
   );
 };
 
-// Adicione isso ao final de AddVisitasAnalista.js e AddVisitasAdmin.js
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,4 +1,4 @@
-// hooks/useTabelaVisitas.js - VERSÃO COMPLETA CORRIGIDA
+// hooks/useTabelaVisitas.jsx - VERSÃO ATUALIZADA
 import { useState, useEffect } from 'react';
 import { 
   collection, 
@@ -9,12 +9,11 @@ import {
   onSnapshot, 
   orderBy, 
   query,
-  serverTimestamp,
-  Timestamp
+  where,
+  serverTimestamp
 } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
-import { enviarNotificacaoWhatsAppSolicitacao } from '../services/whatsappNotificationService';
-
+import { useAuth } from '../contexts/authContext';
 
 const useVisitas = () => {
   const [visits, setVisits] = useState([]);
@@ -22,22 +21,48 @@ const useVisitas = () => {
   const [error, setError] = useState(null);
   const [sortField, setSortField] = useState('dataVisita');
   const [sortDirection, setSortDirection] = useState('desc');
+  const { user, userData } = useAuth();
 
   console.log('🔄 useVisitas: Hook inicializado');
 
-  // Buscar visitas em tempo real - VERSÃO SIMPLIFICADA
+  // Buscar visitas em tempo real
   useEffect(() => {
+    if (!user) {
+      setVisits([]);
+      setLoading(false);
+      return;
+    }
+
     console.log('📡 useVisitas: Configurando listener do Firebase...');
     setLoading(true);
-    setError(null);
     
     try {
       const visitsCollection = collection(db, 'visits');
-      console.log('📡 useVisitas: Coleção referenciada');
-      
-      // Query simples sem filtros complexos por enquanto
-      const q = query(visitsCollection, orderBy('dataVisita', 'desc'));
-      
+      let q;
+
+      if (userData?.tipoUsuario === 'administrador') {
+        // ADM vê TODAS as visitas
+        q = query(visitsCollection, orderBy('dataVisita', 'desc'));
+        console.log('🎯 ADM: Carregando TODAS as visitas');
+      } else if (userData?.tipoUsuario === 'analista') {
+        // Analista vê apenas suas visitas APROVADAS
+        q = query(
+          visitsCollection, 
+          where('criadoPor', '==', user.uid),
+          where('status', 'in', ['aprovada', 'concluida']),
+          orderBy('dataVisita', 'desc')
+        );
+        console.log('🎯 Analista: Carregando visitas aprovadas do usuário');
+      } else {
+        // Proprietário vê visitas do seu poço
+        q = query(
+          visitsCollection, 
+          where('userId', '==', user.uid),
+          orderBy('dataVisita', 'desc')
+        );
+        console.log('🎯 Proprietário: Carregando visitas do usuário');
+      }
+
       const unsubscribe = onSnapshot(q, 
         (snapshot) => {
           console.log('📡 useVisitas: Snapshot recebido -', snapshot.docs.length, 'documentos');
@@ -46,7 +71,9 @@ const useVisitas = () => {
             const data = doc.data();
             return {
               id: doc.id,
-              ...data
+              ...data,
+              dataVisita: data.dataVisita,
+              dataCriacao: data.dataCriacao
             };
           });
           
@@ -70,31 +97,90 @@ const useVisitas = () => {
       setError('Erro de configuração: ' + err.message);
       setLoading(false);
     }
-  }, []);
+  }, [user, userData]);
 
-  const addVisit = async (visitData) => {
+  // ✅ NOVA FUNÇÃO: Enviar visita para aprovação
+  const enviarVisitaParaAprovacao = async (visitData) => {
     try {
-      console.log('🎯 useVisitas.addVisit: Iniciando...', visitData);
+      console.log('📋 useVisitas: Enviando visita para aprovação...', visitData);
       
-      // ✅ ADICIONAR: Enviar notificação para WhatsApp se for do proprietário
-      if (visitData.tipo === 'solicitacao_proprietario_whatsapp') {
-        console.log('📱 Enviando notificação WhatsApp...');
-        await enviarNotificacaoWhatsAppSolicitacao(visitData);
-      }
-
-      const visitsCollection = collection(db, 'visits');
-      const visitWithTimestamp = {
+      // 1. Salvar na coleção de visitas_pendentes
+      const pendingVisitsCollection = collection(db, 'visits_pendentes');
+      
+      const pendingVisitDoc = {
         ...visitData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        status: 'pendente_aprovacao',
+        dataSolicitacao: serverTimestamp(),
+        tipoSolicitacao: 'visita_analista',
+        analistaId: user.uid,
+        analistaNome: userData?.nome || 'Analista',
+        dataCriacao: serverTimestamp()
       };
 
-      const docRef = await addDoc(visitsCollection, visitWithTimestamp);
-      console.log('✅ Visita adicionada com ID:', docRef.id);
+      console.log('📤 Salvando em visits_pendentes:', pendingVisitDoc);
+      const docRef = await addDoc(pendingVisitsCollection, pendingVisitDoc);
+      
+      // 2. Criar notificação para o administrador
+      await criarNotificacaoAdmin(docRef.id, visitData);
+      
+      console.log('✅ useVisitas: Visita enviada para aprovação! ID:', docRef.id);
+      return docRef.id;
+    } catch (error) {
+      console.error('❌ useVisitas: Erro ao enviar visita para aprovação:', error);
+      throw error;
+    }
+  };
+
+  // ✅ FUNÇÃO: Criar notificação para administrador
+  const criarNotificacaoAdmin = async (visitPendingId, visitData) => {
+    try {
+      const notificationsCollection = collection(db, 'notifications_admin');
+      
+      const notificationDoc = {
+        tipo: 'visita_pendente',
+        titulo: '📋 Nova Visita para Aprovação',
+        mensagem: `O analista ${userData?.nome || 'Analista'} enviou uma visita técnica para o poço ${visitData.pocoNome}`,
+        visitPendingId: visitPendingId,
+        dadosVisita: {
+          pocoNome: visitData.pocoNome,
+          dataVisita: visitData.dataVisita,
+          observacoes: visitData.observacoes,
+          analistaNome: userData?.nome || 'Analista',
+          analistaId: user.uid
+        },
+        status: 'nao_lida',
+        dataCriacao: serverTimestamp(),
+        userId: 'admin' // Notificação para todos os admins
+      };
+
+      await addDoc(notificationsCollection, notificationDoc);
+      console.log('✅ Notificação criada para admin');
+    } catch (error) {
+      console.error('❌ Erro ao criar notificação:', error);
+      // Não lançar erro para não quebrar o fluxo principal
+    }
+  };
+
+  // ✅ FUNÇÃO ORIGINAL: Adicionar visita diretamente (para admin/proprietário)
+  const addVisit = async (visitData) => {
+    try {
+      console.log('➕ useVisitas: Adicionando visita...', visitData);
+      
+      const visitsCollection = collection(db, 'visits');
+      
+      const visitDocument = {
+        ...visitData,
+        dataCriacao: serverTimestamp(),
+        status: visitData.status || 'concluida'
+      };
+
+      console.log('➕ useVisitas: Enviando para Firebase...', visitDocument);
+      const docRef = await addDoc(visitsCollection, visitDocument);
+      console.log('✅ useVisitas: Visita cadastrada com sucesso! ID:', docRef.id);
       
       return docRef.id;
     } catch (error) {
-      console.error('❌ Erro ao adicionar visita:', error);
+      console.error('❌ useVisitas: Erro ao adicionar visita:', error);
       throw error;
     }
   };
@@ -126,7 +212,7 @@ const useVisitas = () => {
     }
   };
 
-  // Ordenação - AGORA DEFINIDA CORRETAMENTE
+  // Ordenação
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -137,13 +223,12 @@ const useVisitas = () => {
   };
 
   // Aplicar ordenação client-side
-  const visitsOrdenados = [...visits].sort((a, b) => {
+  const visitsOrdenadas = [...visits].sort((a, b) => {
     if (!a[sortField] || !b[sortField]) return 0;
     
     let aValue = a[sortField];
     let bValue = b[sortField];
     
-    // Se for Timestamp do Firebase, converter para Date
     if (aValue.toDate && bValue.toDate) {
       aValue = aValue.toDate();
       bValue = bValue.toDate();
@@ -157,7 +242,7 @@ const useVisitas = () => {
   });
 
   return {
-    visits: visitsOrdenados,
+    visits: visitsOrdenadas,
     loading,
     error,
     sortField,
@@ -166,6 +251,7 @@ const useVisitas = () => {
     addVisit,
     editVisit,
     deleteVisit,
+    enviarVisitaParaAprovacao
   };
 };
 

@@ -1,13 +1,13 @@
-// screens/GerenciarVisitas.js - VERSÃO FINAL CORRIGIDA
+// screens/GerenciarVisitas.js - VERSÃO CORRIGIDA
 import React from 'react';
 import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text } from 'react-native';
 import TabelaVisitas from '../componentes/TabelaVisitas';
-import VisitasContainer from '../componentes/VisitasContainer'; // ✅ Use VisitasContainer
+import VisitasContainer from '../componentes/VisitasContainer';
 import useVisitas from '../hooks/useTabelaVisitas';
-import { useAuth } from '../contexts/authContext'; // ✅ Adicione isso
+import { useAuth } from '../contexts/authContext';
 
 const GerenciarVisitas = () => {
-  const { userData } = useAuth(); // ✅ Adicione para debug
+  const { userData } = useAuth();
   const {
     visits,
     loading,
@@ -18,6 +18,7 @@ const GerenciarVisitas = () => {
     addVisit,
     editVisit,
     deleteVisit,
+    enviarVisitaParaAprovacao
   } = useVisitas();
 
   console.log('🎯 GerenciarVisitas: Estado do hook -', { 
@@ -28,20 +29,7 @@ const GerenciarVisitas = () => {
     sortDirection
   });
 
-  // ✅ Adicione debug do tipo de usuário
-  console.log('🎯 GerenciarVisitas: Tipo de usuário atual:', userData?.tipoUsuario);
-
-  const handleAdicionarVisita = async (novaVisita) => {
-    try {
-      console.log('🎯 GerenciarVisitas: Recebendo nova visita', novaVisita);
-      await addVisit(novaVisita);
-      Alert.alert('Sucesso', 'Visita cadastrada com sucesso!');
-    } catch (error) {
-      console.error('❌ GerenciarVisitas: Erro no addVisit:', error);
-      Alert.alert('Erro', `Não foi possível cadastrar a visita: ${error.message}`);
-    }
-  };
-
+  // ✅ ADICIONE ESTA FUNÇÃO QUE ESTAVA FALTANDO
   const handleDeleteVisit = async (visitId) => {
     try {
       await deleteVisit(visitId);
@@ -49,6 +37,25 @@ const GerenciarVisitas = () => {
     } catch (error) {
       console.error('Erro ao deletar visita:', error);
       Alert.alert('Erro', 'Não foi possível deletar a visita.');
+    }
+  };
+
+  const handleAdicionarVisita = async (novaVisita) => {
+    try {
+      console.log('🎯 GerenciarVisitas: Recebendo nova visita', novaVisita);
+      
+      // Se for analista, usar sistema de aprovação
+      if (userData?.tipoUsuario === 'analista') {
+        await enviarVisitaParaAprovacao(novaVisita);
+        Alert.alert('Sucesso', 'Visita enviada para aprovação!');
+      } else {
+        // Admin e proprietário cadastram diretamente
+        await addVisit(novaVisita);
+        Alert.alert('Sucesso', 'Visita cadastrada com sucesso!');
+      }
+    } catch (error) {
+      console.error('❌ GerenciarVisitas: Erro:', error);
+      Alert.alert('Erro', `Não foi possível processar a visita: ${error.message}`);
     }
   };
 
@@ -70,38 +77,32 @@ const GerenciarVisitas = () => {
     );
   }
 
-  // screens/GerenciarVisitas.js - VERSÃO ATUALIZADA
-// ... imports e código anterior ...
-
-return (
-  <View style={styles.container}>
-    <ScrollView 
-      style={styles.scrollView}
-      contentContainerStyle={styles.contentContainer}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* ✅ Adicione debug info se necessário */}
-      
-      {/* ✅ Use VisitasContainer passando TODAS as props */}
-      <VisitasContainer 
-        onAdicionarVisita={handleAdicionarVisita}
-        visits={visits}
-        loading={loading}
-        error={error}
-        sortField={sortField}
-        sortDirection={sortDirection}
-        handleSort={handleSort}
-        editVisit={editVisit}
-        deleteVisit={handleDeleteVisit}
-        onSolicitarAlteracao={(visitId, motivo) => {
-          // ✅ Implementar função de solicitação de alteração
-          console.log('Solicitar alteração:', visitId, motivo);
-          Alert.alert('Solicitação Enviada', 'Sua solicitação foi enviada para o administrador');
-        }}
-      />
-    </ScrollView>
-  </View>
-);
+  return (
+    <View style={styles.container}>
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.contentContainer}
+        showsVerticalScrollIndicator={false}
+      >
+        <VisitasContainer 
+          onAdicionarVisita={handleAdicionarVisita}
+          enviarVisitaParaAprovacao={enviarVisitaParaAprovacao}
+          visits={visits}
+          loading={loading}
+          error={error}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          handleSort={handleSort}
+          editVisit={editVisit}
+          deleteVisit={handleDeleteVisit} // ✅ AGORA ESTÁ DEFINIDA
+          onSolicitarAlteracao={(visitId, motivo) => {
+            console.log('Solicitar alteração:', visitId, motivo);
+            Alert.alert('Solicitação Enviada', 'Sua solicitação foi enviada para o administrador');
+          }}
+        />
+      </ScrollView>
+    </View>
+  );
 };
 
 const styles = StyleSheet.create({

@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.2;
+const CARD_WIDTH = screenWidth * 0.3;
 const CARD_MARGIN = 8;
 
 const TabelaPocos = ({ 
@@ -120,17 +120,17 @@ const TabelaPocos = ({
         <Text style={styles.infoLabel}>📍</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           {well.localizacao ? 
-            `${well.localizacao.latitude?.toFixed(4) || 'N/A'}, ${well.localizacao.longitude?.toFixed(4) || 'N/A'}` 
+            `${well.localizacao.latitude?.toFixed(4) || 'N/A'}° S, ${well.localizacao.longitude?.toFixed(4) || 'N/A'}° W` 
             : 'Não informada'
           }
         </Text>
       </View>
       
-      {/* ID Compacto */}
+      {/* ID como Número */}
       <View style={styles.cardInfo}>
         <Text style={styles.infoLabel}>👤</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
-          {well.idProprietario ? `ID: ${well.idProprietario.substring(0, 8)}...` : 'N/A'}
+          {well.idProprietario ? `ID: ${well.idProprietario}` : 'N/A'}
         </Text>
       </View>
       

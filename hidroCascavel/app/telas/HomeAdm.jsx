@@ -93,10 +93,6 @@ const HomeAdm = () => {
         }
     });
 
-    const navigateToNotificacoes = () => {
-        navigation.navigate("NotificacoesAdm");
-    }
-
     return (
         <ScrollView style={styles.scrollView}>
             <View style={[styles.container, { width: contentWidth }]}>
@@ -135,13 +131,6 @@ const HomeAdm = () => {
                 </View>
 
                 <View style={styles.containerPopUps}>
-                    <TouchableOpacity
-                        style={styles.navItem}
-                        onPress={navigateToNotificacoes}
-                    >
-                        Notificacoes
-                    </TouchableOpacity>
-
                     <TouchableOpacity
                         style={styles.navItem}
                         onPress={navigateToGerenciarPocos}
