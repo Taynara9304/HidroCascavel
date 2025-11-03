@@ -3,7 +3,7 @@ import { View, StyleSheet, useWindowDimensions, ScrollView, TouchableOpacity } f
 import PopUp from "../componentes/PopUp";
 import Calendario from "../componentes/Calendario";
 import TabelaVisitas from '../componentes/TabelaVisitas';
-import NavBar from '../componentes/NavBarHome';
+import NavBar from '../componentes/NavBar';
 import MapaUniversal from '../componentes/MapaUniversalPocos';
 import BotaoFuncionalidades from "../componentes/BotaoFuncionalidades";
 import iconeMundo from '../assets/iconeMundo.png';
@@ -97,7 +97,7 @@ const HomeAdm = () => {
         <ScrollView style={styles.scrollView}>
             <View style={[styles.container, { width: contentWidth }]}>
                 <View style={styles.containerNavBar}>
-                    <NavBar />
+                    <NavBar isDashboard={true}/>
                 </View>
 
                 <View style={[styles.containerPopUps, { width: contentWidth }]}>

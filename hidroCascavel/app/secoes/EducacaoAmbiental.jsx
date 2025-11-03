@@ -19,15 +19,17 @@ const EducacaoAmbiental = () => {
   const conteudos = {
     informacoes: {
       titulo: "Informações sobre poços",
-      texto: `Os poços são estruturas fundamentais para o acesso à água subterrânea, especialmente em regiões onde o abastecimento público é limitado.\n\n• Acesso à água potável em áreas remotas\n• Redução da dependência de sistemas públicos de abastecimento\n• Sustentabilidade hídrica quando bem manejados\n• Alternativa para períodos de seca`
+      texto: `Os poços são estruturas utilizadas para captar água subterrânea, que é armazenada em aquíferos — camadas do solo permeáveis que acumulam água. Eles têm papel fundamental no abastecimento doméstico, rural e industrial, especialmente em áreas onde o acesso à rede pública é limitado.
+No entanto, é essencial monitorar a qualidade da água desses poços, pois a contaminação por resíduos, efluentes ou agrotóxicos pode comprometer a saúde humana. Projetos como o HIDROCASCAVEL contribuem ao analisar e orientar a população sobre o uso seguro dessa fonte vital.`
     },
     importancia: {
-      titulo: "Importância da água", 
-      texto: `A água é essencial para a vida e desempenha papéis cruciais nos ecossistemas, agricultura e saúde humana.\n\n• Regulação da temperatura corporal\n• Transporte de nutrientes\n• Irrigação agrícola\n• Geração de energia`
+      titulo: "Informações sobre nascentes", 
+      texto: `As nascentes são os pontos onde a água subterrânea aflora naturalmente à superfície, formando córregos e rios. Elas são o início dos sistemas hídricos e fundamentais para a manutenção da biodiversidade e do equilíbrio ambiental.
+A preservação das nascentes garante o abastecimento futuro de água limpa e protege ecossistemas aquáticos. O projeto atua também na avaliação e recuperação de nascentes, como ocorreu na ação ambiental do Ecoponto Brasília, utilizando técnicas sustentáveis como o solo-cimento.`
     },
     cuidados: {
       titulo: "Cuidados ambientais",
-      texto: `A preservação da água depende de boas práticas ambientais.\n\n• Uso consciente dos recursos\n• Proteção de nascentes\n• Tratamento de esgoto\n• Redução da poluição industrial`
+      texto: `A preservação da água depende de boas práticas ambientais:\n• Uso consciente dos recursos\n• Proteção de nascentes\n• Tratamento de esgoto\n• Redução da poluição industrial`
     }
   };
 
