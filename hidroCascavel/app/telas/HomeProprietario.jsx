@@ -2,7 +2,7 @@ import React from "react";
 import { View, StyleSheet, useWindowDimensions, ScrollView, TouchableOpacity } from 'react-native';
 import Calendario from "../componentes/Calendario";
 import TabelaVisitas from '../componentes/TabelaVisitas';
-import NavBar from '../componentes/NavBarHome';
+import NavBar from '../componentes/NavBar';
 import BotaoFuncionalidades from "../componentes/BotaoFuncionalidades";
 import { useNavigation } from "@react-navigation/native";
 
@@ -78,7 +78,7 @@ const HomeProprietario = () => {
         <ScrollView style={styles.scrollView}>
             <View style={[styles.container, { width: contentWidth }]}>
                 <View style={styles.containerNavBar}>
-                    <NavBar />
+                    <NavBar isDashboard={true}/>
                 </View>
 
                 <View style={styles.containerItems}>
