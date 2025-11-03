@@ -1,4 +1,3 @@
-// telas/NotificacoesAdm.js - VERSÃO COMPLETA COM ANÁLISES E VISITAS
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,10 +13,19 @@ import {
   ScrollView,
   Dimensions
 } from 'react-native';
-import { collection, query, orderBy, onSnapshot, where } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  where,
+  addDoc,
+  updateDoc,
+  doc,
+  Timestamp
+} from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
-import { AdminNotifications } from '../services/notificacaoService';
 import DetalhesSolicitacaoAnalise from '../componentes/DetalhesSolicitacaoAnalise';
 import DetalhesSolicitacaoVisita from '../componentes/DetalhesSolicitacaoVisita';
 
@@ -33,8 +41,8 @@ const NotificacoesAdm = () => {
   const [solicitacaoSelecionada, setSolicitacaoSelecionada] = useState(null);
   const [modalVisivel, setModalVisivel] = useState(false);
   const [filterStatus, setFilterStatus] = useState('todos');
-  const [filterTipo, setFilterTipo] = useState('todos'); // ✅ NOVO FILTRO POR TIPO
-  const [motivoRejeicao, setMotivoRejeicao] = useState(''); // ✅ PARA VISITAS
+  const [filterTipo, setFilterTipo] = useState('todos');
+  const [motivoRejeicao, setMotivoRejeicao] = useState('');
   const { user } = useAuth();
 
   useEffect(() => {
@@ -50,7 +58,6 @@ const NotificacoesAdm = () => {
       setLoading(true);
       console.log('📥 Carregando todas as notificações...');
       
-      // ✅ BUSCAR TODAS AS NOTIFICAÇÕES PENDENTES (ANÁLISES E VISITAS)
       const q = query(
         collection(db, 'notifications'),
         where('status', '==', 'pendente'),
@@ -68,7 +75,6 @@ const NotificacoesAdm = () => {
         });
         
         console.log('✅ Notificações carregadas:', notificacoesList.length);
-        console.log('📋 Tipos de notificações:', notificacoesList.map(n => n.tipo));
         
         setNotifications(notificacoesList);
         setLoading(false);
@@ -91,12 +97,10 @@ const NotificacoesAdm = () => {
   const aplicarFiltros = () => {
     let filtradas = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.status === filterStatus);
     }
 
-    // ✅ NOVO: Filtro por tipo
     if (filterTipo !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.tipo === filterTipo);
     }
@@ -104,7 +108,7 @@ const NotificacoesAdm = () => {
     setFilteredNotifications(filtradas);
   };
 
-  // ✅ FUNÇÃO PARA ACEITAR ANÁLISE
+  // ✅ FUNÇÃO CORRIGIDA PARA ACEITAR ANÁLISE
   const handleAceitarAnalise = async (notification) => {
     if (carregandoId) {
       console.log('⏳ Já existe uma operação em andamento...');
@@ -122,25 +126,98 @@ const NotificacoesAdm = () => {
         return;
       }
 
-      console.log('🔍 Dados da análise:', notification.dadosSolicitacao);
+      const dados = notification.dadosSolicitacao;
+      console.log('🔍 Dados da análise:', dados);
+
+      // 🔒 VERIFICAÇÃO DE SEGURANÇA DOS DADOS
+      if (!dados || !dados.idProprietario || !dados.idAnalista || !dados.idPoco) {
+        console.error('❌ ERRO FATAL: Dados essenciais faltando:', {
+          idProprietario: dados?.idProprietario,
+          idAnalista: dados?.idAnalista,
+          idPoco: dados?.idPoco
+        });
+        Alert.alert(
+          'Erro de Dados', 
+          'Não foi possível aceitar. Dados essenciais da solicitação estão incompletos.'
+        );
+        setCarregandoId(null);
+        return;
+      }
+
+      // 1. Criar a análise na coleção 'analysis'
+      const analiseAprovada = {
+        idAnalista: dados.idAnalista,
+        analistaNome: dados.analistaNome,
+        idProprietario: dados.idProprietario,
+        proprietarioNome: dados.proprietarioNome,
+        idPoco: dados.idPoco,
+        pocoNome: dados.pocoNome,
+        pocoLocalizacao: dados.pocoLocalizacao,
+        dataColeta: dados.dataColeta,
+        dataCriacao: Timestamp.now(),
+        dataAprovacao: Timestamp.now(),
+        aprovadoPor: user.uid,
+        aprovadoPorNome: user.displayName || 'Administrador',
+        resultado: dados.resultado,
+        parametros: dados.parametros,
+        status: 'aprovada'
+      };
+
+      const docRef = await addDoc(collection(db, 'analysis'), analiseAprovada);
+      console.log('✅ Análise criada com ID:', docRef.id);
+
+      // 2. Atualizar a notificação do Admin para 'aceita'
+      await updateDoc(doc(db, 'notifications', notification.id), {
+        status: 'aceita',
+        dataResolucao: Timestamp.now(),
+        resolvidoPor: user.uid
+      });
+
+      // 3. Notificar o Analista que foi aceita
+      const notificacaoAnalista = {
+        tipo: 'analise_aprovada',
+        titulo: '✅ Análise Aprovada',
+        mensagem: `Sua solicitação de análise para o poço "${dados.pocoNome}" foi aprovada e publicada.`,
+        userId: dados.idAnalista,
+        status: 'nao_lida',
+        dataCriacao: Timestamp.now(),
+        dadosAnalise: {
+          analiseId: docRef.id,
+          pocoNome: dados.pocoNome,
+          dataAnalise: Timestamp.now()
+        }
+      };
+      await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
+      console.log('✅ Notificação enviada para o analista');
+
+      // 4. 🔥 CORREÇÃO CRÍTICA: Criar notificação de AVALIAÇÃO para o Proprietário
+      const notificacaoProprietario = {
+        idDoUsuario: dados.idProprietario,
+        tipoNotificacao: 'analise_concluida',
+        titulo: `📊 Análise do Poço "${dados.pocoNome}" Concluída!`,
+        mensagem: `A análise do poço "${dados.pocoNome}" foi concluída e está disponível para consulta. Avalie nosso serviço.`,
+        idDaAnalise: docRef.id,
+        idDoPoco: dados.idPoco,
+        dataSolicitacao: Timestamp.now(),
+        status: 'concluida',
+        statusAvaliacao: 'pendente'
+      };
       
-      await AdminNotifications.aceitarSolicitacaoAnalise(
-        notification.id, 
-        notification
-      );
-      
-      Alert.alert('Sucesso', 'Análise aceita e cadastrada!');
+      await addDoc(collection(db, 'notifications'), notificacaoProprietario);
+      console.log('✅ Notificação de avaliação enviada para o proprietário:', dados.idProprietario);
+
+      Alert.alert('Sucesso', 'Análise aceita e notificações enviadas!');
       await carregarNotificacoes();
       
     } catch (error) {
-      console.error('❌ Erro ao aceitar análise:', error);
-      Alert.alert('Erro', `Não foi possível aceitar: ${error.message}`);
+      console.error('❌ Erro completo ao aceitar análise:', error);
+      Alert.alert('Erro', `Não foi possível aceitar a análise: ${error.message}`);
     } finally {
       setCarregandoId(null);
     }
   };
 
-  // ✅ FUNÇÃO PARA REJEITAR ANÁLISE
+  // ✅ FUNÇÃO PARA REJEITAR ANÁLISE (MODIFICADA)
   const handleRejeitarAnalise = async (notificationId, notificationData) => {
     if (carregandoId) {
       console.log('⏳ Já existe uma operação em andamento...');
@@ -156,9 +233,37 @@ const NotificacoesAdm = () => {
         await carregarNotificacoes();
         return;
       }
-
-      await AdminNotifications.rejeitarSolicitacaoAnalise(notificationId, notificationData);
       
+      // Trava de segurança para dados de rejeição
+      const dados = notificationData.dadosSolicitacao;
+      if (!dados || !dados.idAnalista) {
+        console.error('❌ ERRO FATAL: Notificação de rejeição sem dados do analista.', dados);
+        Alert.alert('Erro de Dados', 'Não foi possível rejeitar. A notificação está corrompida.');
+        setCarregandoId(null);
+        return;
+      }
+
+      // 1. Atualizar a notificação do Admin (esta) para 'rejeitada'
+      await updateDoc(doc(db, 'notifications', notificationId), {
+        status: 'rejeitada',
+        dataResolucao: Timestamp.now(),
+        resolvidoPor: user.uid
+      });
+
+      // 2. Notificar o Analista que foi rejeitada
+      const notificacaoAnalista = {
+        tipo: 'analise_rejeitada',
+        titulo: '❌ Análise Rejeitada',
+        mensagem: `Sua solicitação de análise para o poço ${dados.pocoNome || 'desconhecido'} foi rejeitada.`,
+        userId: dados.idAnalista,
+        status: 'nao_lida',
+        dataCriacao: Timestamp.now(),
+        dadosAnalise: {
+          pocoNome: dados.pocoNome
+        }
+      };
+      await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
+
       Alert.alert('Sucesso', 'Análise rejeitada!');
       await carregarNotificacoes();
       
@@ -170,7 +275,7 @@ const NotificacoesAdm = () => {
     }
   };
 
-  // ✅ NOVA FUNÇÃO: ACEITAR VISITA
+  // ✅ FUNÇÃO: ACEITAR VISITA (Existente)
   const handleAceitarVisita = async (notification) => {
     if (carregandoId) {
       console.log('⏳ Já existe uma operação em andamento...');
@@ -188,23 +293,30 @@ const NotificacoesAdm = () => {
         return;
       }
 
-      console.log('🔍 Dados da visita:', notification.dadosVisita);
+      const dados = notification.dadosVisita;
+      
+      // Trava de segurança para visitas
+      if (!dados || !dados.pocoId || !dados.analistaId) {
+         console.error('❌ ERRO FATAL: A notificação de visita não contém dados essenciais.', dados);
+        Alert.alert('Erro de Dados', 'Não foi possível aceitar. A notificação de visita está corrompida.');
+        setCarregandoId(null);
+        return;
+      }
 
-      // 1. Adicionar visita na coleção principal
       const visitaAprovada = {
-        pocoId: notification.dadosVisita.pocoId,
-        pocoNome: notification.dadosVisita.pocoNome,
-        pocoLocalizacao: notification.dadosVisita.pocoLocalizacao,
-        proprietario: notification.dadosVisita.proprietario,
-        dataVisita: notification.dadosVisita.dataVisita,
-        situacao: notification.dadosVisita.situacao || 'concluida',
-        observacoes: notification.dadosVisita.observacoes,
-        resultado: notification.dadosVisita.resultado || '',
-        recomendacoes: notification.dadosVisita.recomendacoes || '',
-        analistaId: notification.dadosVisita.analistaId,
-        analistaNome: notification.dadosVisita.analistaNome,
-        tipoUsuario: notification.dadosVisita.tipoUsuario,
-        userId: notification.dadosVisita.userId,
+        pocoId: dados.pocoId,
+        pocoNome: dados.pocoNome,
+        pocoLocalizacao: dados.pocoLocalizacao,
+        proprietario: dados.proprietario,
+        dataVisita: dados.dataVisita,
+        situacao: dados.situacao || 'concluida',
+        observacoes: dados.observacoes,
+        resultado: dados.resultado || '',
+        recomendacoes: dados.recomendacoes || '',
+        analistaId: dados.analistaId,
+        analistaNome: dados.analistaNome,
+        tipoUsuario: dados.tipoUsuario,
+        userId: dados.userId,
         status: 'aprovada',
         dataAprovacao: new Date().toISOString(),
         aprovadoPor: user.uid,
@@ -214,24 +326,22 @@ const NotificacoesAdm = () => {
 
       const docRef = await addDoc(collection(db, 'visits'), visitaAprovada);
       
-      // 2. Atualizar notificação
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'aceita',
         dataResolucao: new Date(),
         resolvidoPor: user.uid
       });
 
-      // 3. Notificar analista
       const notificacaoAnalista = {
         tipo: 'visita_aprovada',
         titulo: '✅ Visita Aprovada',
-        mensagem: `Sua visita técnica no poço ${notification.dadosVisita.pocoNome} foi aprovada.`,
-        userId: notification.dadosVisita.analistaId,
+        mensagem: `Sua visita técnica no poço ${dados.pocoNome} foi aprovada.`,
+        userId: dados.analistaId,
         status: 'nao_lida',
         dataCriacao: new Date(),
         dadosVisita: {
           visitaId: docRef.id,
-          pocoNome: notification.dadosVisita.pocoNome
+          pocoNome: dados.pocoNome
         }
       };
 
@@ -248,7 +358,7 @@ const NotificacoesAdm = () => {
     }
   };
 
-  // ✅ NOVA FUNÇÃO: REJEITAR VISITA
+  // ✅ FUNÇÃO: REJEITAR VISITA (Existente)
   const handleRejeitarVisita = async (notification) => {
     if (carregandoId) {
       console.log('⏳ Já existe uma operação em andamento...');
@@ -269,8 +379,17 @@ const NotificacoesAdm = () => {
         await carregarNotificacoes();
         return;
       }
+      
+      const dados = notification.dadosVisita;
+      
+      // Trava de segurança
+      if (!dados || !dados.analistaId) {
+        console.error('❌ ERRO FATAL: Notificação de rejeição de visita sem dados do analista.', dados);
+        Alert.alert('Erro de Dados', 'Não foi possível rejeitar. A notificação está corrompida.');
+        setCarregandoId(null);
+        return;
+      }
 
-      // 1. Atualizar notificação
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'rejeitada',
         dataResolucao: new Date(),
@@ -278,16 +397,15 @@ const NotificacoesAdm = () => {
         motivoRejeicao: motivoRejeicao
       });
 
-      // 2. Notificar analista
       const notificacaoAnalista = {
         tipo: 'visita_rejeitada',
         titulo: '❌ Visita Rejeitada',
-        mensagem: `Sua visita técnica no poço ${notification.dadosVisita.pocoNome} foi rejeitada. Motivo: ${motivoRejeicao}`,
-        userId: notification.dadosVisita.analistaId,
+        mensagem: `Sua visita técnica no poço ${dados.pocoNome || 'desconhecido'} foi rejeitada. Motivo: ${motivoRejeicao}`,
+        userId: dados.analistaId,
         status: 'nao_lida',
         dataCriacao: new Date(),
         dadosVisita: {
-          pocoNome: notification.dadosVisita.pocoNome,
+          pocoNome: dados.pocoNome,
           motivoRejeicao: motivoRejeicao
         }
       };
@@ -306,12 +424,12 @@ const NotificacoesAdm = () => {
       setCarregandoId(null);
     }
   };
-
+  
   const verDetalhes = (solicitacao) => {
     console.log('🔍 Detalhes da solicitação:', solicitacao);
     setSolicitacaoSelecionada(solicitacao);
     setModalVisivel(true);
-    setMotivoRejeicao(''); // Limpar motivo ao abrir
+    setMotivoRejeicao('');
   };
 
   const getTipoInfo = (tipo) => {
@@ -382,7 +500,9 @@ const NotificacoesAdm = () => {
         <Text style={styles.message}>
           {isAnalise 
             ? `${item.dadosSolicitacao?.analistaNome || 'Analista'} solicitou cadastro de análise para o poço ${item.dadosSolicitacao?.pocoNome}`
-            : `${item.dadosVisita?.analistaNome || 'Analista'} registrou uma visita técnica no poço ${item.dadosVisita?.pocoNome}`
+            : isVisita 
+              ? `${item.dadosVisita?.analistaNome || 'Analista'} registrou uma visita técnica no poço ${item.dadosVisita?.pocoNome}`
+              : 'Nova solicitação'
           }
         </Text>
         
@@ -446,7 +566,7 @@ const NotificacoesAdm = () => {
                 if (isAnalise) {
                   handleRejeitarAnalise(item.id, item);
                 } else {
-                  verDetalhes(item); // Para visitas, abrir modal para informar motivo
+                  verDetalhes(item);
                 }
               }}
               disabled={carregandoId !== null}
@@ -476,7 +596,6 @@ const NotificacoesAdm = () => {
     <View style={styles.filterContainer}>
       <Text style={styles.filterTitle}>Filtrar por:</Text>
       
-      {/* Filtro por Status */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterSubtitle}>Status:</Text>
         <View style={styles.filterButtons}>
@@ -502,7 +621,6 @@ const NotificacoesAdm = () => {
         </View>
       </View>
 
-      {/* ✅ NOVO: Filtro por Tipo */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterSubtitle}>Tipo:</Text>
         <View style={styles.filterButtons}>
@@ -543,7 +661,6 @@ const NotificacoesAdm = () => {
       <Text style={styles.header}>Central de Notificações</Text>
       <Text style={styles.subHeader}>Solicitações de Análises e Visitas Técnicas</Text>
       
-      {/* Filtros */}
       {renderFilterButtons()}
       
       <FlatList
@@ -572,7 +689,6 @@ const NotificacoesAdm = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Modal de detalhes */}
       <Modal
         visible={modalVisivel}
         animationType="slide"
@@ -600,7 +716,6 @@ const NotificacoesAdm = () => {
               <>
                 <DetalhesSolicitacaoVisita solicitacao={solicitacaoSelecionada} />
                 
-                {/* Campo para motivo de rejeição (apenas para visitas) */}
                 {solicitacaoSelecionada?.status === 'pendente' && (
                   <View style={styles.motivoSection}>
                     <Text style={styles.motivoLabel}>Motivo da Rejeição *</Text>
@@ -625,16 +740,13 @@ const NotificacoesAdm = () => {
                           !motivoRejeicao.trim() && styles.botaoDesabilitado
                         ]}
                         onPress={() => handleRejeitarVisita(solicitacaoSelecionada)}
-                        disabled={!motivoRejeicao.trim()}
+                        disabled={!motivoRejeicao.trim() || carregandoId !== null}
                       >
-                        <Text style={styles.modalBotaoTexto}>❌ Rejeitar Visita</Text>
-                      </TouchableOpacity>
-                      
-                      <TouchableOpacity 
-                        style={[styles.modalBotao, styles.aceitarBotao]}
-                        onPress={() => handleAceitarVisita(solicitacaoSelecionada)}
-                      >
-                        <Text style={styles.modalBotaoTexto}>✅ Aceitar Visita</Text>
+                        {carregandoId === solicitacaoSelecionada?.id ? (
+                          <ActivityIndicator size="small" color="white" />
+                        ) : (
+                          <Text style={styles.modalBotaoTexto}>Rejeitar Visita</Text>
+                        )}
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -648,87 +760,46 @@ const NotificacoesAdm = () => {
   );
 };
 
-// ✅ ADICIONE ESTES IMPORTS NO TOPO DO ARQUIVO
-import { addDoc, updateDoc, doc } from 'firebase/firestore';
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f4f7f6',
   },
   header: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 16,
     color: '#333',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    textAlign: 'center',
   },
   subHeader: {
-    fontSize: 16,
-    textAlign: 'center',
+    fontSize: 14,
     color: '#666',
+    textAlign: 'center',
     marginBottom: 16,
   },
-  filterContainer: {
-    padding: 16,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: 'white',
-    marginBottom: 8,
-  },
-  filterGroup: {
-    marginBottom: 12,
-  },
-  filterTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 8,
-    color: '#333',
-  },
-  filterSubtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 6,
-    color: '#666',
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  filterButtonActive: {
-    backgroundColor: '#2685BF',
-    borderColor: '#2685BF',
-  },
-  filterButtonText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-  filterButtonTextActive: {
-    color: 'white',
   },
   listContent: {
-    padding: 16,
-    flexGrow: 1,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   notificationCard: {
     backgroundColor: 'white',
+    borderRadius: 8,
     padding: 16,
     marginBottom: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
+    borderLeftWidth: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 2,
+    elevation: 2,
   },
   notificationHeader: {
     flexDirection: 'row',
@@ -739,19 +810,23 @@ const styles = StyleSheet.create({
   tipoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
   },
   tipoIcon: {
-    fontSize: 16,
+    fontSize: 14,
+    marginRight: 4,
   },
   tipoText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   statusText: {
     fontSize: 12,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   },
   title: {
     fontSize: 16,
@@ -761,187 +836,229 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
+    color: '#555',
     lineHeight: 20,
+    marginBottom: 12,
   },
   dataContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 8,
-    borderRadius: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 8,
     marginBottom: 8,
   },
   dataText: {
-    fontSize: 12,
-    color: '#495057',
-    marginBottom: 2,
+    fontSize: 13,
+    color: '#444',
+    marginBottom: 4,
   },
   dataLabel: {
-    fontWeight: '600',
-    color: '#333',
+    fontWeight: 'bold',
   },
   timestamp: {
-    fontSize: 11,
-    color: '#999',
-    marginBottom: 8,
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'right',
   },
   acoes: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
     gap: 8,
-    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    marginTop: 12,
+    paddingTop: 12,
   },
   botaoDetalhes: {
-    paddingHorizontal: 12,
+    backgroundColor: '#f0f0f0',
     paddingVertical: 8,
-    backgroundColor: '#6c757d',
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   botaoDetalhesTexto: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
+    color: '#333',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
   botaoAceitar: {
-    paddingHorizontal: 12,
+    backgroundColor: '#4CAF50',
     paddingVertical: 8,
-    backgroundColor: '#28a745',
+    paddingHorizontal: 12,
     borderRadius: 6,
-    minWidth: 80,
-    alignItems: 'center',
   },
   botaoAceitarTexto: {
     color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
   botaoRejeitar: {
-    paddingHorizontal: 12,
+    backgroundColor: '#F44336',
     paddingVertical: 8,
-    backgroundColor: '#dc3545',
+    paddingHorizontal: 12,
     borderRadius: 6,
   },
   botaoRejeitarTexto: {
     color: 'white',
-    fontSize: 12,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    fontSize: 13,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  processadaContainer: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  processadaText: {
+    fontSize: 13,
+    fontWeight: 'bold',
+  },
+  processadaData: {
+    fontSize: 12,
+    color: '#777',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 50,
+    padding: 20,
+    marginTop: 50,
   },
   emptyText: {
     fontSize: 16,
+    fontWeight: 'bold',
     color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
   },
   emptySubText: {
     fontSize: 14,
-    color: '#999',
+    color: '#888',
     textAlign: 'center',
+    marginTop: 8,
+  },
+  filterContainer: {
+    backgroundColor: 'white',
+    padding: 16,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  filterTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: '#333',
+  },
+  filterGroup: {
+    marginBottom: 8,
+  },
+  filterSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 8,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  filterButton: {
+    backgroundColor: '#f0f0f0',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+  },
+  filterButtonActive: {
+    backgroundColor: '#2685BF',
+  },
+  filterButtonText: {
+    fontSize: 13,
+    color: '#444',
+  },
+  filterButtonTextActive: {
+    color: 'white',
+    fontWeight: 'bold',
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: isDesktop ? 'rgba(0,0,0,0.5)' : '#f4f7f6',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    width: '100%',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#2685BF',
+    borderBottomColor: '#eee',
+    backgroundColor: 'white',
   },
   modalTitulo: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'white',
+    color: '#333',
   },
   botaoFechar: {
-    padding: 8,
-  },
-  botaoFecharTexto: {
-    fontSize: 18,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  processadaContainer: {
-    marginTop: 8,
-    padding: 8,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 4,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  processadaText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  processadaData: {
-    fontSize: 10,
-    color: '#6c757d',
-    marginTop: 2,
+  botaoFecharTexto: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#555',
   },
   motivoSection: {
     padding: 16,
-    backgroundColor: '#fff3cd',
-    margin: 16,
-    borderRadius: 8,
-  },
-  motivoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#856404',
-    marginBottom: 8,
+    backgroundColor: 'white',
+    marginTop: 10,
   },
   textInput: {
+    backgroundColor: '#f9f9f9',
     borderWidth: 1,
-    borderColor: '#ffc107',
-    borderRadius: 8,
+    borderColor: '#ddd',
+    borderRadius: 6,
     padding: 12,
     fontSize: 14,
     minHeight: 80,
-    textAlignVertical: 'top',
-    backgroundColor: 'white',
+  },
+  motivoLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
   },
   motivoHelper: {
     fontSize: 12,
-    color: '#856404',
+    color: '#777',
     marginTop: 4,
-    fontStyle: 'italic',
   },
   modalAcoes: {
-    flexDirection: 'row',
-    gap: 12,
     marginTop: 16,
   },
   modalBotao: {
-    flex: 1,
-    padding: 12,
+    padding: 14,
     borderRadius: 6,
     alignItems: 'center',
   },
-  aceitarBotao: {
-    backgroundColor: '#28a745',
+  modalBotaoTexto: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   rejeitarBotao: {
-    backgroundColor: '#dc3545',
+    backgroundColor: '#F44336',
   },
   botaoDesabilitado: {
     backgroundColor: '#ccc',
-  },
-  modalBotaoTexto: {
-    color: 'white',
-    fontWeight: '500',
   },
 });
 

@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage"; // 1. ADICIONADO ESTE IMPORT
 
 // Sua configuração do Firebase
 const firebaseConfig = {
@@ -37,7 +38,11 @@ try {
 // Initialize Firestore
 const db = getFirestore(app);
 
-export { auth, db };
+// 2. ADICIONADO: Initialize Storage
+const storage = getStorage(app);
+
+// 3. ADICIONADO 'storage' AO EXPORT
+export { auth, db, storage };
 
 export const USER_TYPES = {
   PROPRIETARIO: 'proprietario',

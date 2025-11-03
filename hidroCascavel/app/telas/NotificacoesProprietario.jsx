@@ -1,4 +1,3 @@
-// telas/NotificacoesProprietario.js - VERSÃO CORRIGIDA
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,6 +13,7 @@ import {
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
+import { useNavigation } from '@react-navigation/native';
 
 const NotificacoesProprietario = () => {
   const [notifications, setNotifications] = useState([]);
@@ -24,6 +24,7 @@ const NotificacoesProprietario = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [filterStatus, setFilterStatus] = useState('todos');
   const { user, userData } = useAuth();
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (user) {
@@ -39,6 +40,8 @@ const NotificacoesProprietario = () => {
     setLoading(true);
     
     try {
+      console.log('👤 Carregando notificações para usuário:', user?.uid);
+      
       const q = query(
         collection(db, 'notifications'),
         where('idDoUsuario', '==', user?.uid),
@@ -49,19 +52,28 @@ const NotificacoesProprietario = () => {
         const notificationsList = [];
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          notificationsList.push({ 
-            id: doc.id, 
-            ...data
+          console.log('📨 Notificação encontrada:', {
+            id: doc.id,
+            tipo: data.tipoNotificacao,
+            status: data.status,
+            usuario: data.idDoUsuario
           });
+          notificationsList.push({ id: doc.id, ...data });
         });
+        
+        console.log(`✅ Total de notificações carregadas: ${notificationsList.length}`);
         setNotifications(notificationsList);
+        setLoading(false);
+        setRefreshing(false);
+      }, (error) => {
+        console.error("❌ Erro ao carregar notificações: ", error);
         setLoading(false);
         setRefreshing(false);
       });
 
       return unsubscribe;
     } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
+      console.error("❌ Erro: ", error);
       setLoading(false);
       setRefreshing(false);
     }
@@ -70,50 +82,39 @@ const NotificacoesProprietario = () => {
   const applyFilters = () => {
     let filtered = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
-      filtered = filtered.filter(notification => notification.status === filterStatus);
+      filtered = filtered.filter(n => n.status === filterStatus);
     }
 
     setFilteredNotifications(filtered);
   };
 
-  // ✅ CORREÇÃO: Adicionar função applyFilters que estava faltando
-  const renderFilterButtons = () => (
-    <View style={styles.filterContainer}>
-      <Text style={styles.filterTitle}>Filtrar por status:</Text>
-      <View style={styles.filterButtons}>
-        {['todos', 'pendente', 'aceita', 'recusada'].map(status => (
-          <TouchableOpacity
-            key={status}
-            style={[
-              styles.filterButton,
-              filterStatus === status && styles.filterButtonActive
-            ]}
-            onPress={() => setFilterStatus(status)}
-          >
-            <Text style={[
-              styles.filterButtonText,
-              filterStatus === status && styles.filterButtonTextActive
-            ]}>
-              {status === 'todos' ? 'Todos' : 
-               status === 'pendente' ? 'Pendentes' :
-               status === 'aceita' ? 'Agendadas' : 'Recusadas'}
-            </Text>
-          </TouchableOpacity>
-        ))}
+  const renderFilterButtons = () => {
+    const statuses = ['todos', 'pendente', 'aceita', 'recusada', 'editada', 'concluida'];
+    return (
+      <View style={styles.filterContainer}>
+        <Text style={styles.filterTitle}>Filtrar por status:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {statuses.map(status => (
+            <TouchableOpacity
+              key={status}
+              style={[
+                styles.filterButton,
+                filterStatus === status && styles.filterButtonActive
+              ]}
+              onPress={() => setFilterStatus(status)}
+            >
+              <Text style={[
+                styles.filterButtonText,
+                filterStatus === status && styles.filterButtonTextActive
+              ]}>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
       </View>
-    </View>
-  );
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'pendente': return '#FFA500';
-      case 'aceita': return '#4CAF50';
-      case 'recusada': return '#F44336';
-      case 'editada': return '#2196F3';
-      default: return '#757575';
-    }
+    );
   };
 
   const getStatusText = (status) => {
@@ -122,71 +123,56 @@ const NotificacoesProprietario = () => {
       case 'aceita': return 'Agendada';
       case 'recusada': return 'Recusada';
       case 'editada': return 'Reagendada';
+      case 'concluida': return 'Concluída';
       default: return status;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pendente': return '#FFA500';
+      case 'aceita': return '#34A853';
+      case 'recusada': return '#F44336';
+      case 'editada': return '#2685BF';
+      case 'concluida': return '#757575';
+      default: return '#757575';
     }
   };
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'visita': return '👁️';
+      case 'visita': return '📅';
       case 'cadastro': return '📝';
       case 'edicao': return '✏️';
+      case 'analise_concluida': return '📊';
       default: return '🔔';
     }
   };
 
-  const getActionDetails = (notification) => {
-    if (notification.status === 'pendente') {
-      return { text: 'Aguardando confirmação', color: '#FFA500' };
-    }
-    
-    if (notification.status === 'aceita') {
-      return { 
-        text: 'Visita agendada', 
-        color: '#4CAF50',
-        details: notification.visitDate ? `Para ${formatVisitDate(notification.visitDate)}` : 'Entre em contato para detalhes'
-      };
-    }
-    
-    if (notification.status === 'recusada') {
-      return { 
-        text: 'Visita não autorizada', 
-        color: '#F44336',
-        details: notification.rejectionReason || 'Entre em contato com o administrador'
-      };
-    }
-    
-    if (notification.edited) {
-      return { 
-        text: 'Data ajustada', 
-        color: '#2196F3',
-        details: 'A data da visita foi reagendada'
-      };
-    }
-    
-    return { text: 'Status desconhecido', color: '#757575' };
-  };
-
   const formatDate = (timestamp) => {
-    if (!timestamp) return 'Data não disponível';
-    
+    if (!timestamp) return 'N/A';
     try {
-      const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-      return date.toLocaleDateString('pt-BR') + ' às ' + date.toLocaleTimeString('pt-BR', { 
-        hour: '2-digit', 
-        minute: '2-digit' 
+      return timestamp.toDate().toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
       });
-    } catch (error) {
+    } catch (e) {
       return 'Data inválida';
     }
   };
-
-  const formatVisitDate = (dateString) => {
+  
+  const formatVisitDate = (visitDateStr) => {
+    if (!visitDateStr) return 'N/A';
     try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR');
-    } catch (error) {
-      return dateString;
+      const date = new Date(visitDateStr);
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch (e) {
+      return 'Data inválida';
     }
   };
 
@@ -194,56 +180,34 @@ const NotificacoesProprietario = () => {
     setSelectedNotification(notification);
     setModalVisible(true);
   };
+  
+  const handleAvaliarServico = (notificacao) => {
+    setModalVisible(false);
+    
+    navigation.navigate('DeixarAvaliacao', { 
+      notificationId: notificacao.id,
+      analiseId: notificacao.idDaAnalise,
+      pocoId: notificacao.idDoPoco
+    });
+  };
 
   const renderNotificationItem = ({ item }) => {
-    const actionDetails = getActionDetails(item);
+    const statusColor = getStatusColor(item.status);
     
     return (
       <TouchableOpacity 
-        style={[
-          styles.notificationCard,
-          item.lido && styles.readNotification,
-          { borderLeftColor: actionDetails.color }
-        ]}
+        style={styles.notificationCard} 
         onPress={() => viewNotificationDetails(item)}
       >
         <View style={styles.notificationHeader}>
-          <Text style={styles.typeText}>
-            {getTypeIcon(item.tipoNotificacao)} {item.tipoNotificacao === 'visita' ? 'SOLICITAÇÃO DE VISITA' : item.tipoNotificacao?.toUpperCase()}
+          <Text style={styles.notificationIcon}>{getTypeIcon(item.tipoNotificacao)}</Text>
+          <Text style={styles.notificationTitle} numberOfLines={1}>{item.titulo}</Text>
+          <Text style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+            {getStatusText(item.status)}
           </Text>
-          <View style={[styles.statusBadge, { backgroundColor: actionDetails.color }]}>
-            <Text style={styles.statusBadgeText}>
-              {getStatusText(item.status)}
-            </Text>
-          </View>
         </View>
-
-        <Text style={styles.title}>{item.titulo}</Text>
-        <Text style={styles.message}>{item.mensagem}</Text>
-        
-        {/* Data sugerida para visita */}
-        {item.tipoNotificacao === 'visita' && item.visitDate && (
-          <View style={styles.visitDateContainer}>
-            <Text style={styles.visitDateText}>
-              📅 Data sugerida: {formatVisitDate(item.visitDate)}
-            </Text>
-          </View>
-        )}
-        
-        <View style={styles.actionContainer}>
-          <Text style={[styles.actionText, { color: actionDetails.color }]}>
-            {actionDetails.text}
-          </Text>
-          {actionDetails.details && (
-            <Text style={styles.actionDetails}>
-              {actionDetails.details}
-            </Text>
-          )}
-        </View>
-        
-        <Text style={styles.timestamp}>
-          Solicitado em: {formatDate(item.dataSolicitacao)}
-        </Text>
+        <Text style={styles.notificationMessage} numberOfLines={2}>{item.mensagem}</Text>
+        <Text style={styles.notificationDate}>{formatDate(item.dataSolicitacao)}</Text>
       </TouchableOpacity>
     );
   };
@@ -253,26 +217,32 @@ const NotificacoesProprietario = () => {
     loadNotifications();
   };
 
-  if (loading) {
+  // Debug temporário
+  useEffect(() => {
+    console.log('🔔 Notificações atualizadas:', {
+      total: notifications.length,
+      filtradas: filteredNotifications.length,
+      items: notifications.map(n => ({
+        id: n.id,
+        tipo: n.tipoNotificacao,
+        status: n.status,
+        titulo: n.titulo
+      }))
+    });
+  }, [notifications, filteredNotifications]);
+
+  if (loading && !refreshing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#34A853" />
-        <Text>Carregando suas solicitações...</Text>
+        <ActivityIndicator size="large" color="#2685BF" />
+        <Text>Carregando notificações...</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Minhas Solicitações</Text>
-      <Text style={styles.subHeader}>
-        Acompanhe o status das suas solicitações de visita
-      </Text>
-      
-      {/* ✅ CORREÇÃO: Adicionar filtros */}
       {renderFilterButtons()}
-      
-      {/* ✅ CORREÇÃO: Usar filteredNotifications em vez de notifications */}
       <FlatList
         data={filteredNotifications}
         renderItem={renderNotificationItem}
@@ -281,114 +251,100 @@ const NotificacoesProprietario = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#34A853']}
+            colors={['#2685BF']}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {loading ? 'Carregando...' : 'Nenhuma solicitação encontrada'}
+            <Text style={styles.emptyText}>Nenhuma notificação encontrada.</Text>
+            <Text style={styles.emptySubText}>
+              {filterStatus !== 'todos' ? 'Tente um filtro diferente.' : 'Você está em dia!'}
             </Text>
-            {!loading && filterStatus !== 'todos' && (
-              <Text style={styles.emptySubText}>
-                Tente alterar os filtros
-              </Text>
-            )}
           </View>
         }
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Modal de detalhes */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Detalhes da Notificação</Text>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
             {selectedNotification && (
-              <ScrollView>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Detalhes da Solicitação</Text>
-                  <View style={[styles.modalStatusBadge, { backgroundColor: getActionDetails(selectedNotification).color }]}>
-                    <Text style={styles.modalStatusText}>
-                      {getStatusText(selectedNotification.status)}
-                    </Text>
-                  </View>
-                </View>
-
+              <ScrollView style={styles.modalContent}>
+                <Text style={styles.modalNotificationTitle}>
+                  {getTypeIcon(selectedNotification.tipoNotificacao)}{' '}
+                  {selectedNotification.titulo}
+                </Text>
+                
                 <View style={styles.detailSection}>
-                  <Text style={styles.detailLabel}>Tipo de Solicitação</Text>
-                  <Text style={styles.detailValue}>
-                    {getTypeIcon(selectedNotification.tipoNotificacao)} 
-                    {selectedNotification.tipoNotificacao === 'visita' ? 'SOLICITAÇÃO DE VISITA' : selectedNotification.tipoNotificacao?.toUpperCase()}
+                  <Text style={styles.detailLabel}>Status:</Text>
+                  <Text style={[styles.detailValue, { color: getStatusColor(selectedNotification.status) }]}>
+                    {getStatusText(selectedNotification.status)}
                   </Text>
                 </View>
 
                 <View style={styles.detailSection}>
-                  <Text style={styles.detailLabel}>Título</Text>
-                  <Text style={styles.detailValue}>{selectedNotification.titulo}</Text>
-                </View>
-
-                <View style={styles.detailSection}>
-                  <Text style={styles.detailLabel}>Mensagem</Text>
+                  <Text style={styles.detailLabel}>Mensagem:</Text>
                   <Text style={styles.detailValue}>{selectedNotification.mensagem}</Text>
                 </View>
-
-                {/* Detalhes da visita */}
-                {selectedNotification.tipoNotificacao === 'visita' && (
-                  <View style={styles.detailSection}>
-                    <Text style={styles.detailLabel}>Detalhes da Visita</Text>
-                    {selectedNotification.visitDate && (
+                
+                {selectedNotification.dadosVisita && (
+                  <>
+                    <View style={styles.detailSection}>
+                      <Text style={styles.detailLabel}>Data da Visita:</Text>
                       <Text style={styles.detailValue}>
-                        📅 Data sugerida: {formatVisitDate(selectedNotification.visitDate)}
+                        {formatVisitDate(selectedNotification.dadosVisita.dataVisita)}
+                      </Text>
+                    </View>
+                    {selectedNotification.dadosVisita.confirmada === false && (
+                      <Text style={[styles.detailValue, styles.rejectionReason]}>
+                        O analista não pôde confirmar esta data.
                       </Text>
                     )}
-                    {selectedNotification.visitDetails && (
-                      <Text style={styles.detailValue}>
-                        📝 Observações: {selectedNotification.visitDetails}
-                      </Text>
-                    )}
-                  </View>
+                  </>
                 )}
 
-                <View style={styles.detailSection}>
-                  <Text style={styles.detailLabel}>Data de Solicitação</Text>
-                  <Text style={styles.detailValue}>
-                    {formatDate(selectedNotification.dataSolicitacao)}
-                  </Text>
-                </View>
-
-                {/* Informações de processamento */}
-                {selectedNotification.processedAt && (
+                {selectedNotification.motivoRejeicao && (
                   <View style={styles.detailSection}>
-                    <Text style={styles.detailLabel}>Data de Resposta</Text>
-                    <Text style={styles.detailValue}>
-                      {formatDate(selectedNotification.processedAt)}
-                    </Text>
-                  </View>
-                )}
-
-                {selectedNotification.rejectionReason && (
-                  <View style={styles.detailSection}>
-                    <Text style={styles.detailLabel}>Motivo da Recusa</Text>
+                    <Text style={styles.detailLabel}>Motivo da Rejeição:</Text>
                     <Text style={[styles.detailValue, styles.rejectionReason]}>
-                      {selectedNotification.rejectionReason}
+                      {selectedNotification.motivoRejeicao}
                     </Text>
                   </View>
                 )}
-
-                {selectedNotification.visitDate && selectedNotification.status === 'aceita' && (
+                
+                {/* BOTÃO DE AVALIAÇÃO */}
+                {selectedNotification.tipoNotificacao === 'analise_concluida' && 
+                 selectedNotification.statusAvaliacao === 'pendente' && (
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity 
+                      style={[styles.modalButton, styles.evaluateButton]}
+                      onPress={() => handleAvaliarServico(selectedNotification)}
+                    >
+                      <Text style={styles.modalButtonText}>📊 Avaliar Serviço</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                
+                {selectedNotification.tipoNotificacao === 'analise_concluida' && 
+                 selectedNotification.statusAvaliacao === 'concluida' && (
                   <View style={styles.detailSection}>
-                    <Text style={styles.detailLabel}>✅ Visita Confirmada</Text>
-                    <Text style={[styles.detailValue, styles.confirmedText]}>
-                      Sua visita foi agendada para {formatVisitDate(selectedNotification.visitDate)}
+                    <Text style={[styles.detailValue, styles.confirmedText, {textAlign: 'center'}]}>
+                      ✅ Você já avaliou este serviço. Obrigado!
                     </Text>
                   </View>
                 )}
-
+                
                 <View style={styles.modalActions}>
                   <TouchableOpacity 
                     style={[styles.modalButton, styles.closeButton]}
@@ -409,158 +365,118 @@ const NotificacoesProprietario = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 16,
-    color: '#333',
-  },
-  subHeader: {
-    fontSize: 14,
-    textAlign: 'center',
-    color: '#666',
-    marginHorizontal: 20,
-    marginBottom: 16,
-  },
-  listContent: {
-    padding: 16,
-    flexGrow: 1,
-  },
-  notificationCard: {
-    backgroundColor: 'white',
-    padding: 16,
-    marginBottom: 12,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  readNotification: {
-    opacity: 0.7,
-  },
-  notificationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  typeText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusBadgeText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  message: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-  },
-  visitDateContainer: {
-    backgroundColor: '#e8f5e8',
-    padding: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#34A853',
-  },
-  visitDateText: {
-    fontSize: 12,
-    color: '#34A853',
-    fontWeight: '500',
-  },
-  actionContainer: {
-    marginBottom: 8,
-  },
-  actionText: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  actionDetails: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
-  },
-  timestamp: {
-    fontSize: 11,
-    color: '#999',
+    backgroundColor: '#f4f7f6',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  listContent: {
+    padding: 16,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 50,
+    padding: 20,
+    marginTop: 50,
   },
   emptyText: {
     fontSize: 16,
+    fontWeight: 'bold',
     color: '#666',
-    textAlign: 'center',
-    marginBottom: 8,
   },
   emptySubText: {
     fontSize: 14,
-    color: '#999',
+    color: '#888',
     textAlign: 'center',
+    marginTop: 8,
   },
-  modalContainer: {
+  notificationCard: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  notificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  notificationIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  notificationTitle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  notificationMessage: {
+    fontSize: 14,
+    color: '#555',
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  notificationDate: {
+    fontSize: 12,
+    color: '#888',
+    textAlign: 'right',
+  },
+  statusBadge: {
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    color: 'white',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  modalContent: {
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
+  modalContainer: {
     width: '90%',
+    maxWidth: 500,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    overflow: 'hidden',
     maxHeight: '80%',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   modalTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButtonText: {
+    fontSize: 20,
+    color: '#888',
+  },
+  modalContent: {
+    padding: 16,
+  },
+  modalNotificationTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
-  },
-  modalStatusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  modalStatusText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: '600',
+    color: '#333',
+    marginBottom: 16,
   },
   detailSection: {
     marginBottom: 16,
@@ -593,50 +509,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   closeButton: {
-    backgroundColor: '#34A853',
+    backgroundColor: '#757575',
+  },
+  evaluateButton: {
+    backgroundColor: '#FFA500',
+    marginBottom: 10,
   },
   modalButtonText: {
     color: 'white',
     fontWeight: '500',
   },
-    filterContainer: {
+  filterContainer: {
     backgroundColor: 'white',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
   },
   filterTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  filterButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+    marginBottom: 8,
+    color: '#555',
   },
   filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
     backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    marginRight: 8,
   },
   filterButtonActive: {
-    backgroundColor: '#34A853',
-    borderColor: '#34A853',
+    backgroundColor: '#2685BF',
   },
   filterButtonText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
+    fontSize: 13,
+    color: '#444',
   },
   filterButtonTextActive: {
     color: 'white',
+    fontWeight: 'bold',
   },
 });
 

@@ -1,4 +1,3 @@
-// telas/NotificacoesAnalista.js - VERSÃO FINAL CORRIGIDA
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -41,7 +40,6 @@ const NotificacoesAnalista = () => {
     try {
       console.log('📥 Carregando notificações do analista:', user?.uid);
       
-      // ✅ CORREÇÃO: Buscar na collection notifications_analista
       const q = query(
         collection(db, 'notifications_analista'),
         where('userId', '==', user?.uid),
@@ -79,7 +77,6 @@ const NotificacoesAnalista = () => {
   const applyFilters = () => {
     let filtered = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       filtered = filtered.filter(notification => notification.status === filterStatus);
     }
@@ -133,6 +130,8 @@ const NotificacoesAnalista = () => {
     switch (tipo) {
       case 'analise_aprovada': return '✅';
       case 'analise_rejeitada': return '❌';
+      case 'visita_aprovada': return '📅';
+      case 'visita_rejeitada': return '❌';
       default: return '🔔';
     }
   };
@@ -151,6 +150,22 @@ const NotificacoesAnalista = () => {
         text: 'Análise rejeitada', 
         color: '#F44336',
         details: 'Entre em contato com o administrador para mais informações'
+      };
+    }
+
+    if (notification.tipo === 'visita_aprovada') {
+      return { 
+        text: 'Visita aprovada!', 
+        color: '#4CAF50',
+        details: notification.dadosVisita ? `Poço: ${notification.dadosVisita.pocoNome}` : 'Visita registrada no sistema'
+      };
+    }
+    
+    if (notification.tipo === 'visita_rejeitada') {
+      return { 
+        text: 'Visita rejeitada', 
+        color: '#F44336',
+        details: notification.dadosVisita?.motivoRejeicao ? `Motivo: ${notification.dadosVisita.motivoRejeicao}` : 'Consulte o administrador'
       };
     }
     
@@ -209,6 +224,18 @@ const NotificacoesAnalista = () => {
             {item.dadosAnalise.dataAnalise && (
               <Text style={styles.dataText}>
                 Data: {formatDate(item.dadosAnalise.dataAnalise)}
+              </Text>
+            )}
+          </View>
+        )}
+
+        {/* Dados da visita */}
+        {item.dadosVisita && (
+          <View style={styles.dataContainer}>
+            <Text style={styles.dataText}>Poço: {item.dadosVisita.pocoNome}</Text>
+            {item.dadosVisita.visitaId && (
+              <Text style={styles.dataText}>
+                ID Visita: {item.dadosVisita.visitaId}
               </Text>
             )}
           </View>
@@ -304,7 +331,12 @@ const NotificacoesAnalista = () => {
                 <View style={styles.detailSection}>
                   <Text style={styles.detailLabel}>Tipo</Text>
                   <Text style={styles.detailValue}>
-                    {getTypeIcon(selectedNotification.tipo)} {selectedNotification.tipo === 'analise_aprovada' ? 'Análise Aprovada' : 'Análise Rejeitada'}
+                    {getTypeIcon(selectedNotification.tipo)} {
+                      selectedNotification.tipo === 'analise_aprovada' ? 'Análise Aprovada' : 
+                      selectedNotification.tipo === 'analise_rejeitada' ? 'Análise Rejeitada' :
+                      selectedNotification.tipo === 'visita_aprovada' ? 'Visita Aprovada' :
+                      selectedNotification.tipo === 'visita_rejeitada' ? 'Visita Rejeitada' : 'Notificação'
+                    }
                   </Text>
                 </View>
 
@@ -335,10 +367,37 @@ const NotificacoesAnalista = () => {
                           </Text>
                         </View>
                       )}
-                      {selectedNotification.dadosAnalise.analysisId && (
+                      {selectedNotification.dadosAnalise.analiseId && (
                         <View style={styles.dataItem}>
                           <Text style={styles.dataLabel}>ID da Análise</Text>
-                          <Text style={styles.dataValue}>{selectedNotification.dadosAnalise.analysisId}</Text>
+                          <Text style={styles.dataValue}>{selectedNotification.dadosAnalise.analiseId}</Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                )}
+
+                {/* Dados da visita */}
+                {selectedNotification.dadosVisita && (
+                  <View style={styles.detailSection}>
+                    <Text style={styles.detailLabel}>Informações da Visita</Text>
+                    <View style={styles.dataGrid}>
+                      <View style={styles.dataItem}>
+                        <Text style={styles.dataLabel}>Poço</Text>
+                        <Text style={styles.dataValue}>{selectedNotification.dadosVisita.pocoNome}</Text>
+                      </View>
+                      {selectedNotification.dadosVisita.visitaId && (
+                        <View style={styles.dataItem}>
+                          <Text style={styles.dataLabel}>ID da Visita</Text>
+                          <Text style={styles.dataValue}>{selectedNotification.dadosVisita.visitaId}</Text>
+                        </View>
+                      )}
+                      {selectedNotification.dadosVisita.motivoRejeicao && (
+                        <View style={styles.dataItem}>
+                          <Text style={styles.dataLabel}>Motivo da Rejeição</Text>
+                          <Text style={[styles.dataValue, { color: '#F44336' }]}>
+                            {selectedNotification.dadosVisita.motivoRejeicao}
+                          </Text>
                         </View>
                       )}
                     </View>

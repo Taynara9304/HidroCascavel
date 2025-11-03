@@ -1,10 +1,13 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
 
-const FormAvaliacoes = ({ onSubmit }) => {
+// 1. Prop 'isSubmitting' adicionada para desabilitar o botão
+const FormAvaliacoes = ({ onSubmit, isSubmitting = false }) => {
   const [comment, setComment] = useState("");
   const [rating, setRating] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  
+  // 2. Lógica de imagem foi removida
 
   const handleCommentChange = (text) => {
     if (text.length <= 100) {
@@ -24,7 +27,10 @@ const FormAvaliacoes = ({ onSubmit }) => {
       return;
     }
     
+    // 3. Envia apenas 'comment' e 'rating'
     onSubmit({ comment, rating });
+    
+    // Limpa o formulário
     setComment("");
     setRating(0);
     setCharCount(0);
@@ -56,11 +62,17 @@ const FormAvaliacoes = ({ onSubmit }) => {
         ))}
       </View>
 
+      {/* 4. Seção de Upload de Imagem REMOVIDA */}
+
       <TouchableOpacity
-        style={styles.button}
+        // 5. Botão é desabilitado durante o envio
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
         onPress={handleSubmit}
+        disabled={isSubmitting}
       >
-        <Text style={styles.buttonText}>Enviar</Text>
+        <Text style={styles.buttonText}>
+          {isSubmitting ? "Enviando..." : "Enviar"}
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -78,6 +90,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginVertical: 4,
     color: "#fff",
+    marginTop: 10, // Adicionado
   },
   input: {
     backgroundColor: "#fff",
@@ -106,13 +119,18 @@ const styles = StyleSheet.create({
     color: "#FFD700",
   },
   button: {
-    marginTop: 10,
+    marginTop: 15, // Aumentado
     padding: 12,
     backgroundColor: "#fff",
     borderRadius: 25,
     alignItems: "center",
     borderWidth: 2,
     borderColor: "#2980b9",
+  },
+  // 6. Estilo para botão desabilitado
+  buttonDisabled: {
+    backgroundColor: "#ccc",
+    borderColor: "#999",
   },
   buttonText: {
     fontSize: 16,

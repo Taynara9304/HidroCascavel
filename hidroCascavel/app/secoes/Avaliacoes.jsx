@@ -1,38 +1,18 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   useWindowDimensions,
+  ActivityIndicator,
 } from "react-native";
 import Card from "../componentes/Card";
-import FormAvaliacoes from "../componentes/FormAvaliacoes";
+import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
+import { db } from '../services/firebaseConfig';
 
-const data = [
-  {
-    id: "1",
-    name: "Georgina dos Santos",
-    image: require("../assets/img1Poco.png"),
-    rating: 5,
-    comment:
-      "dhibsjfhdsbfjsbdhfhsdbfjshdbfsbdhfsdhfjdbhfbsjsdbhfjsbdfbsjhdbfsdsjhfbsdhfbsdhfbsdjhbfsdjbfjsbdhfjsd",
-  },
-  {
-    id: "2",
-    name: "Carmen Maria",
-    image: require("../assets/img2Poco.png"),
-    rating: 4,
-    comment: "Bom!",
-  },
-  {
-    id: "3",
-    name: "Carlos Almeida",
-    image: require("../assets/img1Poco.png"),
-    rating: 5,
-    comment: "Ótimo serviço!",
-  },
-];
+// 1. Define uma imagem padrão (fallback)
+const fallbackImage = require("../assets/img1Poco.png");
 
 const Avaliacoes = () => {
   const { width } = useWindowDimensions();
@@ -40,9 +20,39 @@ const Avaliacoes = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
 
-  // Tamanho fixo para os cards
+  const [avaliacoes, setAvaliacoes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const cardWidth = isMobile ? width * 0.85 : 280;
   const cardHeight = 280;
+
+  useEffect(() => {
+    setLoading(true);
+    const q = query(collection(db, 'avaliacoes'), orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const list = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        list.push({
+          id: doc.id,
+          name: data.userName,
+          rating: data.rating,
+          comment: data.comment,
+          // 2. Usa a imagem estática de fallback
+          image: fallbackImage, 
+        });
+      });
+      setAvaliacoes(list);
+      setLoading(false);
+    }, (error) => {
+      console.error("Erro ao buscar avaliações: ", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
 
   const handleScroll = (event) => {
     const contentOffset = event.nativeEvent.contentOffset.x;
@@ -50,14 +60,10 @@ const Avaliacoes = () => {
     setCurrentIndex(index);
   };
 
-  const handleSubmit = (data) => {
-    console.log("Novo depoimento:", data);
-  };
-
   const renderPagination = () => {
     return (
       <View style={styles.paginationContainer}>
-        {data.map((_, index) => (
+        {avaliacoes.map((_, index) => (
           <View
             key={index}
             style={[
@@ -72,6 +78,15 @@ const Avaliacoes = () => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#FFFFFF" />
+        <Text style={styles.loadingText}>Carregando avaliações...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={[
       styles.container,
@@ -84,58 +99,55 @@ const Avaliacoes = () => {
         AVALIAÇÕES E DEPOIMENTOS
       </Text>
 
-      <View style={styles.content}>
-        {isMobile ? (
-          <View style={styles.carouselContainer}>
-            <FlatList
-              ref={flatListRef}
-              data={data}
-              keyExtractor={(item) => item.id}
-              horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              onScroll={handleScroll}
-              scrollEventThrottle={16}
-              snapToInterval={width}
-              snapToAlignment="center"
-              decelerationRate="fast"
-              getItemLayout={(data, index) => ({
-                length: width,
-                offset: width * index,
-                index,
-              })}
-              renderItem={({ item }) => (
-                <View style={[styles.slide, { width }]}>
-                  <View style={[styles.cardContainer, { width: cardWidth, height: cardHeight }]}>
-                    <Card {...item} />
+      {avaliacoes.length === 0 ? (
+        <Text style={styles.loadingText}>Ainda não há avaliações.</Text>
+      ) : (
+        <View style={styles.content}>
+          {isMobile ? (
+            <View style={styles.carouselContainer}>
+              <FlatList
+                ref={flatListRef}
+                data={avaliacoes} 
+                keyExtractor={(item) => item.id}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                snapToInterval={width}
+                snapToAlignment="center"
+                decelerationRate="fast"
+                getItemLayout={(data, index) => ({
+                  length: width,
+                  offset: width * index,
+                  index,
+                })}
+                renderItem={({ item }) => (
+                  <View style={[styles.slide, { width }]}>
+                    <View style={[styles.cardContainer, { width: cardWidth, height: cardHeight }]}>
+                      <Card {...item} />
+                    </View>
                   </View>
+                )}
+              />
+              {renderPagination()}
+            </View>
+          ) : (
+            <View style={styles.cardsGrid}>
+              {avaliacoes.map((item) => ( 
+                <View key={item.id} style={[styles.cardWrapper, { width: cardWidth }]}>
+                  <Card {...item} />
                 </View>
-              )}
-            />
-            {renderPagination()}
-          </View>
-        ) : (
-          <View style={styles.cardsGrid}>
-            {data.map((item) => (
-              <View key={item.id} style={[styles.cardWrapper, { width: cardWidth }]}>
-                <Card {...item} />
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Formulário */}
-        <View style={[
-          styles.formContainer,
-          isMobile && styles.formContainerMobile
-        ]}>
-          <FormAvaliacoes onSubmit={handleSubmit} />
+              ))}
+            </View>
+          )}
         </View>
-      </View>
+      )}
     </View>
   );
 };
 
+// ... (Estilos de Avaliacoes.jsx) ...
 const styles = StyleSheet.create({
   container: {
     backgroundColor: "#2c84be",
@@ -145,6 +157,17 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     width: '100%',
     marginBottom: 0,
+    minHeight: 400,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginTop: 10,
+    textAlign: 'center',
   },
   containerMobile: {
     padding: 16,
@@ -209,13 +232,6 @@ const styles = StyleSheet.create({
   },
   paginationDotInactive: {
     backgroundColor: "rgba(255, 255, 255, 0.5)",
-  },
-  formContainer: {
-    width: '100%',
-    alignSelf: 'center',
-  },
-  formContainerMobile: {
-    paddingHorizontal: 0,
   },
 });
 
