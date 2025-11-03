@@ -1,7 +1,8 @@
+// HomeAdm.js
 import React from "react";
 import { View, StyleSheet, useWindowDimensions, ScrollView, TouchableOpacity } from 'react-native';
 import PopUp from "../componentes/PopUp";
-import Calendario from "../componentes/Calendario";
+import CalendarioVisitas from "../componentes/CalendarioVisitas";
 import TabelaVisitas from '../componentes/TabelaVisitas';
 import NavBar from '../componentes/NavBar';
 import MapaUniversal from '../componentes/MapaUniversalPocos';
@@ -11,6 +12,7 @@ import iconePessoa from "../assets/iconePessoa.png";
 import iconeQuimica from '../assets/iconeQuimica.png';
 import iconeCalendario from '../assets/iconeCalendario.png';
 import { useNavigation } from "@react-navigation/native";
+import { useDashboardStats } from '../hooks/useDashboardStats';
 
 const HomeAdm = () => {
     const { width } = useWindowDimensions();
@@ -18,6 +20,7 @@ const HomeAdm = () => {
     const isMobile = width < 800;
     
     const navigation = useNavigation();
+    const { stats, loading } = useDashboardStats();
 
     // Função simples para lidar com seleção de localização (se necessário)
     const handleLocationSelect = (location) => {
@@ -41,12 +44,10 @@ const HomeAdm = () => {
         navigation.navigate("GerenciarUsuarios");
     };
 
-    // NOVA FUNÇÃO: Navegar para Gerenciar Relatórios
     const navigateToGerenciarRelatorios = () => {
         navigation.navigate("GerenciarRelatorios");
     };
 
-    // Styles DEFINIDOS DENTRO do componente para acessar isMobile
     const styles = StyleSheet.create({
         scrollView: {
             flex: 1,
@@ -102,23 +103,39 @@ const HomeAdm = () => {
 
                 <View style={[styles.containerPopUps, { width: contentWidth }]}>
                     <View>
-                        <PopUp texto="Total de poços" num="1" img={iconeMundo} />
+                        <PopUp 
+                            texto="Total de poços" 
+                            num={loading ? "..." : stats.totalPocos.toString()} 
+                            img={iconeMundo} 
+                        />
                     </View>
                     <View>
-                        <PopUp texto="Análises realizadas" num="2" img={iconeQuimica} />
+                        <PopUp 
+                            texto="Análises realizadas" 
+                            num={loading ? "..." : stats.totalAnalises.toString()} 
+                            img={iconeQuimica} 
+                        />
                     </View>
                     
                     <View>
-                        <PopUp texto="Visitas agendadas" num="3" img={iconeCalendario} />
+                        <PopUp 
+                            texto="Visitas agendadas" 
+                            num={loading ? "..." : stats.totalVisitas.toString()} 
+                            img={iconeCalendario} 
+                        />
                     </View>
 
                     <View>
-                        <PopUp texto="Usuários cadastrados" num="4" img={iconePessoa} />
+                        <PopUp 
+                            texto="Usuários cadastrados" 
+                            num={loading ? "..." : stats.totalUsuarios.toString()} 
+                            img={iconePessoa} 
+                        />
                     </View>
                 </View>
 
                 <View style={styles.containerItems}>
-                    <Calendario />
+                    <CalendarioVisitas />
                 </View>
 
                 <View style={styles.containerItems}>
