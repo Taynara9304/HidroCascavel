@@ -18,6 +18,10 @@ const HomeProprietario = () => {
         console.log('Localização selecionada:', location);
     };
 
+    const navigateToGerenciarAnalises = () => {
+        navigation.navigate("GerenciarAnalises");
+    };
+
     // Funções de navegação
     const navigateToGerenciarPocos = () => {
         navigation.navigate("GerenciarPocos");
@@ -102,6 +106,12 @@ const HomeProprietario = () => {
                         onPress={navigateToGerenciarVisitas}
                     >
                         <BotaoFuncionalidades texto="Gerenciar visitas" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={styles.navItem}
+                        onPress={navigateToGerenciarAnalises}
+                    >
+                        <BotaoFuncionalidades texto="Gerenciar análises" />
                     </TouchableOpacity>
                 </View>
 

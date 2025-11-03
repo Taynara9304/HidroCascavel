@@ -1,3 +1,4 @@
+// componentes/CalendarioVisitas.js - VERSÃO CORRIGIDA
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -24,31 +25,55 @@ const CalendarioVisitas = () => {
   // Dias da semana
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
-  // Organizar visitas por data
+  // ✅ FUNÇÃO CORRIGIDA: Organizar visitas por data
   useEffect(() => {
     const organizedVisits = {};
     
     visits.forEach(visit => {
       if (visit.dataVisita) {
-        // Converter string de data para Date
-        const visitDate = new Date(visit.dataVisita);
-        const dateKey = visitDate.toISOString().split('T')[0]; // Formato YYYY-MM-DD
-        
-        if (!organizedVisits[dateKey]) {
-          organizedVisits[dateKey] = {
-            concluded: 0,
-            scheduled: 0,
-            visits: []
-          };
-        }
-        
-        organizedVisits[dateKey].visits.push(visit);
-        
-        // Contar visitas concluídas e agendadas baseado na situação
-        if (visit.situacao === 'concluida') {
-          organizedVisits[dateKey].concluded++;
-        } else {
-          organizedVisits[dateKey].scheduled++;
+        try {
+          // Converter string de data para Date de forma segura
+          let visitDate;
+          
+          if (typeof visit.dataVisita === 'string') {
+            visitDate = new Date(visit.dataVisita);
+          } else if (visit.dataVisita && typeof visit.dataVisita.toDate === 'function') {
+            // Se for um Timestamp do Firebase
+            visitDate = visit.dataVisita.toDate();
+          } else if (visit.dataVisita instanceof Date) {
+            visitDate = visit.dataVisita;
+          } else {
+            console.warn('Formato de data não reconhecido:', visit.dataVisita);
+            return; // Pula esta visita se a data for inválida
+          }
+
+          // Verificar se a data é válida
+          if (isNaN(visitDate.getTime())) {
+            console.warn('Data inválida:', visit.dataVisita);
+            return;
+          }
+
+          // ✅ CORREÇÃO: Usar toLocaleDateString em vez de toISOString
+          const dateKey = visitDate.toLocaleDateString('en-CA'); // Formato YYYY-MM-DD
+          
+          if (!organizedVisits[dateKey]) {
+            organizedVisits[dateKey] = {
+              concluded: 0,
+              scheduled: 0,
+              visits: []
+            };
+          }
+          
+          organizedVisits[dateKey].visits.push(visit);
+          
+          // Contar visitas concluídas e agendadas baseado na situação
+          if (visit.situacao === 'concluida') {
+            organizedVisits[dateKey].concluded++;
+          } else {
+            organizedVisits[dateKey].scheduled++;
+          }
+        } catch (error) {
+          console.error('Erro ao processar visita:', error, visit);
         }
       }
     });
@@ -56,7 +81,7 @@ const CalendarioVisitas = () => {
     setVisitsByDate(organizedVisits);
   }, [visits]);
 
-  // Gerar o calendário do mês atual
+  // ✅ FUNÇÃO CORRIGIDA: Gerar o calendário do mês atual
   const generateCalendar = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -125,17 +150,29 @@ const CalendarioVisitas = () => {
     );
   };
 
+  // ✅ FUNÇÃO CORRIGIDA: Verificar se tem visitas
   const hasVisits = (dayObj) => {
     if (!dayObj) return false;
-    const dateKey = dayObj.date.toISOString().split('T')[0];
-    return visitsByDate[dateKey] && 
-           (visitsByDate[dateKey].scheduled > 0 || visitsByDate[dateKey].concluded > 0);
+    try {
+      const dateKey = dayObj.date.toLocaleDateString('en-CA');
+      return visitsByDate[dateKey] && 
+             (visitsByDate[dateKey].scheduled > 0 || visitsByDate[dateKey].concluded > 0);
+    } catch (error) {
+      console.error('Erro ao verificar visitas:', error);
+      return false;
+    }
   };
 
+  // ✅ FUNÇÃO CORRIGIDA: Obter informações de visitas
   const getVisitInfo = (dayObj) => {
     if (!dayObj) return null;
-    const dateKey = dayObj.date.toISOString().split('T')[0];
-    return visitsByDate[dateKey];
+    try {
+      const dateKey = dayObj.date.toLocaleDateString('en-CA');
+      return visitsByDate[dateKey];
+    } catch (error) {
+      console.error('Erro ao obter informações de visitas:', error);
+      return null;
+    }
   };
 
   const handleDayPress = (dayObj) => {
@@ -144,22 +181,49 @@ const CalendarioVisitas = () => {
     }
   };
 
+  // ✅ FUNÇÃO CORRIGIDA: Obter visitas para data selecionada
   const getVisitsForSelectedDate = () => {
     if (!selectedDate) return [];
-    const dateKey = selectedDate.toISOString().split('T')[0];
-    return visitsByDate[dateKey]?.visits || [];
+    try {
+      const dateKey = selectedDate.toLocaleDateString('en-CA');
+      return visitsByDate[dateKey]?.visits || [];
+    } catch (error) {
+      console.error('Erro ao obter visitas para data:', error);
+      return [];
+    }
   };
 
   // Formatar data para exibição
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return '--/--/---- --:--';
+    
+    try {
+      let date;
+      if (typeof dateString === 'string') {
+        date = new Date(dateString);
+      } else if (dateString && typeof dateString.toDate === 'function') {
+        date = dateString.toDate();
+      } else if (dateString instanceof Date) {
+        date = dateString;
+      } else {
+        return 'Data inválida';
+      }
+
+      if (isNaN(date.getTime())) {
+        return 'Data inválida';
+      }
+
+      return date.toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('Erro ao formatar data:', error);
+      return 'Erro na data';
+    }
   };
 
   // Obter status da visita para exibição
@@ -261,11 +325,11 @@ const CalendarioVisitas = () => {
                   <View style={styles.visitIndicators}>
                     <View style={styles.indicatorsRow}>
                       {/* Concluídas */}
-                      {getVisitInfo(dayObj).concluded > 0 && (
+                      {getVisitInfo(dayObj)?.concluded > 0 && (
                         <View style={[styles.indicator, styles.concludedIndicator]} />
                       )}
                       {/* Agendadas/Aprovadas */}
-                      {getVisitInfo(dayObj).scheduled > 0 && (
+                      {getVisitInfo(dayObj)?.scheduled > 0 && (
                         <View style={[styles.indicator, styles.scheduledIndicator]} />
                       )}
                     </View>
@@ -462,10 +526,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   concludedIndicator: {
-    backgroundColor: '#4CAF50', // Verde para visitas concluídas
+    backgroundColor: '#4CAF50',
   },
   scheduledIndicator: {
-    backgroundColor: '#FF9800', // Laranja para visitas agendadas
+    backgroundColor: '#FF9800',
   },
   visitsDetails: {
     marginTop: 16,

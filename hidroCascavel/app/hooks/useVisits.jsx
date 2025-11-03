@@ -1,6 +1,6 @@
-// hooks/useVisits.js
+// hooks/useVisits.js - VERSÃO CORRIGIDA
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
 export const useVisits = () => {
@@ -10,10 +10,10 @@ export const useVisits = () => {
   useEffect(() => {
     setLoading(true);
     
-    // Query para buscar todas as visitas
     const q = query(
-      collection(db, 'visits')
-      // orderBy('dataVisita', 'asc') - removido pois dataVisita é string
+      collection(db, 'visits'),
+      orderBy('dataVisita', 'desc'),
+      limit(5)
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -25,9 +25,7 @@ export const useVisits = () => {
         });
       });
       
-      // Ordenar por dataVisita manualmente
-      visitsData.sort((a, b) => new Date(a.dataVisita) - new Date(b.dataVisita));
-      
+      console.log('📋 Últimas 5 visitas carregadas:', visitsData.length);
       setVisits(visitsData);
       setLoading(false);
     }, (error) => {
