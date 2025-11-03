@@ -18,21 +18,18 @@ const Apresentacao = () => {
   const conteudo = {
     "QUEM SOMOS": {
       texto:
-        "Somos um projeto de extensão do IFPR Campus Cascavel vinculado ao Itaipu Parquetec.\n\nTemos como objetivo a disseminação e promoção do conhecimento sobre a importância da manutenção da qualidade da água de poços entre os habitantes de Cascavel.",
+        "Somos o Projeto de Extensão HIDROCASCAVEL, uma iniciativa do Instituto Federal do Paraná – Campus Cascavel, que integra ensino, pesquisa e extensão para promover conhecimento técnico e conscientização ambiental sobre os recursos hídricos locais. Nosso grupo é formado por docentes e estudantes de diferentes cursos, comprometidos com a sustentabilidade e com o fortalecimento do protagonismo comunitário em torno da gestão da água.",
       imagem: require("../assets/imgMembrosGrupo.png"),
     },
     "O QUE FAZEMOS": {
       lista: [
-        "Analisamos a água de poços e nascentes na área urbana e rural que abastecem Cascavel;",
-        "Avaliamos as percepções ambientais dos habitantes;",
-        "Promovemos medidas de conscientização para os moradores;",
-        "Promovemos acesso ao conhecimento ambiental."
+        "O projeto realiza avaliações da qualidade da água de poços e nascentes em diferentes regiões de Cascavel-PR, por meio de coletas de campo e análises físico-químicas e microbiológicas em laboratório. Além do diagnóstico técnico, promovemos ações educativas e oficinas participativas, com o objetivo de aproximar a ciência da comunidade, estimular práticas sustentáveis e disseminar informações sobre o uso responsável da água. Dessa forma, contribuímos para a saúde pública, o meio ambiente e a conscientização social."
       ],
       imagem: require("../assets/imgMembrosGrupo2.png"),
     },
     "NOSSA MISSÃO": {
       texto:
-        "Nossa missão é garantir o acesso a informações confiáveis sobre a qualidade da água e promover a conscientização ambiental em Cascavel e região.\n\nPor meio de análises técnicas e ações educativas, buscamos fortalecer a relação entre a comunidade e os recursos hídricos, incentivando práticas sustentáveis que beneficiem as gerações atuais e futuras.",
+        "Nossa missão é avaliar, educar e transformar, promovendo a conscientização ambiental e o uso sustentável da água. Buscamos despertar o senso de responsabilidade coletiva quanto à preservação dos mananciais, fortalecer o vínculo entre ciência e comunidade e formar cidadãos críticos, informados e comprometidos com o futuro dos recursos hídricos.",
       imagem: require("../assets/imgMembrosGrupo3.png"),
     },
   };
