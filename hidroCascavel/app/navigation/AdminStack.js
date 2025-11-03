@@ -6,6 +6,7 @@ import GerenciarUsuarios from '../telas/GerenciarUsuarios';
 import GerenciarAnalises from '../telas/GerenciarAnalises';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarPocos from '../telas/GerenciarPocos';
+import GerenciarRelatorios from '../telas/GerenciarRelatorios';
 import PerfilUsuario from '../telas/PerfilUsuario';
 import GerenciarSolicitacoesWhatsApp from '../telas/GerenciarSolicitacoesWhatsApp';
 import CadastrarVisitaWhatsApp from '../telas/CadastrarVisitaWhatsApp';
@@ -77,6 +78,14 @@ const AdminStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Notificações" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarRelatorios" 
+        component={GerenciarRelatorios}
+        options={{ 
+          headerShown: isWeb,
+          title: "Gerenciar Relatórios" 
         }}
       />
     </Stack.Navigator>
