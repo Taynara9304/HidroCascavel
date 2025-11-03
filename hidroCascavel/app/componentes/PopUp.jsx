@@ -7,7 +7,9 @@ const PopUp = prop => {
             <View style={styles.numero}>
                 <Text style={styles.numeroText}>{prop.num}</Text>
             </View>
+
             <Text style={styles.texto} numberOfLines={2}>{prop.texto}</Text>
+
             <View style={styles.containerIcone}>
                 <Image style={styles.icone} source={prop.img} />
             </View>
