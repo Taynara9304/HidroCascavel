@@ -8,9 +8,10 @@ import {
   RefreshControl,
   ActivityIndicator,
   Modal,
-  ScrollView
+  ScrollView,
+  Alert
 } from 'react-native';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, orderBy, onSnapshot, addDoc, getDocs, Timestamp } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
 import { useNavigation } from '@react-navigation/native';
@@ -29,6 +30,7 @@ const NotificacoesProprietario = () => {
   useEffect(() => {
     if (user) {
       loadNotifications();
+      checkAllNotifications(); // DEBUG
     }
   }, [user]);
 
@@ -36,12 +38,45 @@ const NotificacoesProprietario = () => {
     applyFilters();
   }, [notifications, filterStatus]);
 
+  // FUNÇÃO DE DEBUG - Ver todas as notificações
+  const checkAllNotifications = async () => {
+    try {
+      const notificationsRef = collection(db, 'notifications');
+      const snapshot = await getDocs(notificationsRef);
+      
+      console.log('🔍 TODAS AS NOTIFICAÇÕES NA COLEÇÃO:');
+      let userNotificationsCount = 0;
+      
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        console.log('Notificação:', {
+          id: doc.id,
+          idDoUsuario: data.idDoUsuario,
+          usuarioLogado: user?.uid,
+          tipo: data.tipoNotificacao,
+          status: data.status,
+          titulo: data.titulo,
+          match: data.idDoUsuario === user?.uid ? '✅' : '❌'
+        });
+        
+        if (data.idDoUsuario === user?.uid) {
+          userNotificationsCount++;
+        }
+      });
+      
+      console.log(`📊 Notificações do usuário atual: ${userNotificationsCount}`);
+    } catch (error) {
+      console.error('Erro ao verificar notificações:', error);
+    }
+  };
+
   const loadNotifications = () => {
     setLoading(true);
     
     try {
       console.log('👤 Carregando notificações para usuário:', user?.uid);
       
+      // ✅ QUERY CORRIGIDA - campo correto e ordenação
       const q = query(
         collection(db, 'notifications'),
         where('idDoUsuario', '==', user?.uid),
@@ -56,7 +91,8 @@ const NotificacoesProprietario = () => {
             id: doc.id,
             tipo: data.tipoNotificacao,
             status: data.status,
-            usuario: data.idDoUsuario
+            usuario: data.idDoUsuario,
+            titulo: data.titulo
           });
           notificationsList.push({ id: doc.id, ...data });
         });
@@ -76,6 +112,28 @@ const NotificacoesProprietario = () => {
       console.error("❌ Erro: ", error);
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  // ✅ FUNÇÃO DE TESTE - Criar notificação de teste
+  const testarNotificacao = async () => {
+    try {
+      const notificacaoTeste = {
+        idDoUsuario: user.uid,
+        tipoNotificacao: 'teste',
+        titulo: 'Teste de Notificação ✅',
+        mensagem: 'Se você está vendo isso, as notificações estão funcionando corretamente!',
+        dataSolicitacao: Timestamp.now(),
+        status: 'concluida',
+        statusAvaliacao: 'pendente'
+      };
+
+      await addDoc(collection(db, 'notifications'), notificacaoTeste);
+      Alert.alert('Sucesso', 'Notificação de teste criada! Atualize a lista.');
+      console.log('✅ Notificação de teste criada para:', user.uid);
+    } catch (error) {
+      console.error('❌ Erro no teste:', error);
+      Alert.alert('Erro', `Falha no teste: ${error.message}`);
     }
   };
 
@@ -113,6 +171,11 @@ const NotificacoesProprietario = () => {
             </TouchableOpacity>
           ))}
         </ScrollView>
+        
+        {/* BOTÃO DE TESTE - TEMPORÁRIO */}
+        <TouchableOpacity style={styles.testButton} onPress={testarNotificacao}>
+          <Text style={styles.testButtonText}>🧪 Testar Notificações</Text>
+        </TouchableOpacity>
       </View>
     );
   };
@@ -145,6 +208,7 @@ const NotificacoesProprietario = () => {
       case 'cadastro': return '📝';
       case 'edicao': return '✏️';
       case 'analise_concluida': return '📊';
+      case 'teste': return '🧪';
       default: return '🔔';
     }
   };
@@ -156,6 +220,8 @@ const NotificacoesProprietario = () => {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } catch (e) {
       return 'Data inválida';
@@ -344,6 +410,11 @@ const NotificacoesProprietario = () => {
                     </Text>
                   </View>
                 )}
+                
+                <View style={styles.detailSection}>
+                  <Text style={styles.detailLabel}>Data:</Text>
+                  <Text style={styles.detailValue}>{formatDate(selectedNotification.dataSolicitacao)}</Text>
+                </View>
                 
                 <View style={styles.modalActions}>
                   <TouchableOpacity 
@@ -550,6 +621,19 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  testButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });
 
