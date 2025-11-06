@@ -132,30 +132,53 @@ const GerenciarAnalises = ({ navigation }) => {
 
   const carregarDadosFormulario = async () => {
     try {
-      // Carregar poços
-      const pocosSnapshot = await getDocs(collection(db, 'pocos'));
+      console.log('🔄 Carregando dados do formulário...');
+      
+      console.log('🔍 Tentando acessar coleção: wells');
+      
+      const pocosSnapshot = await getDocs(collection(db, 'wells'));
       const pocosList = pocosSnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      console.log('✅ Poços carregados com SUCESSO:', pocosList.length);
+      if (pocosList.length > 0) {
+        console.log('📋 Primeiro poço:', pocosList[0]);
+        console.log('👤 idProprietario do primeiro poço:', pocosList[0].idProprietario);
+      }
+      
       setPocos(pocosList);
 
-      // Carregar analistas (usuários com tipo 'analista' ou 'admin')
+      console.log('🔍 Tentando acessar coleção: users');
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const analistasList = usersSnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(user => user.tipoUsuario === 'analista' || user.tipoUsuario === 'admin');
+      
+      console.log('Analistas carregados com SUCESSO:', analistasList.length);
       setAnalistas(analistasList);
 
     } catch (error) {
-      console.error('❌ Erro ao carregar dados do formulário:', error);
+      console.error('Erro ao carregar dados do formulário:', error);
+      console.error('Código do erro:', error.code);
+      console.error('Mensagem do erro:', error.message);
+      
+      if (error.code === 'permission-denied') {
+        Alert.alert(
+          'Permissão Negada', 
+          'Você não tem permissão para acessar os dados necessários. Entre em contato com o administrador.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert('Erro', 'Não foi possível carregar os dados do formulário');
+      }
     }
   };
 
-  // ✅ FUNÇÃO PARA ADMIN CADASTRAR DIRETAMENTE
   const handleCadastroDiretoAdmin = async (analysisData) => {
     try {
-      console.log('📤 Admin: Cadastrando análise diretamente...', analysisData);
+      console.log('Admin: Cadastrando análise diretamente...', analysisData);
       
       const docRef = await addDoc(collection(db, 'analysis'), {
         ...analysisData,
@@ -165,41 +188,40 @@ const GerenciarAnalises = ({ navigation }) => {
         criadoPor: user.uid
       });
 
-      console.log('✅ Análise cadastrada com ID:', docRef.id);
+      console.log('Análise cadastrada com ID:', docRef.id);
       Alert.alert('Sucesso', 'Análise cadastrada diretamente no banco!');
       
       carregarAnalises();
       
     } catch (error) {
-      console.error('❌ Erro ao cadastrar análise:', error);
+      console.error('Erro ao cadastrar análise:', error);
       Alert.alert('Erro', 'Não foi possível cadastrar a análise: ' + error.message);
     }
   };
 
-  // ✅ FUNÇÃO PARA ANALISTA SOLICITAR CADASTRO
   const handleSolicitacaoAnalista = async (analysisData) => {
     try {
-      console.log('📤 Analista: Enviando solicitação de análise...', analysisData);
+      console.log('Analista: Enviando solicitação de análise...', analysisData);
       
       const notificationId = await AnalistaNotifications.solicitarCadastroAnalise(
         user,
         analysisData
       );
 
-      console.log('✅ Solicitação enviada com ID:', notificationId);
+      console.log('Solicitação enviada com ID:', notificationId);
       Alert.alert(
-        '✅ Solicitação Enviada!', 
+        'Solicitação Enviada!', 
         'Sua análise foi enviada para aprovação do administrador.'
       );
       
     } catch (error) {
-      console.error('❌ Erro ao enviar solicitação:', error);
+      console.error('Erro ao enviar solicitação:', error);
       Alert.alert('Erro', 'Não foi possível enviar a solicitação: ' + error.message);
     }
   };
 
   const onRefresh = () => {
-    console.log('🔄 Refresh manual acionado');
+    console.log('Refresh manual acionado');
     setRefreshing(true);
     carregarAnalises();
     carregarDadosFormulario();
@@ -209,7 +231,6 @@ const GerenciarAnalises = ({ navigation }) => {
     navigation.navigate('NotificacoesAnalista');
   };
 
-  // ✅ CORREÇÃO: Usar tipo real do usuário
   const getTitulo = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
     switch (tipoUsuarioReal) {
@@ -224,7 +245,6 @@ const GerenciarAnalises = ({ navigation }) => {
     }
   };
 
-  // ✅ CORREÇÃO: Informações específicas para cada tipo
   const getInfoText = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
     
@@ -259,17 +279,15 @@ const GerenciarAnalises = ({ navigation }) => {
     }
   };
 
-  // ✅ CORREÇÃO: Determinar se deve mostrar o formulário
   const deveMostrarFormulario = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
     return tipoUsuarioReal === 'admin' || tipoUsuarioReal === 'analista';
   };
 
-  // ✅ CORREÇÃO: Renderizar formulário correto
   const renderFormulario = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
     
-    console.log('🎨 Renderizando formulário para:', tipoUsuarioReal);
+    console.log('Renderizando formulário para:', tipoUsuarioReal);
     
     if (tipoUsuarioReal === 'admin') {
       return (
@@ -374,7 +392,6 @@ const GerenciarAnalises = ({ navigation }) => {
         </View>
       </View>
 
-      {/* ✅ BOTÃO DE NOTIFICAÇÕES (APENAS PARA ANALISTA E ADMIN) */}
       {(getTipoUsuarioReal() === 'analista' || getTipoUsuarioReal() === 'admin') && (
         <View style={styles.actionsContainer}>
           <TouchableOpacity 
@@ -386,7 +403,6 @@ const GerenciarAnalises = ({ navigation }) => {
         </View>
       )}
 
-      {/* ✅ TABELA DE ANÁLISES */}
       {analises.length > 0 ? (
         <View style={styles.tabelaContainer}>
           <Text style={styles.tabelaTitle}>
@@ -414,10 +430,8 @@ const GerenciarAnalises = ({ navigation }) => {
         </View>
       )}
 
-      {/* ✅ FORMULÁRIO DE CADASTRO (APENAS PARA ADMIN E ANALISTA) */}
       {deveMostrarFormulario() && renderFormulario()}
 
-      {/* ✅ DEBUG INFO (REMOVER EM PRODUÇÃO) */}
       <View style={styles.debugContainer}>
         <Text style={styles.debugText}>
           DEBUG: UserID: {user?.uid} | UserType: {getTipoUsuarioReal()} | Análises: {analises.length}
