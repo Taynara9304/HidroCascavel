@@ -44,6 +44,10 @@ const HomeAnalista = () => {
         navigation.navigate("GerenciarUsuarios");
     };
 
+    const navigateToGerenciarRelatorios = () => {
+        navigation.navigate("GerenciarRelatorios");
+    };
+
     // Styles DEFINIDOS DENTRO do componente para acessar isMobile
     const styles = StyleSheet.create({
         scrollView: {
@@ -158,7 +162,11 @@ const HomeAnalista = () => {
                 </View>
 
                 <View style={styles.containerBotaoRelatorio}>
-                    <BotaoFuncionalidades texto="Gerar relatórios" />
+                    <TouchableOpacity
+                        onPress={navigateToGerenciarRelatorios}
+                    >
+                        <BotaoFuncionalidades texto="Gerar relatórios" />
+                    </TouchableOpacity>
                 </View>
             </View>
         </ScrollView>
