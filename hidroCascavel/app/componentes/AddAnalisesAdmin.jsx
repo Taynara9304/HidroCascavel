@@ -17,9 +17,6 @@ import { useAuth } from '../contexts/authContext';
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
 
-// componentes/AddAnalisesAdmin.js - VERSÃO CORRIGIDA
-// ... (importações mantidas)
-
 const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
   const { user, userData } = useAuth();
   const [formData, setFormData] = useState({
@@ -44,7 +41,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
   });
   const [enviando, setEnviando] = useState(false);
 
-  // Preencher automaticamente o analista se for admin
   useEffect(() => {
     if (userData?.tipoUsuario === 'administrador' && userData?.nome) {
       setFormData(prev => ({
@@ -67,19 +63,17 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
     try {
       setEnviando(true);
 
-      // ✅ GARANTIR QUE TODOS OS CAMPOS NECESSÁRIOS ESTEJAM PREENCHIDOS
       const analysisData = {
         pocoId: formData.poco.id,
         pocoNome: formData.poco.nomeProprietario || formData.poco.nome,
-        pocoLocalizacao: formData.poco.localizacao || { latitude: 0, longitude: 0 }, // ✅ Valor padrão
+        pocoLocalizacao: formData.poco.localizacao || { latitude: 0, longitude: 0 },
         proprietario: formData.poco.nomeProprietario || 'Proprietário não informado',
-        proprietarioId: formData.poco.userId || 'unknown', // ✅ Garantir que não seja undefined
+        proprietarioId: formData.poco.userId || 'unknown',
         analistaId: formData.analista.id,
         analistaNome: formData.analista.nome,
         dataAnalise: formData.dataAnalise.toISOString(),
         resultado: formData.resultado,
         
-        // Parâmetros com valores padrão
         temperaturaAr: formData.temperaturaAr || '0',
         temperaturaAmostra: formData.temperaturaAmostra || '0',
         ph: formData.ph || '0',
@@ -100,10 +94,9 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
         criadoPor: user.uid
       };
 
-      console.log('📤 AddAnalisesAdmin: Enviando análise:', analysisData);
+      console.log('AddAnalisesAdmin: Enviando análise:', analysisData);
       await onAdicionarAnalise(analysisData);
       
-      // Reset form
       setFormData({
         poco: null,
         analista: {
@@ -132,7 +125,7 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
       Alert.alert('Sucesso', 'Análise cadastrada com sucesso!');
       
     } catch (error) {
-      console.error('❌ AddAnalisesAdmin: Erro no cadastro:', error);
+      console.error('AddAnalisesAdmin: Erro no cadastro:', error);
       Alert.alert('Erro', `Não foi possível cadastrar a análise: ${error.message}`);
     } finally {
       setEnviando(false);
@@ -181,7 +174,7 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
       
       <View style={styles.form}>
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>ℹ️ Cadastro Direto:</Text>
+          <Text style={styles.infoTitle}>Cadastro Direto:</Text>
           <Text style={styles.infoText}>
             • Cadastre análises diretamente{'\n'}
             • Não precisa de aprovação{'\n'}
@@ -190,7 +183,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
           </Text>
         </View>
 
-        {/* SEÇÃO INFORMAÇÕES BÁSICAS */}
         <Text style={styles.sectionTitle}>Informações Básicas</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -223,7 +215,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* DATA E RESULTADO */}
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
           <View style={styles.column}>
             <View style={styles.inputGroup}>
@@ -273,7 +264,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* SEÇÃO PARÂMETROS FÍSICO-QUÍMICOS */}
         <Text style={styles.sectionTitle}>Parâmetros Físico-Químicos</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -288,7 +278,8 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
           <View style={styles.column}>
             {renderInput('pH', 'ph', 'Ex: 7.0', 'decimal-pad')}
-          </View>
+          </View>// ... (mantenha os mesmos estilos do AddAnalises original, apenas adicione estes)
+
           <View style={styles.column}>
             {renderInput('Alcalinidade (mg/L)', 'alcalinidade', 'Ex: 120', 'decimal-pad')}
           </View>
@@ -321,7 +312,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* SEÇÃO PARÂMETROS QUÍMICOS E MICROBIOLÓGICOS */}
         <Text style={styles.sectionTitle}>Parâmetros Químicos e Microbiológicos</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -342,7 +332,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* BOTÃO CADASTRAR */}
         <View style={styles.fullWidth}>
           <TouchableOpacity 
             style={[
@@ -364,7 +353,6 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
   );
 };
 
-// ... (mantenha os mesmos estilos do AddAnalises original, apenas adicione estes)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

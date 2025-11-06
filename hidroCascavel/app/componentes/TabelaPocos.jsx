@@ -1,4 +1,4 @@
-// componentes/TabelaPocos.js - VERSÃO RESPONSIVA COM ARRASTE
+// componentes/TabelaPocos.js - VERSÃO COM FIX PARA WEB
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   View, 
@@ -18,8 +18,7 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const isMobile = screenWidth < 768; // Tablet geralmente tem 768px+
-// ✅ Largura responsiva: 0.3 no computador, 0.8 no celular
+const isMobile = screenWidth < 768;
 const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.25);
 const CARD_MARGIN = 8;
 
@@ -38,21 +37,29 @@ const TabelaPocos = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [editandoPoço, setEditandoPoço] = useState(null);
   const [observacoesEdit, setObservacoesEdit] = useState('');
+  const [inputFocado, setInputFocado] = useState(false); // ✅ Novo estado para foco
   const flatListRef = useRef(null);
+  const buscaInputRef = useRef(null); // ✅ Ref para o input
 
   const wellsSeguro = wells || [];
 
   const proprietariosUnicos = useMemo(() => {
-    const proprietarios = wellsSeguro.map(well => well.nomeProprietario).filter(Boolean);
+    const proprietarios = wellsSeguro
+      .map(well => well.nomeProprietario)
+      .filter(Boolean);
     return [...new Set(proprietarios)];
   }, [wellsSeguro]);
 
   const poçosFiltrados = useMemo(() => {
     const filtrados = wellsSeguro.filter(well => {
+      const nomeProprietario = well.nomeProprietario || '';
+      const observacoes = well.observacoes || '';
+      const idProprietario = well.idProprietario || '';
+      
       const matchBusca = 
-        well.nomeProprietario?.toLowerCase().includes(busca.toLowerCase()) ||
-        well.observacoes?.toLowerCase().includes(busca.toLowerCase()) ||
-        well.idProprietario?.toLowerCase().includes(busca.toLowerCase());
+        nomeProprietario.toLowerCase().includes(busca.toLowerCase()) ||
+        observacoes.toLowerCase().includes(busca.toLowerCase()) ||
+        idProprietario.toString().toLowerCase().includes(busca.toLowerCase());
       
       const matchFiltro = 
         filtroProprietario === 'todos' || 
@@ -64,6 +71,13 @@ const TabelaPocos = ({
     setPaginaAtual(0);
     return filtrados;
   }, [wellsSeguro, busca, filtroProprietario]);
+
+  // ✅ Função para forçar foco no input (especialmente para web)
+  const handleContainerPress = () => {
+    if (Platform.OS === 'web' && !inputFocado) {
+      buscaInputRef.current?.focus();
+    }
+  };
 
   const formatarData = (timestamp) => {
     if (!timestamp) return 'Nunca';
@@ -106,7 +120,7 @@ const TabelaPocos = ({
 
   const renderItem = ({ item: well }) => (
     <View style={styles.card}>
-      {/* Cabeçalho Compacto */}
+      {/* ... (mantenha o mesmo código do card) ... */}
       <View style={styles.cardHeader}>
         <Text style={styles.proprietarioNome} numberOfLines={1}>
           {well.nomeProprietario || 'Sem nome'}
@@ -116,7 +130,6 @@ const TabelaPocos = ({
         </Text>
       </View>
       
-      {/* Localização Compacta */}
       <View style={styles.cardInfo}>
         <Text style={styles.infoLabel}>📍</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
@@ -127,7 +140,6 @@ const TabelaPocos = ({
         </Text>
       </View>
       
-      {/* ID como Número */}
       <View style={styles.cardInfo}>
         <Text style={styles.infoLabel}>👤</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
@@ -135,7 +147,6 @@ const TabelaPocos = ({
         </Text>
       </View>
       
-      {/* Observações Condicional */}
       {well.observacoes && (
         <View style={styles.cardInfo}>
           <Text style={styles.infoLabel}>📝</Text>
@@ -145,7 +156,6 @@ const TabelaPocos = ({
         </View>
       )}
       
-      {/* Ações Compactas */}
       <View style={styles.cardAcoes}>
         <TouchableOpacity 
           style={styles.botaoEditar}
@@ -180,14 +190,27 @@ const TabelaPocos = ({
           Poços ({poçosFiltrados.length})
         </Text>
         
-        {/* Barra de Busca e Filtros */}
+        {/* ✅ Barra de Busca MELHORADA para Web */}
         <View style={styles.barraBuscaContainer}>
-          <View style={styles.buscaInputContainer}>
+          <TouchableOpacity 
+            style={styles.buscaInputContainer}
+            activeOpacity={1}
+            onPress={handleContainerPress}
+          >
             <TextInput
-              style={styles.buscaInput}
+              ref={buscaInputRef}
+              style={[
+                styles.buscaInput,
+                inputFocado && styles.buscaInputFocado // ✅ Estilo quando focado
+              ]}
               placeholder="🔍 Buscar..."
               value={busca}
               onChangeText={setBusca}
+              onFocus={() => setInputFocado(true)} // ✅ Controla estado de foco
+              onBlur={() => setInputFocado(false)} // ✅ Controla estado de foco
+              // ✅ Propriedades específicas para Web
+              selectTextOnFocus={Platform.OS === 'web'}
+              autoFocus={Platform.OS === 'web' && false}
             />
             {busca.length > 0 && (
               <TouchableOpacity 
@@ -197,7 +220,7 @@ const TabelaPocos = ({
                 <Text style={styles.limparBuscaTexto}>×</Text>
               </TouchableOpacity>
             )}
-          </View>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.botaoFiltros}
@@ -208,7 +231,7 @@ const TabelaPocos = ({
           </TouchableOpacity>
         </View>
 
-        {/* Ordenação Rápida */}
+        {/* ... (restante do código permanece igual) ... */}
         <View style={styles.ordenacaoContainer}>
           <Text style={styles.ordenacaoTitulo}>Ordenar:</Text>
           <TouchableOpacity 
@@ -236,7 +259,6 @@ const TabelaPocos = ({
           </TouchableOpacity>
         </View>
 
-        {/* ✅ Grid Horizontal com ARRASTE habilitado */}
         {poçosFiltrados.length > 0 ? (
           <View style={styles.carouselContainer}>
             <FlatList
@@ -245,9 +267,9 @@ const TabelaPocos = ({
               renderItem={renderItem}
               keyExtractor={(item) => item.id}
               horizontal
-              pagingEnabled={false} // ✅ Desabilita paginação forçada para permitir arraste livre
-              showsHorizontalScrollIndicator={true} // ✅ Mostra scrollbar para indicar que pode arrastar
-              snapToInterval={null} // ✅ Remove snap para arraste suave
+              pagingEnabled={false}
+              showsHorizontalScrollIndicator={true}
+              snapToInterval={null}
               snapToAlignment="center"
               decelerationRate="normal"
               onMomentumScrollEnd={(event) => {
@@ -261,7 +283,6 @@ const TabelaPocos = ({
               contentContainerStyle={styles.carouselContent}
             />
             
-            {/* Indicadores de Página - ainda funcionam */}
             {poçosFiltrados.length > 1 && (
               <View style={styles.paginacaoContainer}>
                 <Text style={styles.paginacaoTexto}>
@@ -448,6 +469,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  buscaInputFocado: {
+    borderColor: '#2685BF', // ✅ Borda azul quando focado
+    shadowColor: '#2685BF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   limparBusca: {
     position: 'absolute',
@@ -459,6 +489,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1, // ✅ Garante que fique acima do input
   },
   limparBuscaTexto: {
     color: 'white',
@@ -489,6 +520,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     backgroundColor: '#FF4444',
   },
+  // ... (mantenha o resto dos estilos iguais)
   ordenacaoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -514,7 +546,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  // ✅ Carousel com arraste livre
   carouselContainer: {
     flex: 1,
   },
@@ -601,7 +632,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-  // Paginação
   paginacaoContainer: {
     alignItems: 'center',
     marginTop: 16,
@@ -627,7 +657,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Modal de Edição
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -693,7 +722,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Estilos para quando não há dados
   semDadosContainer: {
     flex: 1,
     justifyContent: 'center',

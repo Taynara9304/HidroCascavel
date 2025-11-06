@@ -1,4 +1,4 @@
-// componentes/TabelaAnalises.jsx - VERSÃO COM GESTOS CORRIGIDOS
+// componentes/TabelaAnalises.jsx - VERSÃO COM FIX PARA WEB
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -13,7 +13,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Keyboard,
-  FlatList
+  FlatList,
+  Platform
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -21,7 +22,6 @@ const isMobile = screenWidth < 768;
 const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.3);
 const CARD_MARGIN = 8;
 
-// ✅ Componente de Detalhes integrado (mantido igual)
 const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
   if (!solicitacao) {
     return (
@@ -31,7 +31,6 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
     );
   }
 
-  // ✅ Funções de formatação (mantidas iguais)
   const formatarLocalizacao = (localizacao) => {
     if (!localizacao) return 'Não informada';
     
@@ -111,9 +110,8 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
       </View>
 
       <ScrollView style={styles.detalhesContent}>
-        {/* Informações Básicas */}
         <View style={styles.secao}>
-          <Text style={styles.subtitulo}>📋 Informações Básicas</Text>
+          <Text style={styles.subtitulo}>Informações Básicas</Text>
           {renderCampo('Poço', solicitacao.pocoNome)}
           {renderCampo('Proprietário', solicitacao.proprietario)}
           {renderCampo('Analista', solicitacao.analistaNome)}
@@ -124,7 +122,7 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
 
         {/* Parâmetros Físico-Químicos */}
         <View style={styles.secao}>
-          <Text style={styles.subtitulo}>🧪 Parâmetros Físico-Químicos</Text>
+          <Text style={styles.subtitulo}>Parâmetros Físico-Químicos</Text>
           <View style={styles.parametrosGrid}>
             <View style={styles.coluna}>
               {renderCampo('pH', solicitacao.ph)}
@@ -141,7 +139,6 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
           </View>
         </View>
 
-        {/* Metais Pesados */}
         {(solicitacao.aluminio || solicitacao.arsenio || solicitacao.chumbo || solicitacao.cromo || solicitacao.mercurio) && (
           <View style={styles.secao}>
             <Text style={styles.subtitulo}>⚠️ Metais Pesados (mg/L)</Text>
@@ -159,10 +156,9 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
           </View>
         )}
 
-        {/* Parâmetros Microbiológicos */}
         {(solicitacao.coliformesTermotolerantes || solicitacao.escherichiaColi) && (
           <View style={styles.secao}>
-            <Text style={styles.subtitulo}>🔬 Parâmetros Microbiológicos</Text>
+            <Text style={styles.subtitulo}>Parâmetros Microbiológicos</Text>
             <View style={styles.parametrosGrid}>
               <View style={styles.coluna}>
                 {renderCampo('Coliformes Termotolerantes', solicitacao.coliformesTermotolerantes, 'UFC/100mL')}
@@ -174,9 +170,8 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
           </View>
         )}
 
-        {/* Outros Parâmetros */}
         <View style={styles.secao}>
-          <Text style={styles.subtitulo}>📊 Outros Parâmetros</Text>
+          <Text style={styles.subtitulo}>Outros Parâmetros</Text>
           <View style={styles.parametrosGrid}>
             <View style={styles.coluna}>
               {renderCampo('Nitrogênio', solicitacao.nitrogenio, 'mg/L')}
@@ -189,7 +184,6 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
           </View>
         </View>
 
-        {/* Observações */}
         {solicitacao.observacoes && solicitacao.observacoes !== '-' && (
           <View style={styles.secao}>
             <Text style={styles.subtitulo}>📝 Observações</Text>
@@ -216,9 +210,10 @@ const TabelaAnalises = ({
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [detalhesAnalise, setDetalhesAnalise] = useState(null);
+  const [inputFocado, setInputFocado] = useState(false); // ✅ Novo estado para foco
   const flatListRef = useRef(null);
+  const buscaInputRef = useRef(null); // ✅ Ref para o input
 
-  // ✅ CORREÇÃO: Handlers para gestos
   const handleScrollEndDrag = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
@@ -230,6 +225,13 @@ const TabelaAnalises = ({
 
   const handleScrollBeginDrag = () => {
     // Marca que o scroll horizontal começou
+  };
+
+  // ✅ Função para forçar foco no input (especialmente para web)
+  const handleContainerPress = () => {
+    if (Platform.OS === 'web' && !inputFocado) {
+      buscaInputRef.current?.focus();
+    }
   };
 
   useEffect(() => {
@@ -271,7 +273,6 @@ const TabelaAnalises = ({
     }
   }, [analises]);
 
-  // ✅ Funções de conversão (mantidas)
   const converterParaString = (valor) => {
     if (valor === null || valor === undefined) return '-';
     if (typeof valor === 'string') return valor;
@@ -334,7 +335,6 @@ const TabelaAnalises = ({
     return String(numero);
   };
 
-  // ✅ Filtragem
   const analisesFiltradas = useMemo(() => {
     const filtradas = analisesProcessadas.filter(analise => {
       const matchBusca = 
@@ -378,7 +378,6 @@ const TabelaAnalises = ({
     }
   };
 
-  // ✅ Handlers
   const handleEdit = (analise) => {
     if (analise.podeEditar === false) {
       Alert.alert('Ação não permitida', 'Análises aprovadas não podem ser editadas.');
@@ -427,10 +426,8 @@ const TabelaAnalises = ({
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // ✅ Renderização do Card
   const renderItem = ({ item: analise }) => (
     <View style={styles.card}>
-      {/* Cabeçalho Compacto */}
       <View style={styles.cardHeader}>
         <Text style={styles.pocoNome} numberOfLines={1}>
           {analise.pocoNome || 'Poço não informado'}
@@ -440,9 +437,7 @@ const TabelaAnalises = ({
         </Text>
       </View>
       
-      {/* Resultado e Status */}
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>📊</Text>
         <Text 
           style={[
             styles.infoValue, 
@@ -455,7 +450,6 @@ const TabelaAnalises = ({
       </View>
 
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>🔍</Text>
         <Text 
           style={[
             styles.infoValue, 
@@ -467,39 +461,32 @@ const TabelaAnalises = ({
         </Text>
       </View>
       
-      {/* Parâmetros Principais */}
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>🧪</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           pH: {analise.ph} | Turb: {analise.turbidez}
         </Text>
       </View>
       
-      {/* Temperaturas */}
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>🌡️</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           Ar: {analise.temperaturaAr}°C | Amostra: {analise.temperaturaAmostra}°C
         </Text>
       </View>
       
-      {/* Observações Condicional */}
       {analise.observacoes && analise.observacoes !== '-' && (
         <View style={styles.cardInfo}>
-          <Text style={styles.infoLabel}>📝</Text>
           <Text style={styles.infoValue} numberOfLines={2}>
             {analise.observacoes}
           </Text>
         </View>
       )}
       
-      {/* Ações Compactas */}
       <View style={styles.cardAcoes}>
         <TouchableOpacity 
           style={styles.botaoDetalhes}
           onPress={() => handleDetails(analise)}
         >
-          <Text style={styles.botaoTexto}>🔍 Detalhes</Text>
+          <Text style={styles.botaoTexto}>Detalhes</Text>
         </TouchableOpacity>
         
         {!readOnly && (
@@ -513,7 +500,7 @@ const TabelaAnalises = ({
               disabled={!analise.podeEditar}
             >
               <Text style={styles.botaoTexto}>
-                {analise.podeEditar ? '✏️ Editar' : '🔒 Bloqueado'}
+                {analise.podeEditar ? 'Editar' : 'Bloqueado'}
               </Text>
             </TouchableOpacity>
             
@@ -526,7 +513,7 @@ const TabelaAnalises = ({
               disabled={!analise.podeEditar}
             >
               <Text style={styles.botaoTexto}>
-                {analise.podeEditar ? '🗑️ Excluir' : '🔒 Bloqueado'}
+                {analise.podeEditar ? 'Excluir' : 'Bloqueado'}
               </Text>
             </TouchableOpacity>
           </>
@@ -551,14 +538,27 @@ const TabelaAnalises = ({
           Análises ({analisesFiltradas.length})
         </Text>
         
-        {/* Barra de Busca e Filtros */}
+        {/* ✅ Barra de Busca MELHORADA para Web */}
         <View style={styles.barraBuscaContainer}>
-          <View style={styles.buscaInputContainer}>
+          <TouchableOpacity 
+            style={styles.buscaInputContainer}
+            activeOpacity={1}
+            onPress={handleContainerPress}
+          >
             <TextInput
-              style={styles.buscaInput}
-              placeholder="🔍 Buscar por poço, data ou observações..."
+              ref={buscaInputRef}
+              style={[
+                styles.buscaInput,
+                inputFocado && styles.buscaInputFocado // ✅ Estilo quando focado
+              ]}
+              placeholder="Buscar por poço, data ou observações..."
               value={busca}
               onChangeText={setBusca}
+              onFocus={() => setInputFocado(true)} // ✅ Controla estado de foco
+              onBlur={() => setInputFocado(false)} // ✅ Controla estado de foco
+              // ✅ Propriedades específicas para Web
+              selectTextOnFocus={Platform.OS === 'web'}
+              autoFocus={Platform.OS === 'web' && false}
             />
             {busca.length > 0 && (
               <TouchableOpacity 
@@ -568,7 +568,7 @@ const TabelaAnalises = ({
                 <Text style={styles.limparBuscaTexto}>×</Text>
               </TouchableOpacity>
             )}
-          </View>
+          </TouchableOpacity>
           
           <TouchableOpacity 
             style={styles.botaoFiltros}
@@ -811,6 +811,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  buscaInputFocado: {
+    borderColor: '#2685BF', // ✅ Borda azul quando focado
+    shadowColor: '#2685BF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   limparBusca: {
     position: 'absolute',
@@ -822,6 +831,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    zIndex: 1, // ✅ Garante que fique acima do input
   },
   limparBuscaTexto: {
     color: 'white',
