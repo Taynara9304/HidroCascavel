@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from './contexts/authContext'; // Verifique o c
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './services/toastConfig'; // Verifique o caminho
 import { ActivityIndicator, View, Text } from 'react-native';
+import DeixarAvaliacao from './telas/DeixarAvaliacao';
 
 // Stacks
 import ProprietarioStack from './navigation/ProprietarioStack';
@@ -79,6 +80,9 @@ const AppContent = () => {
       <Stack.Screen name="ProprietarioStack" component={ProprietarioStack} />
       <Stack.Screen name="AnalistaStack" component={AnalistaStack} />
       <Stack.Screen name="AdministradorStack" component={AdministradorStack} />
+      <Stack.Screen name='DeixarAvaliacao' component={DeixarAvaliacao} />
+
+      
       
     </Stack.Navigator>
   );

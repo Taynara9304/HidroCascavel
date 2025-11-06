@@ -117,7 +117,7 @@ const NotificacoesAdm = () => {
 
   try {
     setCarregandoId(notification.id);
-    console.log('📋 Aceitando análise:', notification.id);
+    console.log('📋 Aceitando análise - NOTIFICAÇÃO COMPLETA:', notification);
     
     if (notification.status !== 'pendente') {
       Alert.alert('Aviso', 'Esta solicitação já foi processada.');
@@ -127,18 +127,66 @@ const NotificacoesAdm = () => {
     }
 
     const dados = notification.dadosSolicitacao;
-    console.log('🔍 Dados da análise:', dados);
+    console.log('🔍 Dados da solicitação (dadosSolicitacao):', dados);
+    
+    // 🔍 DEBUG DETALHADO - Verificar TODOS os campos disponíveis
+    console.log('🔎 ESTRUTURA COMPLETA DA NOTIFICAÇÃO:');
+    Object.keys(notification).forEach(key => {
+      console.log(`   ${key}:`, notification[key]);
+    });
 
-    // 🔒 VERIFICAÇÃO DE SEGURANÇA DOS DADOS
-    if (!dados || !dados.idProprietario || !dados.idAnalista || !dados.idPoco) {
-      console.error('❌ ERRO FATAL: Dados essenciais faltando:', {
-        idProprietario: dados?.idProprietario,
-        idAnalista: dados?.idAnalista,
-        idPoco: dados?.idPoco
-      });
+    // 🔒 VERIFICAÇÃO DE SEGURANÇA DOS DADOS - COM ALTERNATIVAS
+    let idProprietario, idAnalista, idPoco, analistaNome, proprietarioNome, pocoNome, pocoLocalizacao, resultado, parametros, dataColeta;
+
+    // Tentar diferentes estruturas de dados
+    if (dados) {
+      // Estrutura 1: dados diretos em dadosSolicitacao
+      idProprietario = dados.idProprietario || dados.proprietarioId;
+      idAnalista = dados.idAnalista || dados.analistaId;
+      idPoco = dados.idPoco || dados.pocoId;
+      analistaNome = dados.analistaNome;
+      proprietarioNome = dados.proprietarioNome;
+      pocoNome = dados.pocoNome;
+      pocoLocalizacao = dados.pocoLocalizacao;
+      resultado = dados.resultado;
+      parametros = dados.parametros;
+      dataColeta = dados.dataColeta;
+    } else {
+      // Estrutura 2: dados diretos na notificação
+      idProprietario = notification.idProprietario;
+      idAnalista = notification.idAnalista;
+      idPoco = notification.idPoco;
+      analistaNome = notification.analistaNome;
+      proprietarioNome = notification.proprietarioNome;
+      pocoNome = notification.pocoNome;
+      pocoLocalizacao = notification.pocoLocalizacao;
+      resultado = notification.resultado;
+      parametros = notification.parametros;
+      dataColeta = notification.dataColeta;
+    }
+
+    console.log('📊 DADOS EXTRAÍDOS:', {
+      idProprietario,
+      idAnalista,
+      idPoco,
+      analistaNome,
+      proprietarioNome,
+      pocoNome,
+      pocoLocalizacao,
+      resultado,
+      parametros,
+      dataColeta
+    });
+
+    // Verificar se temos os dados mínimos necessários
+    if (!idProprietario || !idAnalista || !idPoco) {
+      console.error('❌ ERRO FATAL: Dados essenciais faltando após tentar todas as estruturas');
       Alert.alert(
         'Erro de Dados', 
-        'Não foi possível aceitar. Dados essenciais da solicitação estão incompletos.'
+        `Não foi possível aceitar. Dados essenciais incompletos:
+        - Proprietário: ${idProprietario ? '✅' : '❌'}
+        - Analista: ${idAnalista ? '✅' : '❌'} 
+        - Poço: ${idPoco ? '✅' : '❌'}`
       );
       setCarregandoId(null);
       return;
@@ -146,23 +194,24 @@ const NotificacoesAdm = () => {
 
     // 1. Criar a análise na coleção 'analysis'
     const analiseAprovada = {
-      idAnalista: dados.idAnalista,
-      analistaNome: dados.analistaNome,
-      idProprietario: dados.idProprietario,
-      proprietarioNome: dados.proprietarioNome,
-      idPoco: dados.idPoco,
-      pocoNome: dados.pocoNome,
-      pocoLocalizacao: dados.pocoLocalizacao,
-      dataColeta: dados.dataColeta,
+      idAnalista: idAnalista,
+      analistaNome: analistaNome || 'Analista',
+      idProprietario: idProprietario,
+      proprietarioNome: proprietarioNome || 'Proprietário',
+      idPoco: idPoco,
+      pocoNome: pocoNome || 'Poço',
+      pocoLocalizacao: pocoLocalizacao || 'Localização não informada',
+      dataColeta: dataColeta || Timestamp.now(),
       dataCriacao: Timestamp.now(),
       dataAprovacao: Timestamp.now(),
       aprovadoPor: user.uid,
       aprovadoPorNome: user.displayName || 'Administrador',
-      resultado: dados.resultado,
-      parametros: dados.parametros,
+      resultado: resultado || 'Resultado não informado',
+      parametros: parametros || {},
       status: 'aprovada'
     };
 
+    console.log('📝 Criando análise com dados:', analiseAprovada);
     const docRef = await addDoc(collection(db, 'analysis'), analiseAprovada);
     console.log('✅ Análise criada com ID:', docRef.id);
 
@@ -177,35 +226,34 @@ const NotificacoesAdm = () => {
     const notificacaoAnalista = {
       tipo: 'analise_aprovada',
       titulo: '✅ Análise Aprovada',
-      mensagem: `Sua solicitação de análise para o poço "${dados.pocoNome}" foi aprovada e publicada.`,
-      userId: dados.idAnalista,
+      mensagem: `Sua solicitação de análise para o poço "${pocoNome}" foi aprovada e publicada.`,
+      userId: idAnalista,
       status: 'nao_lida',
       dataCriacao: Timestamp.now(),
       dadosAnalise: {
         analiseId: docRef.id,
-        pocoNome: dados.pocoNome,
+        pocoNome: pocoNome,
         dataAnalise: Timestamp.now()
       }
     };
     await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
-    console.log('✅ Notificação enviada para o analista');
+    console.log('✅ Notificação enviada para o analista:', idAnalista);
 
-    // 4. 🔥 CORREÇÃO CRÍTICA: Criar notificação de AVALIAÇÃO para o Proprietário
+    // 4. Criar notificação de AVALIAÇÃO para o Proprietário
     const notificacaoProprietario = {
-      idDoUsuario: dados.idProprietario, // ✅ Campo CORRETO
-      tipoNotificacao: 'analise_concluida', // ✅ Tipo correto
-      titulo: `📊 Análise do Poço "${dados.pocoNome}" Concluída!`,
-      mensagem: `A análise do poço "${dados.pocoNome}" foi concluída e está disponível para consulta. Avalie nosso serviço.`,
+      idDoUsuario: idProprietario,
+      tipoNotificacao: 'analise_concluida',
+      titulo: `📊 Análise do Poço "${pocoNome}" Concluída!`,
+      mensagem: `A análise do poço "${pocoNome}" foi concluída e está disponível para consulta. Avalie nosso serviço.`,
       idDaAnalise: docRef.id,
-      idDoPoco: dados.idPoco,
-      dataSolicitacao: Timestamp.now(), // ✅ Campo importante para ordenação
+      idDoPoco: idPoco,
+      dataSolicitacao: Timestamp.now(),
       status: 'concluida',
       statusAvaliacao: 'pendente'
     };
     
-    // ✅ SALVAR na coleção CORRETA
     await addDoc(collection(db, 'notifications'), notificacaoProprietario);
-    console.log('✅ Notificação de avaliação enviada para o proprietário:', dados.idProprietario);
+    console.log('✅ Notificação de avaliação enviada para o proprietário:', idProprietario);
 
     Alert.alert('Sucesso', 'Análise aceita e notificações enviadas!');
     await carregarNotificacoes();
@@ -217,64 +265,6 @@ const NotificacoesAdm = () => {
     setCarregandoId(null);
   }
 };
-
-  // ✅ FUNÇÃO PARA REJEITAR ANÁLISE (MODIFICADA)
-  const handleRejeitarAnalise = async (notificationId, notificationData) => {
-    if (carregandoId) {
-      console.log('⏳ Já existe uma operação em andamento...');
-      return;
-    }
-
-    try {
-      setCarregandoId(notificationId);
-      
-      if (notificationData.status !== 'pendente') {
-        Alert.alert('Aviso', 'Esta solicitação já foi processada.');
-        setCarregandoId(null);
-        await carregarNotificacoes();
-        return;
-      }
-      
-      // Trava de segurança para dados de rejeição
-      const dados = notificationData.dadosSolicitacao;
-      if (!dados || !dados.idAnalista) {
-        console.error('❌ ERRO FATAL: Notificação de rejeição sem dados do analista.', dados);
-        Alert.alert('Erro de Dados', 'Não foi possível rejeitar. A notificação está corrompida.');
-        setCarregandoId(null);
-        return;
-      }
-
-      // 1. Atualizar a notificação do Admin (esta) para 'rejeitada'
-      await updateDoc(doc(db, 'notifications', notificationId), {
-        status: 'rejeitada',
-        dataResolucao: Timestamp.now(),
-        resolvidoPor: user.uid
-      });
-
-      // 2. Notificar o Analista que foi rejeitada
-      const notificacaoAnalista = {
-        tipo: 'analise_rejeitada',
-        titulo: '❌ Análise Rejeitada',
-        mensagem: `Sua solicitação de análise para o poço ${dados.pocoNome || 'desconhecido'} foi rejeitada.`,
-        userId: dados.idAnalista,
-        status: 'nao_lida',
-        dataCriacao: Timestamp.now(),
-        dadosAnalise: {
-          pocoNome: dados.pocoNome
-        }
-      };
-      await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
-
-      Alert.alert('Sucesso', 'Análise rejeitada!');
-      await carregarNotificacoes();
-      
-    } catch (error) {
-      console.error('❌ Erro ao rejeitar análise:', error);
-      Alert.alert('Erro', 'Não foi possível rejeitar a análise');
-    } finally {
-      setCarregandoId(null);
-    }
-  };
 
   // ✅ FUNÇÃO: ACEITAR VISITA (Existente)
   const handleAceitarVisita = async (notification) => {

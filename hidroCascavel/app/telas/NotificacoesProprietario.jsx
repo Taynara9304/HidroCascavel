@@ -172,10 +172,7 @@ const NotificacoesProprietario = () => {
           ))}
         </ScrollView>
         
-        {/* BOTÃO DE TESTE - TEMPORÁRIO */}
-        <TouchableOpacity style={styles.testButton} onPress={testarNotificacao}>
-          <Text style={styles.testButtonText}>🧪 Testar Notificações</Text>
-        </TouchableOpacity>
+
       </View>
     );
   };
@@ -248,13 +245,28 @@ const NotificacoesProprietario = () => {
   };
   
   const handleAvaliarServico = (notificacao) => {
-    setModalVisible(false);
-    
-    navigation.navigate('DeixarAvaliacao', { 
+    console.log('🔍 Navegando para avaliação com dados:', {
       notificationId: notificacao.id,
       analiseId: notificacao.idDaAnalise,
       pocoId: notificacao.idDoPoco
     });
+    
+    setModalVisible(false);
+    
+    // ✅ NAVEGAÇÃO CORRIGIDA - Verifica se os parâmetros existem
+    if (!notificacao.idDaAnalise || !notificacao.idDoPoco) {
+      Alert.alert('Erro', 'Dados incompletos para avaliação. Contate o suporte.');
+      return;
+    }
+    
+    // ✅ Navegação com timeout para evitar conflitos com o modal
+    setTimeout(() => {
+      navigation.navigate('DeixarAvaliacao', { 
+        notificationId: notificacao.id,
+        analiseId: notificacao.idDaAnalise,
+        pocoId: notificacao.idDoPoco
+      });
+    }, 300);
   };
 
   const renderNotificationItem = ({ item }) => {
@@ -621,14 +633,6 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: 'white',
     fontWeight: 'bold',
-  },
-  testButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginTop: 8,
-    alignItems: 'center',
   },
   testButtonText: {
     color: 'white',
