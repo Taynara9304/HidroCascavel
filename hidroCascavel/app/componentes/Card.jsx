@@ -2,14 +2,32 @@ import React from "react";
 import { View, Text, Image, StyleSheet } from "react-native";
 
 const Card = ({ name, image, rating, comment }) => {
+  // Função para obter as iniciais do nome
+  const getInitials = (fullName) => {
+    if (!fullName) return "?";
+    
+    const names = fullName.trim().split(' ');
+    if (names.length === 1) {
+      return names[0].charAt(0).toUpperCase();
+    } else {
+      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
+    }
+  };
+
   // Limita o comentário a 100 caracteres e adiciona reticências se necessário
-  const truncatedComment = comment.length > 100 
+  const truncatedComment = comment && comment.length > 100 
     ? comment.substring(0, 100) + '...' 
     : comment;
 
   return (
     <View style={styles.card}>
-      <Image source={image} style={styles.image} />
+      {image ? (
+        <Image source={image} style={styles.image} />
+      ) : (
+        <View style={styles.initialsContainer}>
+          <Text style={styles.initialsText}>{getInitials(name)}</Text>
+        </View>
+      )}
       <Text style={styles.name}>{name}</Text>
       <Text style={styles.stars}>{"⭐".repeat(rating)}</Text>
       <Text style={styles.comment}>{truncatedComment}</Text>
@@ -24,7 +42,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
     alignItems: "center",
-    // Removidas as propriedades de sombra
     height: '100%', // Para ocupar toda a altura do container
   },
   image: {
@@ -32,6 +49,20 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     marginBottom: 12,
+  },
+  initialsContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#008000",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  initialsText: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "bold",
   },
   name: {
     fontWeight: "bold",

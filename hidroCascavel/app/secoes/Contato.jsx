@@ -27,7 +27,6 @@ const Contato = () => {
     <View style={styles.container}>
       <View style={styles.containerContato}>
         <Text style={styles.titulo}>CONTATO</Text>
-        <Text style={styles.texto}>(45) 99988-7766</Text>
         <Text style={styles.texto}>hidrocascavel.ifpr@gmail.com</Text>
         <View style={styles.containerImagem}>
           <TouchableOpacity

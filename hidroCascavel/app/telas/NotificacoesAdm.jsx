@@ -22,7 +22,9 @@ import {
   addDoc,
   updateDoc,
   doc,
-  Timestamp
+  Timestamp,
+  deleteDoc,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
@@ -31,6 +33,73 @@ import DetalhesSolicitacaoVisita from '../componentes/DetalhesSolicitacaoVisita'
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
+
+// Cores do tema
+const COLORS = {
+  primary: '#2685BF',
+  secondary: '#4CAF50',
+  danger: '#F44336',
+  warning: '#FFA500',
+  light: '#f4f7f6',
+  white: '#FFFFFF',
+  gray: {
+    100: '#f8f9fa',
+    200: '#e9ecef',
+    300: '#dee2e6',
+    400: '#ced4da',
+    500: '#adb5bd',
+    600: '#6c757d',
+    700: '#495057',
+    800: '#343a40',
+    900: '#212529',
+  },
+  text: {
+    primary: '#333333',
+    secondary: '#666666',
+    light: '#888888',
+  }
+};
+
+// Espaçamentos
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 16,
+  lg: 24,
+  xl: 32,
+};
+
+// Bordas
+const BORDER = {
+  radius: {
+    sm: 6,
+    md: 8,
+    lg: 12,
+    xl: 16,
+  },
+  width: {
+    thin: 1,
+    thick: 5,
+  }
+};
+
+// Sombras
+const SHADOW = {
+  light: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  medium: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  }
+};
 
 const NotificacoesAdm = () => {
   const [notifications, setNotifications] = useState([]);
@@ -43,47 +112,68 @@ const NotificacoesAdm = () => {
   const [filterStatus, setFilterStatus] = useState('todos');
   const [filterTipo, setFilterTipo] = useState('todos');
   const [motivoRejeicao, setMotivoRejeicao] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
+  // Calcular data de 30 dias atrás
+  const getThirtyDaysAgo = () => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return Timestamp.fromDate(date);
+  };
+
   useEffect(() => {
-    carregarNotificacoes();
+    const unsubscribe = carregarNotificacoes();
+    
+    // Limpar notificações antigas ao carregar o componente
+    limparNotificacoesAntigas();
+    
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
     aplicarFiltros();
-  }, [notifications, filterStatus, filterTipo]);
+  }, [notifications, filterStatus, filterTipo, searchQuery]);
 
   const carregarNotificacoes = async () => {
     try {
       setLoading(true);
-      console.log('📥 Carregando todas as notificações...');
+      console.log('📥 Carregando notificações dos últimos 30 dias...');
+      
+      const trintaDiasAtras = getThirtyDaysAgo();
       
       const q = query(
         collection(db, 'notifications'),
-        where('status', '==', 'pendente'),
+        where('dataCriacao', '>=', trintaDiasAtras),
         orderBy('dataCriacao', 'desc')
       );
 
-      const unsubscribe = onSnapshot(q, (querySnapshot) => {
-        const notificacoesList = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          notificacoesList.push({
-            id: doc.id,
-            ...data
+      const unsubscribe = onSnapshot(q, 
+        (querySnapshot) => {
+          const notificacoesList = [];
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            notificacoesList.push({
+              id: doc.id,
+              ...data
+            });
           });
-        });
-        
-        console.log('✅ Notificações carregadas:', notificacoesList.length);
-        
-        setNotifications(notificacoesList);
-        setLoading(false);
-        setRefreshing(false);
-      }, (error) => {
-        console.error('❌ Erro ao carregar notificações:', error);
-        setLoading(false);
-        setRefreshing(false);
-      });
+          
+          console.log('✅ Notificações carregadas:', notificacoesList.length);
+          
+          setNotifications(notificacoesList);
+          setLoading(false);
+          setRefreshing(false);
+        }, 
+        (error) => {
+          console.error('❌ Erro ao carregar notificações:', error);
+          setLoading(false);
+          setRefreshing(false);
+          Alert.alert('Erro', 'Não foi possível carregar as notificações');
+        }
+      );
 
       return unsubscribe;
     } catch (error) {
@@ -97,199 +187,187 @@ const NotificacoesAdm = () => {
   const aplicarFiltros = () => {
     let filtradas = [...notifications];
 
+    // Filtro por status
     if (filterStatus !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.status === filterStatus);
     }
 
+    // Filtro por tipo
     if (filterTipo !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.tipo === filterTipo);
+    }
+
+    // Filtro por busca
+    if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase().trim();
+      filtradas = filtradas.filter(notificacao => {
+        const buscaAnalista = notificacao.dadosSolicitacao?.analistaNome?.toLowerCase().includes(query) ||
+                            notificacao.dadosVisita?.analistaNome?.toLowerCase().includes(query);
+        const buscaPoco = notificacao.dadosSolicitacao?.pocoNome?.toLowerCase().includes(query) ||
+                         notificacao.dadosVisita?.pocoNome?.toLowerCase().includes(query);
+        const buscaProprietario = notificacao.dadosSolicitacao?.proprietarioNome?.toLowerCase().includes(query) ||
+                                 notificacao.dadosVisita?.proprietario?.toLowerCase().includes(query);
+        
+        return buscaAnalista || buscaPoco || buscaProprietario;
+      });
     }
 
     setFilteredNotifications(filtradas);
   };
 
+  // 🔧 FUNÇÃO PARA LIMPAR NOTIFICAÇÕES ANTIGAS
+  const limparNotificacoesAntigas = async () => {
+    try {
+      const trintaDiasAtras = getThirtyDaysAgo();
+      const q = query(
+        collection(db, 'notifications'),
+        where('dataCriacao', '<', trintaDiasAtras)
+      );
+
+      const querySnapshot = await getDocs(q);
+      const deletarPromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
+      
+      await Promise.all(deletarPromises);
+      console.log(`🗑️ ${deletarPromises.length} notificações antigas removidas`);
+    } catch (error) {
+      console.error('❌ Erro ao limpar notificações antigas:', error);
+    }
+  };
+
   // ✅ FUNÇÃO CORRIGIDA PARA ACEITAR ANÁLISE
   const handleAceitarAnalise = async (notification) => {
-  if (carregandoId) {
-    console.log('⏳ Já existe uma operação em andamento...');
-    return;
-  }
-
-  try {
-    setCarregandoId(notification.id);
-    console.log('📋 Aceitando análise - NOTIFICAÇÃO COMPLETA:', notification);
-    
-    if (notification.status !== 'pendente') {
-      Alert.alert('Aviso', 'Esta solicitação já foi processada.');
-      setCarregandoId(null);
-      await carregarNotificacoes();
-      return;
-    }
-
-    const dados = notification.dadosSolicitacao;
-    console.log('🔍 Dados da solicitação (dadosSolicitacao):', dados);
-    
-    // 🔍 DEBUG DETALHADO - Verificar TODOS os campos disponíveis
-    console.log('🔎 ESTRUTURA COMPLETA DA NOTIFICAÇÃO:');
-    Object.keys(notification).forEach(key => {
-      console.log(`   ${key}:`, notification[key]);
-    });
-
-    // 🔒 VERIFICAÇÃO DE SEGURANÇA DOS DADOS - COM ALTERNATIVAS
-    let idProprietario, idAnalista, idPoco, analistaNome, proprietarioNome, pocoNome, pocoLocalizacao, resultado, parametros, dataColeta;
-
-    // Tentar diferentes estruturas de dados
-    if (dados) {
-      // Estrutura 1: dados diretos em dadosSolicitacao
-      idProprietario = dados.idProprietario || dados.proprietarioId;
-      idAnalista = dados.idAnalista || dados.analistaId;
-      idPoco = dados.idPoco || dados.pocoId;
-      analistaNome = dados.analistaNome;
-      proprietarioNome = dados.proprietarioNome;
-      pocoNome = dados.pocoNome;
-      pocoLocalizacao = dados.pocoLocalizacao;
-      resultado = dados.resultado;
-      parametros = dados.parametros;
-      dataColeta = dados.dataColeta;
-    } else {
-      // Estrutura 2: dados diretos na notificação
-      idProprietario = notification.idProprietario;
-      idAnalista = notification.idAnalista;
-      idPoco = notification.idPoco;
-      analistaNome = notification.analistaNome;
-      proprietarioNome = notification.proprietarioNome;
-      pocoNome = notification.pocoNome;
-      pocoLocalizacao = notification.pocoLocalizacao;
-      resultado = notification.resultado;
-      parametros = notification.parametros;
-      dataColeta = notification.dataColeta;
-    }
-
-    console.log('📊 DADOS EXTRAÍDOS:', {
-      idProprietario,
-      idAnalista,
-      idPoco,
-      analistaNome,
-      proprietarioNome,
-      pocoNome,
-      pocoLocalizacao,
-      resultado,
-      parametros,
-      dataColeta
-    });
-
-    // Verificar se temos os dados mínimos necessários
-    if (!idProprietario || !idAnalista || !idPoco) {
-      console.error('❌ ERRO FATAL: Dados essenciais faltando após tentar todas as estruturas');
-      Alert.alert(
-        'Erro de Dados', 
-        `Não foi possível aceitar. Dados essenciais incompletos:
-        - Proprietário: ${idProprietario ? '✅' : '❌'}
-        - Analista: ${idAnalista ? '✅' : '❌'} 
-        - Poço: ${idPoco ? '✅' : '❌'}`
-      );
-      setCarregandoId(null);
-      return;
-    }
-
-    // 1. Criar a análise na coleção 'analysis'
-    const analiseAprovada = {
-      idAnalista: idAnalista,
-      analistaNome: analistaNome || 'Analista',
-      idProprietario: idProprietario,
-      proprietarioNome: proprietarioNome || 'Proprietário',
-      idPoco: idPoco,
-      pocoNome: pocoNome || 'Poço',
-      pocoLocalizacao: pocoLocalizacao || 'Localização não informada',
-      dataColeta: dataColeta || Timestamp.now(),
-      dataCriacao: Timestamp.now(),
-      dataAprovacao: Timestamp.now(),
-      aprovadoPor: user.uid,
-      aprovadoPorNome: user.displayName || 'Administrador',
-      resultado: resultado || 'Resultado não informado',
-      parametros: parametros || {},
-      status: 'aprovada'
-    };
-
-    console.log('📝 Criando análise com dados:', analiseAprovada);
-    const docRef = await addDoc(collection(db, 'analysis'), analiseAprovada);
-    console.log('✅ Análise criada com ID:', docRef.id);
-
-    // 2. Atualizar a notificação do Admin para 'aceita'
-    await updateDoc(doc(db, 'notifications', notification.id), {
-      status: 'aceita',
-      dataResolucao: Timestamp.now(),
-      resolvidoPor: user.uid
-    });
-
-    // 3. Notificar o Analista que foi aceita
-    const notificacaoAnalista = {
-      tipo: 'analise_aprovada',
-      titulo: '✅ Análise Aprovada',
-      mensagem: `Sua solicitação de análise para o poço "${pocoNome}" foi aprovada e publicada.`,
-      userId: idAnalista,
-      status: 'nao_lida',
-      dataCriacao: Timestamp.now(),
-      dadosAnalise: {
-        analiseId: docRef.id,
-        pocoNome: pocoNome,
-        dataAnalise: Timestamp.now()
-      }
-    };
-    await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
-    console.log('✅ Notificação enviada para o analista:', idAnalista);
-
-    // 4. Criar notificação de AVALIAÇÃO para o Proprietário
-    const notificacaoProprietario = {
-      idDoUsuario: idProprietario,
-      tipoNotificacao: 'analise_concluida',
-      titulo: `📊 Análise do Poço "${pocoNome}" Concluída!`,
-      mensagem: `A análise do poço "${pocoNome}" foi concluída e está disponível para consulta. Avalie nosso serviço.`,
-      idDaAnalise: docRef.id,
-      idDoPoco: idPoco,
-      dataSolicitacao: Timestamp.now(),
-      status: 'concluida',
-      statusAvaliacao: 'pendente'
-    };
-    
-    await addDoc(collection(db, 'notifications'), notificacaoProprietario);
-    console.log('✅ Notificação de avaliação enviada para o proprietário:', idProprietario);
-
-    Alert.alert('Sucesso', 'Análise aceita e notificações enviadas!');
-    await carregarNotificacoes();
-    
-  } catch (error) {
-    console.error('❌ Erro completo ao aceitar análise:', error);
-    Alert.alert('Erro', `Não foi possível aceitar a análise: ${error.message}`);
-  } finally {
-    setCarregandoId(null);
-  }
-};
-
-  // ✅ FUNÇÃO: ACEITAR VISITA (Existente)
-  const handleAceitarVisita = async (notification) => {
-    if (carregandoId) {
-      console.log('⏳ Já existe uma operação em andamento...');
-      return;
-    }
+    if (carregandoId) return;
 
     try {
       setCarregandoId(notification.id);
-      console.log('📋 Aceitando visita:', notification.id);
       
       if (notification.status !== 'pendente') {
         Alert.alert('Aviso', 'Esta solicitação já foi processada.');
         setCarregandoId(null);
-        await carregarNotificacoes();
+        return;
+      }
+
+      const dados = notification.dadosSolicitacao;
+      
+      // Verificar dados essenciais
+      if (!dados?.idProprietario || !dados?.idAnalista || !dados?.idPoco) {
+        Alert.alert('Erro', 'Dados da análise incompletos.');
+        setCarregandoId(null);
+        return;
+      }
+
+      // Criar análise na coleção 'analysis'
+      const analiseAprovada = {
+        idAnalista: dados.idAnalista,
+        analistaNome: dados.analistaNome || 'Analista',
+        idProprietario: dados.idProprietario,
+        proprietarioNome: dados.proprietarioNome || 'Proprietário',
+        idPoco: dados.idPoco,
+        pocoNome: dados.pocoNome || 'Poço',
+        pocoLocalizacao: dados.pocoLocalizacao || 'Localização não informada',
+        dataColeta: dados.dataColeta || Timestamp.now(),
+        dataCriacao: Timestamp.now(),
+        dataAprovacao: Timestamp.now(),
+        aprovadoPor: user.uid,
+        aprovadoPorNome: user.displayName || 'Administrador',
+        resultado: dados.resultado || 'Resultado não informado',
+        parametros: dados.parametros || {},
+        status: 'aprovada'
+      };
+
+      const docRef = await addDoc(collection(db, 'analysis'), analiseAprovada);
+
+      // Atualizar notificação
+      await updateDoc(doc(db, 'notifications', notification.id), {
+        status: 'aceita',
+        dataResolucao: Timestamp.now(),
+        resolvidoPor: user.uid
+      });
+
+      // Notificar analista
+      const notificacaoAnalista = {
+        tipo: 'analise_aprovada',
+        titulo: '✅ Análise Aprovada',
+        mensagem: `Sua solicitação de análise para o poço "${dados.pocoNome}" foi aprovada.`,
+        userId: dados.idAnalista,
+        status: 'nao_lida',
+        dataCriacao: Timestamp.now(),
+        dadosAnalise: {
+          analiseId: docRef.id,
+          pocoNome: dados.pocoNome
+        }
+      };
+      await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
+
+      Alert.alert('Sucesso', 'Análise aceita com sucesso!');
+      
+    } catch (error) {
+      console.error('❌ Erro ao aceitar análise:', error);
+      Alert.alert('Erro', `Não foi possível aceitar a análise: ${error.message}`);
+    } finally {
+      setCarregandoId(null);
+    }
+  };
+
+  // ✅ FUNÇÃO PARA REJEITAR ANÁLISE
+  const handleRejeitarAnalise = async (notificationId, notification) => {
+    if (!motivoRejeicao.trim()) {
+      Alert.alert('Atenção', 'Por favor, informe o motivo da rejeição.');
+      return;
+    }
+
+    try {
+      setCarregandoId(notificationId);
+      
+      await updateDoc(doc(db, 'notifications', notificationId), {
+        status: 'rejeitada',
+        dataResolucao: Timestamp.now(),
+        resolvidoPor: user.uid,
+        motivoRejeicao: motivoRejeicao
+      });
+
+      // Notificar analista
+      const dados = notification.dadosSolicitacao;
+      const notificacaoAnalista = {
+        tipo: 'analise_rejeitada',
+        titulo: '❌ Análise Rejeitada',
+        mensagem: `Sua análise para o poço "${dados?.pocoNome}" foi rejeitada. Motivo: ${motivoRejeicao}`,
+        userId: dados?.idAnalista,
+        status: 'nao_lida',
+        dataCriacao: Timestamp.now(),
+        motivoRejeicao: motivoRejeicao
+      };
+      await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
+
+      Alert.alert('Sucesso', 'Análise rejeitada!');
+      setModalVisivel(false);
+      setMotivoRejeicao('');
+      
+    } catch (error) {
+      console.error('❌ Erro ao rejeitar análise:', error);
+      Alert.alert('Erro', `Não foi possível rejeitar: ${error.message}`);
+    } finally {
+      setCarregandoId(null);
+    }
+  };
+
+  // ✅ FUNÇÃO: ACEITAR VISITA
+  const handleAceitarVisita = async (notification) => {
+    if (carregandoId) return;
+
+    try {
+      setCarregandoId(notification.id);
+      
+      if (notification.status !== 'pendente') {
+        Alert.alert('Aviso', 'Esta solicitação já foi processada.');
+        setCarregandoId(null);
         return;
       }
 
       const dados = notification.dadosVisita;
       
-      // Trava de segurança para visitas
-      if (!dados || !dados.pocoId || !dados.analistaId) {
-         console.error('❌ ERRO FATAL: A notificação de visita não contém dados essenciais.', dados);
-        Alert.alert('Erro de Dados', 'Não foi possível aceitar. A notificação de visita está corrompida.');
+      if (!dados?.pocoId || !dados?.analistaId) {
+        Alert.alert('Erro', 'Dados da visita incompletos.');
         setCarregandoId(null);
         return;
       }
@@ -309,17 +387,17 @@ const NotificacoesAdm = () => {
         tipoUsuario: dados.tipoUsuario,
         userId: dados.userId,
         status: 'aprovada',
-        dataAprovacao: new Date().toISOString(),
+        dataAprovacao: Timestamp.now(),
         aprovadoPor: user.uid,
         aprovadoPorNome: 'Administrador',
-        dataCriacao: new Date()
+        dataCriacao: Timestamp.now()
       };
 
       const docRef = await addDoc(collection(db, 'visits'), visitaAprovada);
       
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'aceita',
-        dataResolucao: new Date(),
+        dataResolucao: Timestamp.now(),
         resolvidoPor: user.uid
       });
 
@@ -329,7 +407,7 @@ const NotificacoesAdm = () => {
         mensagem: `Sua visita técnica no poço ${dados.pocoNome} foi aprovada.`,
         userId: dados.analistaId,
         status: 'nao_lida',
-        dataCriacao: new Date(),
+        dataCriacao: Timestamp.now(),
         dadosVisita: {
           visitaId: docRef.id,
           pocoNome: dados.pocoNome
@@ -339,7 +417,6 @@ const NotificacoesAdm = () => {
       await addDoc(collection(db, 'notifications_analista'), notificacaoAnalista);
 
       Alert.alert('Sucesso', 'Visita aprovada com sucesso!');
-      await carregarNotificacoes();
       
     } catch (error) {
       console.error('❌ Erro ao aceitar visita:', error);
@@ -349,13 +426,8 @@ const NotificacoesAdm = () => {
     }
   };
 
-  // ✅ FUNÇÃO: REJEITAR VISITA (Existente)
+  // ✅ FUNÇÃO: REJEITAR VISITA
   const handleRejeitarVisita = async (notification) => {
-    if (carregandoId) {
-      console.log('⏳ Já existe uma operação em andamento...');
-      return;
-    }
-
     if (!motivoRejeicao.trim()) {
       Alert.alert('Atenção', 'Por favor, informe o motivo da rejeição.');
       return;
@@ -364,26 +436,11 @@ const NotificacoesAdm = () => {
     try {
       setCarregandoId(notification.id);
       
-      if (notification.status !== 'pendente') {
-        Alert.alert('Aviso', 'Esta solicitação já foi processada.');
-        setCarregandoId(null);
-        await carregarNotificacoes();
-        return;
-      }
-      
       const dados = notification.dadosVisita;
       
-      // Trava de segurança
-      if (!dados || !dados.analistaId) {
-        console.error('❌ ERRO FATAL: Notificação de rejeição de visita sem dados do analista.', dados);
-        Alert.alert('Erro de Dados', 'Não foi possível rejeitar. A notificação está corrompida.');
-        setCarregandoId(null);
-        return;
-      }
-
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'rejeitada',
-        dataResolucao: new Date(),
+        dataResolucao: Timestamp.now(),
         resolvidoPor: user.uid,
         motivoRejeicao: motivoRejeicao
       });
@@ -391,10 +448,10 @@ const NotificacoesAdm = () => {
       const notificacaoAnalista = {
         tipo: 'visita_rejeitada',
         titulo: '❌ Visita Rejeitada',
-        mensagem: `Sua visita técnica no poço ${dados.pocoNome || 'desconhecido'} foi rejeitada. Motivo: ${motivoRejeicao}`,
+        mensagem: `Sua visita técnica no poço ${dados.pocoNome} foi rejeitada. Motivo: ${motivoRejeicao}`,
         userId: dados.analistaId,
         status: 'nao_lida',
-        dataCriacao: new Date(),
+        dataCriacao: Timestamp.now(),
         dadosVisita: {
           pocoNome: dados.pocoNome,
           motivoRejeicao: motivoRejeicao
@@ -406,7 +463,6 @@ const NotificacoesAdm = () => {
       Alert.alert('Sucesso', 'Visita rejeitada com sucesso!');
       setModalVisivel(false);
       setMotivoRejeicao('');
-      await carregarNotificacoes();
       
     } catch (error) {
       console.error('❌ Erro ao rejeitar visita:', error);
@@ -415,31 +471,36 @@ const NotificacoesAdm = () => {
       setCarregandoId(null);
     }
   };
-  
+
   const verDetalhes = (solicitacao) => {
-    console.log('🔍 Detalhes da solicitação:', solicitacao);
     setSolicitacaoSelecionada(solicitacao);
     setModalVisivel(true);
+    setMotivoRejeicao('');
+  };
+
+  const fecharModal = () => {
+    setModalVisivel(false);
+    setSolicitacaoSelecionada(null);
     setMotivoRejeicao('');
   };
 
   const getTipoInfo = (tipo) => {
     switch (tipo) {
       case 'solicitacao_cadastro_analise':
-        return { icon: '🔬', text: 'Análise', color: '#2685BF' };
+        return { icon: '🔬', text: 'Análise', color: COLORS.primary };
       case 'solicitacao_cadastro_visita':
-        return { icon: '📋', text: 'Visita Técnica', color: '#4CAF50' };
+        return { icon: '📋', text: 'Visita Técnica', color: COLORS.secondary };
       default:
-        return { icon: '📄', text: 'Solicitação', color: '#757575' };
+        return { icon: '📄', text: 'Solicitação', color: COLORS.gray[500] };
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pendente': return '#FFA500';
-      case 'aceita': return '#4CAF50';
-      case 'rejeitada': return '#F44336';
-      default: return '#757575';
+      case 'pendente': return COLORS.warning;
+      case 'aceita': return COLORS.secondary;
+      case 'rejeitada': return COLORS.danger;
+      default: return COLORS.gray[500];
     }
   };
 
@@ -462,6 +523,12 @@ const NotificacoesAdm = () => {
     carregarNotificacoes();
   };
 
+  const limparFiltros = () => {
+    setFilterStatus('todos');
+    setFilterTipo('todos');
+    setSearchQuery('');
+  };
+
   const renderNotificationItem = ({ item }) => {
     const tipoInfo = getTipoInfo(item.tipo);
     const isAnalise = item.tipo === 'solicitacao_cadastro_analise';
@@ -469,10 +536,10 @@ const NotificacoesAdm = () => {
 
     return (
       <View style={[
-        styles.notificationCard,
+        styles.card,
         { borderLeftColor: tipoInfo.color }
       ]}>
-        <View style={styles.notificationHeader}>
+        <View style={styles.cardHeader}>
           <View style={styles.tipoContainer}>
             <Text style={styles.tipoIcon}>{tipoInfo.icon}</Text>
             <Text style={styles.tipoText}>{tipoInfo.text}</Text>
@@ -483,46 +550,31 @@ const NotificacoesAdm = () => {
           </Text>
         </View>
 
-        <Text style={styles.title}>
+        <Text style={styles.cardTitle}>
           {isAnalise ? 'Nova Análise Solicitada' : 
            isVisita ? 'Nova Visita Técnica' : 'Nova Solicitação'}
         </Text>
         
-        <Text style={styles.message}>
+        <Text style={styles.cardMessage}>
           {isAnalise 
-            ? `${item.dadosSolicitacao?.analistaNome || 'Analista'} solicitou cadastro de análise para o poço ${item.dadosSolicitacao?.pocoNome}`
+            ? `${item.dadosSolicitacao?.analistaNome || 'Analista'} solicitou cadastro de análise`
             : isVisita 
-              ? `${item.dadosVisita?.analistaNome || 'Analista'} registrou uma visita técnica no poço ${item.dadosVisita?.pocoNome}`
+              ? `${item.dadosVisita?.analistaNome || 'Analista'} registrou uma visita técnica`
               : 'Nova solicitação'
           }
         </Text>
         
-        <View style={styles.dataContainer}>
-          {isAnalise && (
-            <>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Poço:</Text> {item.dadosSolicitacao?.pocoNome}
-              </Text>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Analista:</Text> {item.dadosSolicitacao?.analistaNome}
-              </Text>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Resultado:</Text> {item.dadosSolicitacao?.resultado}
-              </Text>
-            </>
-          )}
+        <View style={styles.cardData}>
+          <Text style={styles.dataText}>
+            <Text style={styles.dataLabel}>Poço:</Text> {isAnalise ? item.dadosSolicitacao?.pocoNome : item.dadosVisita?.pocoNome}
+          </Text>
+          <Text style={styles.dataText}>
+            <Text style={styles.dataLabel}>Analista:</Text> {isAnalise ? item.dadosSolicitacao?.analistaNome : item.dadosVisita?.analistaNome}
+          </Text>
           {isVisita && (
-            <>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Poço:</Text> {item.dadosVisita?.pocoNome}
-              </Text>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Analista:</Text> {item.dadosVisita?.analistaNome}
-              </Text>
-              <Text style={styles.dataText}>
-                <Text style={styles.dataLabel}>Data:</Text> {formatDate(item.dadosVisita?.dataVisita)}
-              </Text>
-            </>
+            <Text style={styles.dataText}>
+              <Text style={styles.dataLabel}>Data:</Text> {formatDate(item.dadosVisita?.dataVisita)}
+            </Text>
           )}
         </View>
         
@@ -531,50 +583,49 @@ const NotificacoesAdm = () => {
         </Text>
 
         {item.status === 'pendente' && (
-          <View style={styles.acoes}>
+          <View style={styles.actions}>
             <TouchableOpacity 
-              style={styles.botaoDetalhes}
+              style={styles.buttonSecondary}
               onPress={() => verDetalhes(item)}
             >
-              <Text style={styles.botaoDetalhesTexto}>📋 Detalhes</Text>
+              <Text style={styles.buttonSecondaryText}>📋 Detalhes</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.botaoAceitar}
+              style={styles.buttonSuccess}
               onPress={() => isAnalise ? handleAceitarAnalise(item) : handleAceitarVisita(item)}
               disabled={carregandoId !== null}
             >
               {carregandoId === item.id ? (
-                <ActivityIndicator size="small" color="white" />
+                <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
-                <Text style={styles.botaoAceitarTexto}>✅ Aceitar</Text>
+                <Text style={styles.buttonText}>✅ Aceitar</Text>
               )}
             </TouchableOpacity>
             
             <TouchableOpacity 
-              style={styles.botaoRejeitar}
-              onPress={() => {
-                if (isAnalise) {
-                  handleRejeitarAnalise(item.id, item);
-                } else {
-                  verDetalhes(item);
-                }
-              }}
+              style={styles.buttonDanger}
+              onPress={() => verDetalhes(item)}
               disabled={carregandoId !== null}
             >
-              <Text style={styles.botaoRejeitarTexto}>❌ Rejeitar</Text>
+              <Text style={styles.buttonText}>❌ Rejeitar</Text>
             </TouchableOpacity>
           </View>
         )}
 
         {item.status !== 'pendente' && (
-          <View style={styles.processadaContainer}>
-            <Text style={styles.processadaText}>
+          <View style={styles.processedContainer}>
+            <Text style={styles.processedText}>
               {item.status === 'aceita' ? '✅ Processada - Aceita' : '❌ Processada - Rejeitada'}
             </Text>
             {item.dataResolucao && (
-              <Text style={styles.processadaData}>
+              <Text style={styles.processedDate}>
                 Em: {formatDate(item.dataResolucao)}
+              </Text>
+            )}
+            {item.motivoRejeicao && (
+              <Text style={styles.motivoText}>
+                Motivo: {item.motivoRejeicao}
               </Text>
             )}
           </View>
@@ -583,66 +634,111 @@ const NotificacoesAdm = () => {
     );
   };
 
-  const renderFilterButtons = () => (
+  const renderFilterSection = () => (
     <View style={styles.filterContainer}>
-      <Text style={styles.filterTitle}>Filtrar por:</Text>
+      <Text style={styles.sectionTitle}>Filtrar Notificações</Text>
       
-      <View style={styles.filterGroup}>
-        <Text style={styles.filterSubtitle}>Status:</Text>
-        <View style={styles.filterButtons}>
-          {['todos', 'pendente', 'aceita', 'rejeitada'].map(status => (
-            <TouchableOpacity
-              key={status}
-              style={[
-                styles.filterButton,
-                filterStatus === status && styles.filterButtonActive
-              ]}
-              onPress={() => setFilterStatus(status)}
-            >
-              <Text style={[
-                styles.filterButtonText,
-                filterStatus === status && styles.filterButtonTextActive
-              ]}>
-                {status === 'todos' ? 'Todos' : 
-                 status === 'pendente' ? 'Pendentes' :
-                 status === 'aceita' ? 'Aceitas' : 'Rejeitadas'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      {/* Barra de Busca */}
+      <View style={styles.searchContainer}>
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Buscar por analista, poço ou proprietário..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        {searchQuery !== '' && (
+          <TouchableOpacity 
+            style={styles.clearButton}
+            onPress={() => setSearchQuery('')}
+          >
+            <Text style={styles.clearButtonText}>✕</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
+      {/* Filtros de Status */}
       <View style={styles.filterGroup}>
-        <Text style={styles.filterSubtitle}>Tipo:</Text>
-        <View style={styles.filterButtons}>
-          {['todos', 'solicitacao_cadastro_analise', 'solicitacao_cadastro_visita'].map(tipo => (
-            <TouchableOpacity
-              key={tipo}
-              style={[
-                styles.filterButton,
-                filterTipo === tipo && styles.filterButtonActive
-              ]}
-              onPress={() => setFilterTipo(tipo)}
-            >
-              <Text style={[
-                styles.filterButtonText,
-                filterTipo === tipo && styles.filterButtonTextActive
-              ]}>
-                {tipo === 'todos' ? 'Todos' : 
-                 tipo === 'solicitacao_cadastro_analise' ? 'Análises' : 'Visitas'}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.filterLabel}>Status:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.filterButtons}>
+            {[
+              { key: 'todos', label: 'Todos' },
+              { key: 'pendente', label: 'Pendentes' },
+              { key: 'aceita', label: 'Aceitas' },
+              { key: 'rejeitada', label: 'Rejeitadas' }
+            ].map(({ key, label }) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.filterButton,
+                  filterStatus === key && styles.filterButtonActive
+                ]}
+                onPress={() => setFilterStatus(key)}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  filterStatus === key && styles.filterButtonTextActive
+                ]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Filtros de Tipo */}
+      <View style={styles.filterGroup}>
+        <Text style={styles.filterLabel}>Tipo:</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <View style={styles.filterButtons}>
+            {[
+              { key: 'todos', label: 'Todos' },
+              { key: 'solicitacao_cadastro_analise', label: 'Análises' },
+              { key: 'solicitacao_cadastro_visita', label: 'Visitas' }
+            ].map(({ key, label }) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.filterButton,
+                  filterTipo === key && styles.filterButtonActive
+                ]}
+                onPress={() => setFilterTipo(key)}
+              >
+                <Text style={[
+                  styles.filterButtonText,
+                  filterTipo === key && styles.filterButtonTextActive
+                ]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </ScrollView>
+      </View>
+
+      {/* Contadores e Limpar Filtros */}
+      <View style={styles.filterFooter}>
+        <Text style={styles.counterText}>
+          Mostrando {filteredNotifications.length} de {notifications.length}
+        </Text>
+        {(filterStatus !== 'todos' || filterTipo !== 'todos' || searchQuery !== '') && (
+          <TouchableOpacity 
+            style={styles.clearFiltersButton}
+            onPress={limparFiltros}
+          >
+            <Text style={styles.clearFiltersText}>Limpar Filtros</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#2685BF" />
-        <Text>Carregando notificações...</Text>
+      <View style={styles.centerContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Carregando notificações...</Text>
       </View>
     );
   }
@@ -652,7 +748,7 @@ const NotificacoesAdm = () => {
       <Text style={styles.header}>Central de Notificações</Text>
       <Text style={styles.subHeader}>Solicitações de Análises e Visitas Técnicas</Text>
       
-      {renderFilterButtons()}
+      {renderFilterSection()}
       
       <FlatList
         data={filteredNotifications}
@@ -662,19 +758,29 @@ const NotificacoesAdm = () => {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={['#2685BF']}
+            colors={[COLORS.primary]}
           />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>
-              {loading ? 'Carregando...' : 'Nenhuma notificação encontrada'}
+            <Text style={styles.emptyTitle}>
+              {notifications.length === 0 
+                ? 'Nenhuma notificação encontrada' 
+                : 'Nenhuma notificação com os filtros selecionados'}
             </Text>
-            <Text style={styles.emptySubText}>
-              {filterStatus !== 'todos' || filterTipo !== 'todos' 
-                ? `Nenhuma notificação com os filtros selecionados` 
-                : 'Todas as solicitações foram processadas'}
+            <Text style={styles.emptySubtitle}>
+              {notifications.length === 0 
+                ? 'As notificações são mantidas por 30 dias' 
+                : 'Tente ajustar os filtros de busca'}
             </Text>
+            {(filterStatus !== 'todos' || filterTipo !== 'todos' || searchQuery !== '') && (
+              <TouchableOpacity 
+                style={styles.clearFiltersButton}
+                onPress={limparFiltros}
+              >
+                <Text style={styles.clearFiltersText}>Limpar Filtros</Text>
+              </TouchableOpacity>
+            )}
           </View>
         }
         contentContainerStyle={styles.listContent}
@@ -683,35 +789,33 @@ const NotificacoesAdm = () => {
       <Modal
         visible={modalVisivel}
         animationType="slide"
-        onRequestClose={() => setModalVisivel(false)}
+        onRequestClose={fecharModal}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitulo}>
+            <Text style={styles.modalTitle}>
               {solicitacaoSelecionada?.tipo === 'solicitacao_cadastro_analise' 
                 ? 'Detalhes da Análise' 
                 : 'Detalhes da Visita'}
             </Text>
             <TouchableOpacity 
-              style={styles.botaoFechar}
-              onPress={() => setModalVisivel(false)}
+              style={styles.closeButton}
+              onPress={fecharModal}
             >
-              <Text style={styles.botaoFecharTexto}>✕</Text>
+              <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
           
-          <ScrollView>
+          <ScrollView style={styles.modalContent}>
             {solicitacaoSelecionada?.tipo === 'solicitacao_cadastro_analise' ? (
-              <DetalhesSolicitacaoAnalise solicitacao={solicitacaoSelecionada} />
-            ) : (
               <>
-                <DetalhesSolicitacaoVisita solicitacao={solicitacaoSelecionada} />
+                <DetalhesSolicitacaoAnalise solicitacao={solicitacaoSelecionada} />
                 
                 {solicitacaoSelecionada?.status === 'pendente' && (
-                  <View style={styles.motivoSection}>
-                    <Text style={styles.motivoLabel}>Motivo da Rejeição *</Text>
+                  <View style={styles.rejectionSection}>
+                    <Text style={styles.inputLabel}>Motivo da Rejeição *</Text>
                     <TextInput
-                      style={styles.textInput}
+                      style={styles.textArea}
                       value={motivoRejeicao}
                       onChangeText={setMotivoRejeicao}
                       placeholder="Informe o motivo da rejeição..."
@@ -719,24 +823,64 @@ const NotificacoesAdm = () => {
                       numberOfLines={3}
                       textAlignVertical="top"
                     />
-                    <Text style={styles.motivoHelper}>
+                    <Text style={styles.helperText}>
                       * Obrigatório apenas para rejeição
                     </Text>
                     
-                    <View style={styles.modalAcoes}>
+                    <View style={styles.modalActions}>
                       <TouchableOpacity 
                         style={[
-                          styles.modalBotao, 
-                          styles.rejeitarBotao,
-                          !motivoRejeicao.trim() && styles.botaoDesabilitado
+                          styles.modalButton, 
+                          styles.rejectButton,
+                          !motivoRejeicao.trim() && styles.buttonDisabled
+                        ]}
+                        onPress={() => handleRejeitarAnalise(solicitacaoSelecionada.id, solicitacaoSelecionada)}
+                        disabled={!motivoRejeicao.trim() || carregandoId !== null}
+                      >
+                        {carregandoId === solicitacaoSelecionada?.id ? (
+                          <ActivityIndicator size="small" color={COLORS.white} />
+                        ) : (
+                          <Text style={styles.modalButtonText}>Rejeitar Análise</Text>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
+              </>
+            ) : (
+              <>
+                <DetalhesSolicitacaoVisita solicitacao={solicitacaoSelecionada} />
+                
+                {solicitacaoSelecionada?.status === 'pendente' && (
+                  <View style={styles.rejectionSection}>
+                    <Text style={styles.inputLabel}>Motivo da Rejeição *</Text>
+                    <TextInput
+                      style={styles.textArea}
+                      value={motivoRejeicao}
+                      onChangeText={setMotivoRejeicao}
+                      placeholder="Informe o motivo da rejeição..."
+                      multiline={true}
+                      numberOfLines={3}
+                      textAlignVertical="top"
+                    />
+                    <Text style={styles.helperText}>
+                      * Obrigatório apenas para rejeição
+                    </Text>
+                    
+                    <View style={styles.modalActions}>
+                      <TouchableOpacity 
+                        style={[
+                          styles.modalButton, 
+                          styles.rejectButton,
+                          !motivoRejeicao.trim() && styles.buttonDisabled
                         ]}
                         onPress={() => handleRejeitarVisita(solicitacaoSelecionada)}
                         disabled={!motivoRejeicao.trim() || carregandoId !== null}
                       >
                         {carregandoId === solicitacaoSelecionada?.id ? (
-                          <ActivityIndicator size="small" color="white" />
+                          <ActivityIndicator size="small" color={COLORS.white} />
                         ) : (
-                          <Text style={styles.modalBotaoTexto}>Rejeitar Visita</Text>
+                          <Text style={styles.modalButtonText}>Rejeitar Visita</Text>
                         )}
                       </TouchableOpacity>
                     </View>
@@ -752,304 +896,375 @@ const NotificacoesAdm = () => {
 };
 
 const styles = StyleSheet.create({
+  // Layout
   container: {
     flex: 1,
-    backgroundColor: '#f4f7f6',
+    backgroundColor: COLORS.light,
   },
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.white,
+  },
+  listContent: {
+    paddingHorizontal: SPACING.md,
+    paddingBottom: SPACING.lg,
+  },
+
+  // Cabeçalho
   header: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    paddingHorizontal: 16,
-    paddingTop: 16,
+    color: COLORS.text.primary,
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.md,
     textAlign: 'center',
   },
   subHeader: {
     fontSize: 14,
-    color: '#666',
+    color: COLORS.text.secondary,
     textAlign: 'center',
-    marginBottom: 16,
+    marginBottom: SPACING.md,
   },
-  loadingContainer: {
+
+  // Filtros
+  filterContainer: {
+    backgroundColor: COLORS.white,
+    padding: SPACING.md,
+    marginHorizontal: SPACING.md,
+    marginBottom: SPACING.md,
+    borderRadius: BORDER.radius.md,
+    ...SHADOW.light,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: SPACING.sm,
+    color: COLORS.text.primary,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  searchInput: {
     flex: 1,
+    backgroundColor: COLORS.gray[100],
+    borderWidth: BORDER.width.thin,
+    borderColor: COLORS.gray[300],
+    borderRadius: BORDER.radius.md,
+    padding: SPACING.sm,
+    fontSize: 14,
+  },
+  clearButton: {
+    position: 'absolute',
+    right: SPACING.sm,
+    backgroundColor: COLORS.gray[400],
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'white',
   },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
+  clearButtonText: {
+    fontSize: 12,
+    color: COLORS.gray[700],
+    fontWeight: 'bold',
   },
-  notificationCard: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
-    borderLeftWidth: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+  filterGroup: {
+    marginBottom: SPACING.sm,
   },
-  notificationHeader: {
+  filterLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: COLORS.text.secondary,
+    marginBottom: SPACING.xs,
+  },
+  filterButtons: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
+  },
+  filterButton: {
+    backgroundColor: COLORS.gray[200],
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.xl,
+  },
+  filterButtonActive: {
+    backgroundColor: COLORS.primary,
+  },
+  filterButtonText: {
+    fontSize: 13,
+    color: COLORS.text.secondary,
+  },
+  filterButtonTextActive: {
+    color: COLORS.white,
+    fontWeight: 'bold',
+  },
+  filterFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginTop: SPACING.xs,
+  },
+  counterText: {
+    fontSize: 12,
+    color: COLORS.text.light,
+  },
+
+  // Cards de Notificação
+  card: {
+    backgroundColor: COLORS.white,
+    borderRadius: BORDER.radius.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.sm,
+    borderLeftWidth: BORDER.width.thick,
+    ...SHADOW.light,
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.xs,
   },
   tipoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
+    backgroundColor: COLORS.gray[200],
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.lg,
   },
   tipoIcon: {
     fontSize: 14,
-    marginRight: 4,
+    marginRight: SPACING.xs,
   },
   tipoText: {
     fontSize: 12,
     fontWeight: 'bold',
+    color: COLORS.text.primary,
   },
   statusText: {
     fontSize: 12,
     fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  title: {
+  cardTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
   },
-  message: {
+  cardMessage: {
     fontSize: 14,
-    color: '#555',
+    color: COLORS.text.secondary,
     lineHeight: 20,
-    marginBottom: 12,
+    marginBottom: SPACING.sm,
   },
-  dataContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 8,
-    marginBottom: 8,
+  cardData: {
+    borderTopWidth: BORDER.width.thin,
+    borderTopColor: COLORS.gray[300],
+    paddingTop: SPACING.xs,
+    marginBottom: SPACING.xs,
   },
   dataText: {
     fontSize: 13,
-    color: '#444',
-    marginBottom: 4,
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
   },
   dataLabel: {
     fontWeight: 'bold',
   },
   timestamp: {
     fontSize: 12,
-    color: '#888',
+    color: COLORS.text.light,
     textAlign: 'right',
   },
-  acoes: {
+
+  // Botões
+  actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    marginTop: 12,
-    paddingTop: 12,
+    gap: SPACING.xs,
+    borderTopWidth: BORDER.width.thin,
+    borderTopColor: COLORS.gray[300],
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.sm,
   },
-  botaoDetalhes: {
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+  buttonSecondary: {
+    backgroundColor: COLORS.gray[200],
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.sm,
   },
-  botaoDetalhesTexto: {
-    color: '#333',
+  buttonSecondaryText: {
+    color: COLORS.text.primary,
     fontWeight: 'bold',
     fontSize: 13,
   },
-  botaoAceitar: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+  buttonSuccess: {
+    backgroundColor: COLORS.secondary,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.sm,
   },
-  botaoAceitarTexto: {
-    color: 'white',
+  buttonDanger: {
+    backgroundColor: COLORS.danger,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.sm,
+  },
+  buttonText: {
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 13,
   },
-  botaoRejeitar: {
-    backgroundColor: '#F44336',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+
+  // Estados Processados
+  processedContainer: {
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.sm,
+    borderTopWidth: BORDER.width.thin,
+    borderTopColor: COLORS.gray[300],
   },
-  botaoRejeitarTexto: {
-    color: 'white',
-    fontWeight: 'bold',
-    fontSize: 13,
-  },
-  processadaContainer: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  processadaText: {
+  processedText: {
     fontSize: 13,
     fontWeight: 'bold',
+    color: COLORS.text.primary,
   },
-  processadaData: {
+  processedDate: {
     fontSize: 12,
-    color: '#777',
+    color: COLORS.text.light,
   },
+  motivoText: {
+    fontSize: 12,
+    color: COLORS.danger,
+    fontStyle: 'italic',
+  },
+
+  // Estados Vazios
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    marginTop: 50,
+    padding: SPACING.lg,
+    marginTop: SPACING.xl,
   },
-  emptyText: {
+  emptyTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#666',
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: '#888',
+    color: COLORS.text.secondary,
     textAlign: 'center',
-    marginTop: 8,
   },
-  filterContainer: {
-    backgroundColor: 'white',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  filterTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333',
-  },
-  filterGroup: {
-    marginBottom: 8,
-  },
-  filterSubtitle: {
+  emptySubtitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
-    marginBottom: 8,
+    color: COLORS.text.light,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
   },
-  filterButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
+
+  // Botões de Ação
+  clearFiltersButton: {
+    backgroundColor: COLORS.danger,
+    paddingVertical: SPACING.xs,
+    paddingHorizontal: SPACING.sm,
+    borderRadius: BORDER.radius.xl,
+    marginTop: SPACING.sm,
   },
-  filterButton: {
-    backgroundColor: '#f0f0f0',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-  },
-  filterButtonActive: {
-    backgroundColor: '#2685BF',
-  },
-  filterButtonText: {
-    fontSize: 13,
-    color: '#444',
-  },
-  filterButtonTextActive: {
-    color: 'white',
+  clearFiltersText: {
+    fontSize: 12,
+    color: COLORS.white,
     fontWeight: 'bold',
   },
+
+  // Modal
   modalContainer: {
     flex: 1,
-    backgroundColor: isDesktop ? 'rgba(0,0,0,0.5)' : '#f4f7f6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: COLORS.light,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: 'white',
+    padding: SPACING.md,
+    borderBottomWidth: BORDER.width.thin,
+    borderBottomColor: COLORS.gray[300],
+    backgroundColor: COLORS.white,
   },
-  modalTitulo: {
+  modalContent: {
+    flex: 1,
+  },
+  modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: COLORS.text.primary,
   },
-  botaoFechar: {
-    backgroundColor: '#f0f0f0',
+  closeButton: {
+    backgroundColor: COLORS.gray[200],
     borderRadius: 15,
     width: 30,
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  botaoFecharTexto: {
+  closeButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#555',
+    color: COLORS.text.secondary,
   },
-  motivoSection: {
-    padding: 16,
-    backgroundColor: 'white',
-    marginTop: 10,
+
+  // Seção de Rejeição
+  rejectionSection: {
+    padding: SPACING.md,
+    backgroundColor: COLORS.white,
+    marginTop: SPACING.xs,
   },
-  textInput: {
-    backgroundColor: '#f9f9f9',
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 6,
-    padding: 12,
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: COLORS.text.primary,
+    marginBottom: SPACING.xs,
+  },
+  textArea: {
+    backgroundColor: COLORS.gray[100],
+    borderWidth: BORDER.width.thin,
+    borderColor: COLORS.gray[300],
+    borderRadius: BORDER.radius.sm,
+    padding: SPACING.sm,
     fontSize: 14,
     minHeight: 80,
   },
-  motivoLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  motivoHelper: {
+  helperText: {
     fontSize: 12,
-    color: '#777',
-    marginTop: 4,
+    color: COLORS.text.light,
+    marginTop: SPACING.xs,
   },
-  modalAcoes: {
-    marginTop: 16,
+  modalActions: {
+    marginTop: SPACING.md,
   },
-  modalBotao: {
-    padding: 14,
-    borderRadius: 6,
+  modalButton: {
+    padding: SPACING.sm,
+    borderRadius: BORDER.radius.sm,
     alignItems: 'center',
   },
-  modalBotaoTexto: {
-    color: 'white',
+  modalButtonText: {
+    color: COLORS.white,
     fontWeight: 'bold',
     fontSize: 15,
   },
-  rejeitarBotao: {
-    backgroundColor: '#F44336',
+  rejectButton: {
+    backgroundColor: COLORS.danger,
   },
-  botaoDesabilitado: {
-    backgroundColor: '#ccc',
+  buttonDisabled: {
+    backgroundColor: COLORS.gray[400],
+  },
+
+  // Textos
+  loadingText: {
+    marginTop: SPACING.sm,
+    color: COLORS.text.secondary,
   },
 });
 
