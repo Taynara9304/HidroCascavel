@@ -1,4 +1,4 @@
-// componentes/TabelaVisitasAnalista.js
+// componentes/TabelaVisitasAnalista.js - VERSÃO COM GESTOS CORRIGIDOS
 import React, { useState, useRef } from 'react';
 import { 
   View, 
@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3;
+const isMobile = screenWidth < 768;
+const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.3);
 const CARD_MARGIN = 12;
 
 const TabelaVisitasAnalista = ({ 
@@ -25,6 +26,20 @@ const TabelaVisitasAnalista = ({
 }) => {
   const [paginaAtual, setPaginaAtual] = useState(0);
   const flatListRef = useRef(null);
+
+  // ✅ CORREÇÃO: Handlers para gestos
+  const handleScrollEndDrag = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
+    
+    if (newIndex >= 0 && newIndex < visits.length) {
+      setPaginaAtual(newIndex);
+    }
+  };
+
+  const handleScrollBeginDrag = () => {
+    // Marca que o scroll horizontal começou
+  };
 
   const formatarData = (dataString) => {
     if (!dataString) return 'Data não informada';
@@ -209,6 +224,7 @@ const TabelaVisitasAnalista = ({
         </TouchableOpacity>
       </View>
 
+      {/* ✅ CORREÇÃO: Carousel com gestos otimizados */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -217,18 +233,24 @@ const TabelaVisitasAnalista = ({
             renderItem={renderItem}
             keyExtractor={(item) => item.id || Math.random().toString()}
             horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
+            pagingEnabled={false}
+            showsHorizontalScrollIndicator={true}
+            snapToInterval={null}
             snapToAlignment="center"
-            decelerationRate="fast"
-            onMomentumScrollEnd={(event) => {
-              const newIndex = Math.round(
-                event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_MARGIN * 2)
-              );
-              setPaginaAtual(newIndex);
-            }}
+            decelerationRate="normal"
+            // ✅ Handlers para gestos
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onScrollEndDrag={handleScrollEndDrag}
+            onMomentumScrollEnd={handleScrollEndDrag}
+            // ✅ Configurações para melhor performance de gestos
+            scrollEventThrottle={16}
+            directionalLockEnabled={true}
+            alwaysBounceHorizontal={true}
+            alwaysBounceVertical={false}
+            bounces={true}
+            overScrollMode="always"
             contentContainerStyle={styles.carouselContent}
+            style={styles.flatList}
           />
           
           {visits.length > 1 && (
@@ -318,23 +340,26 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 300,
   },
+  flatList: {
+    flex: 1,
+  },
   carouselContent: {
     paddingHorizontal: CARD_MARGIN,
+    paddingVertical: 0,
   },
   // Nos estilos de ambos os componentes, substitua:
-card: {
-  width: CARD_WIDTH,
-  backgroundColor: 'white',
-  padding: 20,
-  marginHorizontal: CARD_MARGIN,
-  borderRadius: 16,
-  // ✅ SOLUÇÃO SIMPLES
-  elevation: 3,
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.1,
-  shadowRadius: 4,
-},
+  card: {
+    width: CARD_WIDTH,
+    backgroundColor: 'white',
+    padding: 20,
+    marginHorizontal: CARD_MARGIN,
+    borderRadius: 16,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

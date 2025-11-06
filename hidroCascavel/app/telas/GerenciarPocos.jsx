@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/authContext';
 const GerenciarPocos = () => {
   const { userData } = useAuth();
   const {
-    pocos, // ✅ Certifique-se que o hook retorna 'pocos' e não 'wells'
+    pocos,
     loading,
     error,
     sortField,
@@ -70,7 +70,6 @@ const GerenciarPocos = () => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        {/* ✅ Adicione debug info */}
         <View style={styles.debugContainer}>
           <Text style={styles.debugText}>
             Debug: {pocos?.length || 0} poços | Usuário: {userData?.tipoUsuario || 'não definido'}
@@ -80,9 +79,8 @@ const GerenciarPocos = () => {
           </Text>
         </View>
         
-        {/* ✅ Passe 'pocos' em vez de 'wells' */}
         <TabelaPocos
-          wells={pocos} // ✅ Agora passando 'pocos' que vem do hook
+          wells={pocos}
           onEdit={editPoco}
           onDelete={handleDeletePoco}
           sortField={sortField}

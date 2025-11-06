@@ -48,7 +48,6 @@ const HomeAnalista = () => {
         navigation.navigate("GerenciarRelatorios");
     };
 
-    // Styles DEFINIDOS DENTRO do componente para acessar isMobile
     const styles = StyleSheet.create({
         scrollView: {
             flex: 1,
@@ -127,7 +126,6 @@ const HomeAnalista = () => {
                 </View>
 
                 <View style={styles.containerItems}>
-                    {/* MapaUniversal gerencia seus próprios marcadores */}
                     <MapaUniversal onLocationSelect={handleLocationSelect} />
                 </View>
 

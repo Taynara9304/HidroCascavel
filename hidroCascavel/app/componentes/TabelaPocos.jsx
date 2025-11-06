@@ -1,4 +1,4 @@
-// componentes/TabelaPocos.js - VERSÃO CORRIGIDA
+// componentes/TabelaPocos.js - VERSÃO RESPONSIVA COM ARRASTE
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   View, 
@@ -13,21 +13,24 @@ import {
   FlatList,
   Dimensions,
   Alert,
-  ActivityIndicator
+  ActivityIndicator,
+  Platform
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3;
+const isMobile = screenWidth < 768; // Tablet geralmente tem 768px+
+// ✅ Largura responsiva: 0.3 no computador, 0.8 no celular
+const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.25);
 const CARD_MARGIN = 8;
 
 const TabelaPocos = ({ 
-  wells = [], // ✅ CORREÇÃO: Valor padrão para array vazio
+  wells = [],
   onEdit, 
   onDelete, 
   sortField, 
   sortDirection, 
   onSort,
-  loading = false // ✅ Adicionado loading state
+  loading = false
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroProprietario, setFiltroProprietario] = useState('todos');
@@ -37,7 +40,6 @@ const TabelaPocos = ({
   const [observacoesEdit, setObservacoesEdit] = useState('');
   const flatListRef = useRef(null);
 
-  // ✅ CORREÇÃO: Proteção contra undefined
   const wellsSeguro = wells || [];
 
   const proprietariosUnicos = useMemo(() => {
@@ -80,7 +82,6 @@ const TabelaPocos = ({
     flatListRef.current?.scrollToIndex({ index: pagina, animated: true });
   };
 
-  // Função para editar poço
   const handleEditar = (well) => {
     setEditandoPoço(well);
     setObservacoesEdit(well.observacoes || '');
@@ -163,7 +164,6 @@ const TabelaPocos = ({
     </View>
   );
 
-  // ✅ CORREÇÃO: Loading state
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -236,7 +236,7 @@ const TabelaPocos = ({
           </TouchableOpacity>
         </View>
 
-        {/* Grid Horizontal de Cards */}
+        {/* ✅ Grid Horizontal com ARRASTE habilitado */}
         {poçosFiltrados.length > 0 ? (
           <View style={styles.carouselContainer}>
             <FlatList
@@ -245,21 +245,23 @@ const TabelaPocos = ({
               renderItem={renderItem}
               keyExtractor={(item) => item.id}
               horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
+              pagingEnabled={false} // ✅ Desabilita paginação forçada para permitir arraste livre
+              showsHorizontalScrollIndicator={true} // ✅ Mostra scrollbar para indicar que pode arrastar
+              snapToInterval={null} // ✅ Remove snap para arraste suave
               snapToAlignment="center"
-              decelerationRate="fast"
+              decelerationRate="normal"
               onMomentumScrollEnd={(event) => {
                 const newIndex = Math.round(
                   event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_MARGIN * 2)
                 );
-                setPaginaAtual(newIndex);
+                if (newIndex >= 0 && newIndex < poçosFiltrados.length) {
+                  setPaginaAtual(newIndex);
+                }
               }}
               contentContainerStyle={styles.carouselContent}
             />
             
-            {/* Indicadores de Página */}
+            {/* Indicadores de Página - ainda funcionam */}
             {poçosFiltrados.length > 1 && (
               <View style={styles.paginacaoContainer}>
                 <Text style={styles.paginacaoTexto}>
@@ -302,7 +304,7 @@ const TabelaPocos = ({
           </View>
         )}
 
-        {/* Modal de Edição */}
+        {/* Modais (mantidos iguais) */}
         <Modal
           visible={!!editandoPoço}
           animationType="slide"
@@ -351,7 +353,6 @@ const TabelaPocos = ({
           </View>
         </Modal>
 
-        {/* Modal de Filtros */}
         <Modal
           visible={mostrarFiltros}
           animationType="slide"
@@ -421,7 +422,7 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   titulo: {
-    fontSize: 22, // Aumentado
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 16,
     color: '#2685BF',
@@ -441,7 +442,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 12,
-    fontSize: 16, // Aumentado
+    fontSize: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -477,7 +478,7 @@ const styles = StyleSheet.create({
   botaoFiltrosTexto: {
     color: 'white',
     fontWeight: 'bold',
-    fontSize: 16, // Aumentado
+    fontSize: 16,
   },
   filtroAtivo: {
     position: 'absolute',
@@ -495,25 +496,25 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   ordenacaoTitulo: {
-    fontSize: 14, // Aumentado
+    fontSize: 14,
     fontWeight: '600',
     color: '#666',
   },
   ordenacaoBotao: {
     backgroundColor: '#f1f3f4',
-    paddingHorizontal: 12, // Aumentado
-    paddingVertical: 6, // Aumentado
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 12,
   },
   ordenacaoBotaoAtivo: {
     backgroundColor: '#2685BF',
   },
   ordenacaoBotaoTexto: {
-    fontSize: 12, // Aumentado
+    fontSize: 12,
     fontWeight: '600',
     color: '#333',
   },
-  // Carousel e Cards
+  // ✅ Carousel com arraste livre
   carouselContainer: {
     flex: 1,
   },
@@ -523,7 +524,7 @@ const styles = StyleSheet.create({
   card: {
     width: CARD_WIDTH,
     backgroundColor: 'white',
-    padding: 16, // Aumentado
+    padding: 16,
     marginHorizontal: CARD_MARGIN,
     borderRadius: 12,
     shadowColor: '#000',
@@ -536,68 +537,68 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12, // Aumentado
-    paddingBottom: 12, // Aumentado
+    marginBottom: 12,
+    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',
   },
   proprietarioNome: {
-    fontSize: 16, // Aumentado
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#333',
     flex: 1,
     marginRight: 8,
   },
   data: {
-    fontSize: 12, // Aumentado
+    fontSize: 12,
     color: '#666',
     fontWeight: '500',
   },
   cardInfo: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 8, // Aumentado
+    marginBottom: 8,
   },
   infoLabel: {
-    fontSize: 14, // Aumentado
-    marginRight: 8, // Aumentado
+    fontSize: 14,
+    marginRight: 8,
     marginTop: 1,
   },
   infoValue: {
-    fontSize: 14, // Aumentado
+    fontSize: 14,
     color: '#555',
     flex: 1,
-    lineHeight: 18, // Aumentado
+    lineHeight: 18,
   },
   cardAcoes: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12, // Aumentado
-    paddingTop: 12, // Aumentado
+    marginTop: 12,
+    paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
   },
   botaoEditar: {
     backgroundColor: '#FFA500',
-    paddingVertical: 8, // Aumentado
-    paddingHorizontal: 16, // Aumentado
-    borderRadius: 8, // Aumentado
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     flex: 1,
-    marginRight: 6, // Aumentado
+    marginRight: 6,
     alignItems: 'center',
   },
   botaoDeletar: {
     backgroundColor: '#FF4444',
-    paddingVertical: 8, // Aumentado
-    paddingHorizontal: 16, // Aumentado
-    borderRadius: 8, // Aumentado
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
     flex: 1,
-    marginLeft: 6, // Aumentado
+    marginLeft: 6,
     alignItems: 'center',
   },
   botaoTexto: {
     color: 'white',
-    fontSize: 14, // Aumentado
+    fontSize: 14,
     fontWeight: 'bold',
   },
   // Paginação
@@ -607,7 +608,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   paginacaoTexto: {
-    fontSize: 14, // Aumentado
+    fontSize: 14,
     color: '#666',
     marginBottom: 8,
   },
@@ -617,14 +618,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   ponto: {
-    width: 8, // Aumentado
-    height: 8, // Aumentado
-    borderRadius: 4, // Aumentado
+    width: 8,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: '#ccc',
   },
   pontoAtivo: {
     backgroundColor: '#2685BF',
-    width: 16, // Aumentado
+    width: 16,
   },
   // Modal de Edição
   modalContainer: {
@@ -690,6 +691,30 @@ const styles = StyleSheet.create({
   modalBotaoTexto: {
     color: 'white',
     fontSize: 16,
+    fontWeight: 'bold',
+  },
+  // Estilos para quando não há dados
+  semDadosContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  semDados: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  limparFiltros: {
+    backgroundColor: '#2685BF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  limparFiltrosTexto: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
 });

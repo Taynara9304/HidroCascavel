@@ -1,5 +1,5 @@
-// componentes/DateTimePickerCompleto.js - VERSÃO CORRIGIDA
-import React, { useState } from 'react';
+// componentes/DateTimePickerCompleto.js - VERSÃO HÍBRIDA
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,50 +9,52 @@ import {
   ScrollView,
   TextInput,
   Platform,
-  Dimensions
+  Dimensions,
+  Alert
 } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
-const DateTimePickerCompleto = ({ 
-  value, 
-  onChange, 
-  placeholder = "Selecione data e hora",
-  minDate = new Date()
-}) => {
+// ✅ COMPONENTE PARA WEB (seu componente original)
+const DateTimePickerWeb = ({ value, onChange, placeholder }) => {
   const [modalVisible, setModalVisible] = useState(false);
-  const [currentDate, setCurrentDate] = useState(value || new Date());
-  const [selectedDate, setSelectedDate] = useState(value || new Date());
-  const [selectedTime, setSelectedTime] = useState(
-    value ? 
-    `${value.getHours().toString().padStart(2, '0')}:${value.getMinutes().toString().padStart(2, '0')}` 
-    : '08:00'
-  );
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedTime, setSelectedTime] = useState('08:00');
   const [customTime, setCustomTime] = useState('');
 
-  console.log('🎯 DateTimePicker - Estado:', {
-    modalVisible,
-    selectedDate: selectedDate?.toISOString(),
-    selectedTime,
-    value: value?.toISOString()
-  });
+  // Inicializar com valor prop
+  useEffect(() => {
+    if (value && value instanceof Date) {
+      console.log('🎯 Web: Inicializando com valor:', value.toISOString());
+      setSelectedDate(new Date(value));
+      setCurrentDate(new Date(value));
+      
+      const hours = value.getHours().toString().padStart(2, '0');
+      const minutes = value.getMinutes().toString().padStart(2, '0');
+      setSelectedTime(`${hours}:${minutes}`);
+    } else {
+      const defaultDate = new Date();
+      defaultDate.setHours(defaultDate.getHours() + 1);
+      defaultDate.setMinutes(0, 0, 0);
+      
+      setSelectedDate(defaultDate);
+      setCurrentDate(defaultDate);
+      setSelectedTime(`${defaultDate.getHours().toString().padStart(2, '0')}:00`);
+    }
+  }, [value]);
 
-  // Nomes dos meses em português
   const monthNames = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ];
 
-  // Dias da semana
   const weekDays = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-
-  // Horários disponíveis
   const horariosDisponiveis = [
     '08:00', '09:00', '10:00', '11:00', '12:00', 
     '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
   ];
 
-  // ✅ CORREÇÃO: Gerar calendário de forma segura
   const generateCalendar = () => {
     try {
       const year = currentDate.getFullYear();
@@ -127,12 +129,15 @@ const DateTimePickerCompleto = ({
       day
     );
     
-    // Desabilitar datas passadas
-    return testDate < new Date(new Date().setHours(0, 0, 0, 0));
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    testDate.setHours(0, 0, 0, 0);
+    
+    return testDate < today;
   };
 
   const handleDayPress = (day) => {
-    console.log('📅 Dia pressionado:', day);
+    console.log('📅 Web - Dia pressionado:', day);
     if (day && !isDisabled(day)) {
       const newSelectedDate = new Date(
         currentDate.getFullYear(),
@@ -140,21 +145,19 @@ const DateTimePickerCompleto = ({
         day
       );
       setSelectedDate(newSelectedDate);
-      console.log('✅ Nova data selecionada:', newSelectedDate.toISOString());
     }
   };
 
   const handleTimeSelect = (time) => {
-    console.log('⏰ Horário selecionado:', time);
+    console.log('⏰ Web - Horário selecionado:', time);
     setSelectedTime(time);
-    setCustomTime(''); // Limpar horário personalizado quando selecionar um pré-definido
+    setCustomTime('');
   };
 
   const handleCustomTimeChange = (text) => {
-    console.log('⌨️ Horário personalizado:', text);
+    console.log('⌨️ Web - Horário personalizado:', text);
     setCustomTime(text);
     
-    // Validar formato HH:MM e atualizar selectedTime se for válido
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     if (timeRegex.test(text)) {
       setSelectedTime(text);
@@ -162,51 +165,75 @@ const DateTimePickerCompleto = ({
   };
 
   const handleConfirm = () => {
-    console.log('✅ Confirmando data/hora...');
+    console.log('✅ Web - Confirmando data/hora...');
     
     try {
-      // Usar horário personalizado se estiver preenchido e válido, senão usar selectedTime
       const finalTime = customTime && /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(customTime) 
         ? customTime 
         : selectedTime;
       
-      // Combinar data selecionada com horário
+      if (!finalTime) {
+        Alert.alert('Erro', 'Selecione um horário válido');
+        return;
+      }
+
       const [hours, minutes] = finalTime.split(':').map(Number);
-      const finalDateTime = new Date(selectedDate);
-      finalDateTime.setHours(hours, minutes, 0, 0);
       
-      console.log('🕐 DateTime final:', {
-        finalDateTime: finalDateTime.toISOString(),
-        local: finalDateTime.toLocaleString('pt-BR'),
-        horarioUsado: finalTime
-      });
+      const finalDateTime = new Date(
+        selectedDate.getFullYear(),
+        selectedDate.getMonth(),
+        selectedDate.getDate(),
+        hours,
+        minutes,
+        0,
+        0
+      );
+
+      const agora = new Date();
+      if (finalDateTime <= agora) {
+        Alert.alert('Erro', 'Selecione uma data e hora futuras');
+        return;
+      }
       
-      // ✅ CORREÇÃO: Chamar onChange antes de fechar o modal
-      if (onChange) {
+      if (onChange && typeof onChange === 'function') {
         onChange(finalDateTime);
       }
       
       setModalVisible(false);
-      console.log('✅ Modal fechado após confirmação');
     } catch (error) {
       console.error('❌ Erro ao confirmar data/hora:', error);
+      Alert.alert('Erro', 'Data/hora inválida');
     }
   };
 
   const handleCancel = () => {
-    console.log('❌ Cancelando seleção...');
+    if (value && value instanceof Date) {
+      setSelectedDate(new Date(value));
+      setCurrentDate(new Date(value));
+      
+      const hours = value.getHours().toString().padStart(2, '0');
+      const minutes = value.getMinutes().toString().padStart(2, '0');
+      setSelectedTime(`${hours}:${minutes}`);
+    }
+    
     setModalVisible(false);
   };
 
   const formatDisplay = (date) => {
-    if (!date) return '';
-    return date.toLocaleString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!date || !(date instanceof Date)) return placeholder;
+    
+    try {
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      console.error('❌ Erro ao formatar data:', error);
+      return placeholder;
+    }
   };
 
   const calendarWeeks = generateCalendar();
@@ -215,13 +242,10 @@ const DateTimePickerCompleto = ({
     <View style={styles.container}>
       <TouchableOpacity 
         style={styles.dateTimeButton} 
-        onPress={() => {
-          console.log('📅 Abrindo modal...');
-          setModalVisible(true);
-        }}
+        onPress={() => setModalVisible(true)}
       >
         <Text style={value ? styles.dateTimeText : styles.placeholder}>
-          {value ? formatDisplay(value) : placeholder}
+          {formatDisplay(value)}
         </Text>
       </TouchableOpacity>
 
@@ -235,13 +259,11 @@ const DateTimePickerCompleto = ({
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Selecionar Data e Hora</Text>
 
-            {/* Calendário - CORRIGIDO: ScrollView com altura fixa */}
             <ScrollView 
               style={styles.scrollContainer}
               contentContainerStyle={styles.scrollContent}
               showsVerticalScrollIndicator={true}
             >
-              {/* Seção do Calendário */}
               <View style={styles.calendarSection}>
                 <View style={styles.calendarHeader}>
                   <TouchableOpacity 
@@ -263,7 +285,6 @@ const DateTimePickerCompleto = ({
                   </TouchableOpacity>
                 </View>
 
-                {/* Dias da semana */}
                 <View style={styles.weekDays}>
                   {weekDays.map((day, index) => (
                     <Text key={index} style={styles.weekDayText}>
@@ -272,7 +293,6 @@ const DateTimePickerCompleto = ({
                   ))}
                 </View>
 
-                {/* Dias do mês */}
                 <View style={styles.calendarContainer}>
                   {calendarWeeks.map((week, weekIndex) => (
                     <View key={weekIndex} style={styles.week}>
@@ -306,11 +326,9 @@ const DateTimePickerCompleto = ({
                 </View>
               </View>
 
-              {/* Seletor de Horário */}
               <View style={styles.timeSection}>
                 <Text style={styles.timeSectionTitle}>Selecione o Horário</Text>
                 
-                {/* Horários pré-definidos */}
                 <Text style={styles.timeSubtitle}>Horários disponíveis:</Text>
                 <ScrollView 
                   horizontal 
@@ -337,7 +355,6 @@ const DateTimePickerCompleto = ({
                   ))}
                 </ScrollView>
 
-                {/* Horário personalizado - CORRIGIDO: Agora é editável */}
                 <View style={styles.customTimeContainer}>
                   <Text style={styles.customTimeLabel}>Ou digite um horário personalizado:</Text>
                   <View style={styles.customTimeInputContainer}>
@@ -349,15 +366,12 @@ const DateTimePickerCompleto = ({
                       placeholderTextColor="#999"
                       maxLength={5}
                       keyboardType="numbers-and-punctuation"
-                      editable={true}
-                      selectTextOnFocus={true}
                     />
                     <Text style={styles.customTimeExample}>Ex: 09:30, 14:45, 16:20</Text>
                   </View>
                 </View>
               </View>
 
-              {/* Data e Hora Selecionadas */}
               <View style={styles.selectedInfo}>
                 <Text style={styles.selectedLabel}>Data e Hora Selecionadas:</Text>
                 <Text style={styles.selectedDateTime}>
@@ -367,7 +381,6 @@ const DateTimePickerCompleto = ({
               </View>
             </ScrollView>
 
-            {/* ✅ CORREÇÃO: Botões de Ação FIXOS fora do ScrollView */}
             <View style={styles.actionButtons}>
               <TouchableOpacity 
                 style={styles.cancelButton}
@@ -390,6 +403,175 @@ const DateTimePickerCompleto = ({
   );
 };
 
+// ✅ COMPONENTE PARA MOBILE (com DateTimePicker nativo)
+const DateTimePickerMobile = ({ value, onChange, placeholder }) => {
+  const [selectedDateTime, setSelectedDateTime] = useState(new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [mode, setMode] = useState('date');
+
+  // ✅ CORREÇÃO: Importação condicional para mobile
+  let DateTimePicker;
+  if (Platform.OS !== 'web') {
+    try {
+      DateTimePicker = require('@react-native-community/datetimepicker').default;
+    } catch (error) {
+      console.log('DateTimePicker não disponível');
+    }
+  }
+
+  useEffect(() => {
+    if (value && value instanceof Date) {
+      console.log('📱 Mobile: Inicializando com valor:', value.toISOString());
+      setSelectedDateTime(new Date(value));
+    } else {
+      const defaultDate = new Date();
+      defaultDate.setHours(defaultDate.getHours() + 1);
+      defaultDate.setMinutes(0, 0, 0);
+      setSelectedDateTime(defaultDate);
+    }
+  }, [value]);
+
+  const onDateChange = (event, selectedDate) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+      setShowTimePicker(false);
+    }
+
+    if (selectedDate) {
+      if (mode === 'date') {
+        const newDate = new Date(selectedDate);
+        newDate.setHours(selectedDateTime.getHours());
+        newDate.setMinutes(selectedDateTime.getMinutes());
+        setSelectedDateTime(newDate);
+        
+        if (Platform.OS === 'android') {
+          setTimeout(() => {
+            setMode('time');
+            setShowTimePicker(true);
+          }, 300);
+        }
+      } else {
+        const newDate = new Date(selectedDateTime);
+        newDate.setHours(selectedDate.getHours());
+        newDate.setMinutes(selectedDate.getMinutes());
+        setSelectedDateTime(newDate);
+        
+        if (Platform.OS === 'android') {
+          handleConfirmMobile(newDate);
+        }
+      }
+    }
+  };
+
+  const showDatepicker = () => {
+    setMode('date');
+    setShowDatePicker(true);
+  };
+
+  const showTimepicker = () => {
+    setMode('time');
+    setShowTimePicker(true);
+  };
+
+  const handleConfirmMobile = (date) => {
+    const agora = new Date();
+    if (date <= agora) {
+      Alert.alert('Erro', 'Selecione uma data e hora futuras');
+      return;
+    }
+
+    if (onChange && typeof onChange === 'function') {
+      onChange(date);
+    }
+  };
+
+  const formatDisplay = (date) => {
+    if (!date || !(date instanceof Date)) return placeholder;
+    
+    try {
+      return date.toLocaleString('pt-BR', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return placeholder;
+    }
+  };
+
+  // Para iOS - interface personalizada
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={styles.container}>
+        <TouchableOpacity 
+          style={styles.dateTimeButton} 
+          onPress={showDatepicker}
+        >
+          <Text style={value ? styles.dateTimeText : styles.placeholder}>
+            {formatDisplay(value)}
+          </Text>
+        </TouchableOpacity>
+
+        {(showDatePicker || showTimePicker) && DateTimePicker && (
+          <DateTimePicker
+            value={selectedDateTime}
+            mode={mode}
+            display="spinner"
+            onChange={onDateChange}
+            minimumDate={new Date()}
+            minuteInterval={15}
+          />
+        )}
+      </View>
+    );
+  }
+
+  // Para Android - picker nativo direto
+  return (
+    <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.dateTimeButton} 
+        onPress={() => {
+          setMode('date');
+          setShowDatePicker(true);
+        }}
+      >
+        <Text style={value ? styles.dateTimeText : styles.placeholder}>
+          {formatDisplay(value)}
+        </Text>
+      </TouchableOpacity>
+
+      {(showDatePicker || showTimePicker) && DateTimePicker && (
+        <DateTimePicker
+          value={selectedDateTime}
+          mode={mode}
+          display="default"
+          onChange={onDateChange}
+          minimumDate={new Date()}
+          minuteInterval={15}
+        />
+      )}
+    </View>
+  );
+};
+
+// ✅ COMPONENTE PRINCIPAL - Seleciona automaticamente
+const DateTimePickerCompleto = (props) => {
+  console.log('🌍 Plataforma detectada:', Platform.OS);
+  
+  // Se for web, usa o componente web personalizado
+  if (Platform.OS === 'web') {
+    return <DateTimePickerWeb {...props} />;
+  }
+  
+  // Se for mobile, usa o componente com DateTimePicker nativo
+  return <DateTimePickerMobile {...props} />;
+};
+
+// Estilos (mantidos do componente original)
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,

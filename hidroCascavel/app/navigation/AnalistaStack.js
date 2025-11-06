@@ -6,8 +6,8 @@ import MinhasSolicitacoes from '../telas/MinhasSolicitacoes';
 import NovaSolicitacao from '../telas/NovaSolicitacao';
 import PerfilUsuario from '../telas/PerfilUsuario';
 import NotificacoesAnalista from '../telas/NotificacoesAnalista';
+import GerenciarRelatorios from '../telas/GerenciarRelatorios';
 
-// ✅ ADICIONE ESTAS IMPORTACÕES
 import GerenciarPocos from '../telas/GerenciarPocos';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 import GerenciarAnalises from '../telas/GerenciarAnalises';
@@ -50,7 +50,6 @@ const AnalistaStack = () => {
         }}
       />
       
-      {/* ✅ ADICIONE ESTAS NOVAS ROTAS */}
       <Stack.Screen 
         name="GerenciarPocos" 
         component={GerenciarPocos}
@@ -89,6 +88,14 @@ const AnalistaStack = () => {
         options={{ 
           headerShown: isWeb,
           title: "Notificações" 
+        }}
+      />
+      <Stack.Screen 
+        name="GerenciarRelatorios" 
+        component={GerenciarRelatorios}
+        options={{ 
+          headerShown: isWeb,
+          title: "GerenciarRelatorios" 
         }}
       />
     </Stack.Navigator>

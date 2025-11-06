@@ -1,4 +1,4 @@
-// componentes/TabelaAnalises.jsx - VERSÃO COM DETALHES DA SOLICITAÇÃO
+// componentes/TabelaAnalises.jsx - VERSÃO COM GESTOS CORRIGIDOS
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -17,10 +17,11 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3;
+const isMobile = screenWidth < 768;
+const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.3);
 const CARD_MARGIN = 8;
 
-// ✅ Componente de Detalhes integrado
+// ✅ Componente de Detalhes integrado (mantido igual)
 const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
   if (!solicitacao) {
     return (
@@ -30,7 +31,7 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
     );
   }
 
-  // ✅ Funções de formatação
+  // ✅ Funções de formatação (mantidas iguais)
   const formatarLocalizacao = (localizacao) => {
     if (!localizacao) return 'Não informada';
     
@@ -216,6 +217,20 @@ const TabelaAnalises = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [detalhesAnalise, setDetalhesAnalise] = useState(null);
   const flatListRef = useRef(null);
+
+  // ✅ CORREÇÃO: Handlers para gestos
+  const handleScrollEndDrag = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
+    
+    if (newIndex >= 0 && newIndex < analisesFiltradas.length) {
+      setPaginaAtual(newIndex);
+    }
+  };
+
+  const handleScrollBeginDrag = () => {
+    // Marca que o scroll horizontal começou
+  };
 
   useEffect(() => {
     if (analises && analises.length > 0) {
@@ -579,7 +594,7 @@ const TabelaAnalises = ({
           </Text>
         </View>
 
-        {/* Grid Horizontal de Cards */}
+        {/* ✅ CORREÇÃO: Grid Horizontal com gestos otimizados */}
         {analisesFiltradas.length > 0 ? (
           <View style={styles.carouselContainer}>
             <FlatList
@@ -588,18 +603,24 @@ const TabelaAnalises = ({
               renderItem={renderItem}
               keyExtractor={(item) => item.id}
               horizontal
-              pagingEnabled
-              showsHorizontalScrollIndicator={false}
-              snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
+              pagingEnabled={false}
+              showsHorizontalScrollIndicator={true}
+              snapToInterval={null}
               snapToAlignment="center"
-              decelerationRate="fast"
-              onMomentumScrollEnd={(event) => {
-                const newIndex = Math.round(
-                  event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_MARGIN * 2)
-                );
-                setPaginaAtual(newIndex);
-              }}
+              decelerationRate="normal"
+              // ✅ Handlers para gestos
+              onScrollBeginDrag={handleScrollBeginDrag}
+              onScrollEndDrag={handleScrollEndDrag}
+              onMomentumScrollEnd={handleScrollEndDrag}
+              // ✅ Configurações para melhor performance de gestos
+              scrollEventThrottle={16}
+              directionalLockEnabled={true}
+              alwaysBounceHorizontal={true}
+              alwaysBounceVertical={false}
+              bounces={true}
+              overScrollMode="always"
               contentContainerStyle={styles.carouselContent}
+              style={styles.flatList}
             />
             
             {/* Indicadores de Página */}
@@ -849,12 +870,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#666',
   },
-  // Carousel e Cards
+  // ✅ ESTILOS CORRIGIDOS PARA GESTOS
   carouselContainer: {
+    flex: 1,
+    minHeight: 300,
+  },
+  flatList: {
     flex: 1,
   },
   carouselContent: {
     paddingHorizontal: CARD_MARGIN,
+    paddingVertical: 0,
   },
   card: {
     width: CARD_WIDTH,
@@ -987,7 +1013,7 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     overflow: 'hidden',
   },
-  // Estilos do Componente de Detalhes
+  // Estilos do Componente de Detalhes (mantidos iguais)
   detalhesContainer: {
     flex: 1,
     backgroundColor: 'white',

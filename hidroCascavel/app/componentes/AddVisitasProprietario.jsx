@@ -387,7 +387,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
                 placeholder="Selecione data e hora"
               />
               <Text style={styles.dateInfo}>
-                📅 Selecionado: {formData.dataHora.toLocaleString('pt-BR')}
+                Selecionado: {formData.dataHora.toLocaleString('pt-BR')}
               </Text>
             </View>
           </View>
@@ -408,7 +408,6 @@ Gostaria que a visita seja ${dataHoraFormatada}
           </View>
         </View>
 
-        {/* ✅ INFO DO USUÁRIO */}
         <View style={styles.userInfoBox}>
           <Text style={styles.userInfoTitle}>👤 Seus Dados:</Text>
           <Text style={styles.userInfoText}>
@@ -422,7 +421,6 @@ Gostaria que a visita seja ${dataHoraFormatada}
           )}
         </View>
 
-        {/* ✅ PRÉVIA DA MENSAGEM */}
         {formData.poco && formData.observacoes && (
           <View style={styles.previewBox}>
             <Text style={styles.previewTitle}>📋 Prévia da Mensagem WhatsApp:</Text>

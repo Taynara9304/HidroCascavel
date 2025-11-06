@@ -1,7 +1,6 @@
 // telas/GerenciarVisitas.js - VERSÃO FINAL COMPLETA
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
-import TabelaVisitas from '../componentes/TabelaVisitas';
 import VisitasContainer from '../componentes/VisitasContainer';
 import GerenciarSolicitacoesVisitas from '../componentes/GerenciarSolicitacoesVisitas'; // ✅ NOVO COMPONENTE
 import useVisitas from '../hooks/useTabelaVisitas';
@@ -9,7 +8,7 @@ import { useAuth } from '../contexts/authContext';
 
 const GerenciarVisitas = () => {
   const { userData } = useAuth();
-  const [abaAtiva, setAbaAtiva] = useState('visitas'); // ✅ CONTROLE DE ABAS
+  const [abaAtiva, setAbaAtiva] = useState('visitas');
   
   const {
     visits,
@@ -26,7 +25,6 @@ const GerenciarVisitas = () => {
     rejeitarVisita
   } = useVisitas();
 
-  // ✅ ADICIONE AS FUNÇÕES DE APROVAÇÃO AO CONTEXTO DO HOOK
   const handleDeleteVisit = async (visitId) => {
     try {
       await deleteVisit(visitId);
@@ -54,7 +52,6 @@ const GerenciarVisitas = () => {
     }
   };
 
-  // ✅ RENDERIZAR ABAS APENAS PARA ADMIN
   const renderAbas = () => {
     if (userData?.tipoUsuario !== 'administrador') {
       return null;
@@ -76,21 +73,18 @@ const GerenciarVisitas = () => {
           onPress={() => setAbaAtiva('solicitacoes')}
         >
           <Text style={[styles.abaTexto, abaAtiva === 'solicitacoes' && styles.abaTextoAtivo]}>
-            ⏳ Solicitações
-            {/* Poderia adicionar badge com contador aqui */}
+            Solicitações
           </Text>
         </TouchableOpacity>
       </View>
     );
   };
 
-  // ✅ RENDERIZAR CONTEÚDO BASEADO NA ABA
   const renderConteudo = () => {
     if (abaAtiva === 'solicitacoes' && userData?.tipoUsuario === 'administrador') {
       return <GerenciarSolicitacoesVisitas />;
     }
 
-    // Conteúdo padrão (visitas)
     if (loading) {
       return (
         <View style={styles.loadingContainer}>

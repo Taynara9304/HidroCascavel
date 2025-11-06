@@ -19,7 +19,7 @@ import Toast from "react-native-toast-message";
 import * as Print from "expo-print";
 import * as Sharing from "expo-sharing";
 import { db } from "../services/firebaseConfig";
-import html2pdf from 'html2pdf.js';
+
 
 const GerenciarRelatorios = ({ navigation }) => {
     const { width } = useWindowDimensions();

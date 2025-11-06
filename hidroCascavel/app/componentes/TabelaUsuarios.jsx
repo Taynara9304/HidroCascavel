@@ -13,7 +13,8 @@ import {
 } from 'react-native';
 
 const { width: screenWidth } = Dimensions.get('window');
-const CARD_WIDTH = screenWidth * 0.3;
+const isMobile = screenWidth < 768;
+const CARD_WIDTH = screenWidth * (isMobile ? 0.8 : 0.3);
 const CARD_MARGIN = 12;
 
 const TabelaUsuarios = ({
@@ -33,6 +34,20 @@ const TabelaUsuarios = ({
   const flatListRef = useRef(null);
 
   console.log('📊 TabelaUsuarios: users recebido =', users.length);
+
+  // ✅ CORREÇÃO: Handlers para gestos
+  const handleScrollEndDrag = (event) => {
+    const offsetX = event.nativeEvent.contentOffset.x;
+    const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
+    
+    if (newIndex >= 0 && newIndex < usuariosFiltrados.length) {
+      setPaginaAtual(newIndex);
+    }
+  };
+
+  const handleScrollBeginDrag = () => {
+    // Marca que o scroll horizontal começou
+  };
 
   const usuariosFiltrados = useMemo(() => {
     const filtrados = users.filter(user => {
@@ -278,7 +293,7 @@ const TabelaUsuarios = ({
         </TouchableOpacity>
       </View>
 
-      {/* CARROSSEL DE CARDS */}
+      {/* ✅ CORREÇÃO: Carrossel com gestos otimizados */}
       {usuariosFiltrados.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -287,18 +302,24 @@ const TabelaUsuarios = ({
             renderItem={renderItem}
             keyExtractor={(item) => item.id}
             horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            snapToInterval={CARD_WIDTH + CARD_MARGIN * 2}
+            pagingEnabled={false}
+            showsHorizontalScrollIndicator={true}
+            snapToInterval={null}
             snapToAlignment="center"
-            decelerationRate="fast"
-            onMomentumScrollEnd={(event) => {
-              const newIndex = Math.round(
-                event.nativeEvent.contentOffset.x / (CARD_WIDTH + CARD_MARGIN * 2)
-              );
-              setPaginaAtual(newIndex);
-            }}
+            decelerationRate="normal"
+            // ✅ Handlers para gestos
+            onScrollBeginDrag={handleScrollBeginDrag}
+            onScrollEndDrag={handleScrollEndDrag}
+            onMomentumScrollEnd={handleScrollEndDrag}
+            // ✅ Configurações para melhor performance de gestos
+            scrollEventThrottle={16}
+            directionalLockEnabled={true}
+            alwaysBounceHorizontal={true}
+            alwaysBounceVertical={false}
+            bounces={true}
+            overScrollMode="always"
             contentContainerStyle={styles.carouselContent}
+            style={styles.flatList}
           />
           
           {/* INDICADORES DE PÁGINA */}
@@ -601,12 +622,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
-  // CARROSSEL
+  // ✅ ESTILOS CORRIGIDOS PARA GESTOS
   carouselContainer: {
+    flex: 1,
+    minHeight: 300,
+  },
+  flatList: {
     flex: 1,
   },
   carouselContent: {
     paddingHorizontal: CARD_MARGIN,
+    paddingVertical: 0,
   },
   card: {
     width: CARD_WIDTH,
