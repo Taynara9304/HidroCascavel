@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+// telas/Login.js - VERSÃO CORRIGIDA PARA A ESTRUTURA DE STACKS
+import React, { useState, useEffect } from "react";
 import {
   View,
   StyleSheet,
@@ -27,7 +28,54 @@ const Login = ({ navigation }) => {
   const [senha, setSenha] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const { buscarDadosUsuario } = useAuth();
+  const { user, userData } = useAuth();
+
+  // ✅ CORREÇÃO: Redirecionamento automático para os Stacks corretos
+  useEffect(() => {
+    console.log('🔍 Login - Estado do usuário:', user ? `Logado: ${user.uid}` : 'Deslogado');
+    console.log('📊 Dados do usuário:', userData);
+    
+    if (user && userData) {
+      console.log('✅ Usuário logado com dados, redirecionando para o Stack correto...');
+      
+      // Pequeno delay para garantir que tudo foi carregado
+      const timer = setTimeout(() => {
+        redirecionarParaStackCorreto(userData.tipoUsuario);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [user, userData, navigation]);
+
+  // ✅ NOVA FUNÇÃO: Redirecionar para o Stack correto baseado no tipo de usuário
+  const redirecionarParaStackCorreto = (tipoUsuario) => {
+    console.log('🎯 Redirecionando para Stack do tipo:', tipoUsuario);
+    
+    // ✅ CORREÇÃO: Usar os nomes exatos dos Stacks definidos no App.js
+    switch (tipoUsuario) {
+      case 'administrador':
+      case 'admin':
+        console.log('🚀 Redirecionando para AdministradorStack');
+        navigation.replace('AdministradorStack'); // Nome exato do Stack
+        break;
+      case 'analista':
+        console.log('🔬 Redirecionando para AnalistaStack');
+        navigation.replace('AnalistaStack'); // Nome exato do Stack
+        break;
+      case 'proprietario':
+      case 'proprietário':
+        console.log('🏠 Redirecionando para ProprietarioStack');
+        navigation.replace('ProprietarioStack'); // Nome exato do Stack
+        break;
+      default:
+        console.log('❌ Tipo de usuário desconhecido:', tipoUsuario);
+        Toast.show({
+          type: 'error',
+          text1: 'Erro',
+          text2: 'Tipo de usuário não reconhecido'
+        });
+    }
+  };
 
   const validateFields = () => {
     const newErrors = {};
@@ -52,29 +100,28 @@ const Login = ({ navigation }) => {
     }
 
     setIsLoading(true);
+    setErrors({});
 
     try {
+      console.log('🔐 Tentando login com:', email);
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userFirebase = userCredential.user;
 
       console.log('✅ Usuário autenticado no Firebase:', userFirebase.uid);
 
-      // Busca os dados do usuário
-      const userData = await buscarDadosUsuario(userFirebase);
-      console.log('📊 Dados do usuário buscados:', userData);
-
       Toast.show({
         type: 'success',
-        text1: 'Sucesso',
+        text1: 'Sucesso!',
         text2: 'Login realizado com sucesso!'
       });
 
-      // ⚠️ NÃO FAÇA REDIRECIONAMENTO AQUI!
-      // O AuthProvider vai lidar com o redirecionamento automaticamente
+      // ✅ O redirecionamento agora é automático pelo useEffect acima
+      // O AuthProvider vai atualizar o estado 'user' e 'userData' e o useEffect vai redirecionar
       
     } catch (error) {
       console.error('❌ Erro no login:', error);
-      let errorMessage = 'Erro ao fazer login';
+      let errorMessage = 'Erro ao fazer login. Tente novamente.';
 
       if (error.code === 'auth/user-not-found') {
         errorMessage = 'Usuário não encontrado';
@@ -84,11 +131,13 @@ const Login = ({ navigation }) => {
         errorMessage = 'Email inválido';
       } else if (error.code === 'auth/network-request-failed') {
         errorMessage = 'Erro de conexão. Verifique sua internet.';
+      } else if (error.code === 'auth/too-many-requests') {
+        errorMessage = 'Muitas tentativas. Tente novamente mais tarde.';
       }
 
       Toast.show({
         type: 'error',
-        text1: 'Erro',
+        text1: 'Erro no login',
         text2: errorMessage
       });
     } finally {
@@ -96,24 +145,51 @@ const Login = ({ navigation }) => {
     }
   };
 
+  // Se o usuário já estiver logado, mostrar loading
+  if (user && userData) {
+    const getNomeStack = () => {
+      switch (userData.tipoUsuario) {
+        case 'administrador':
+        case 'admin':
+          return 'Administrador';
+        case 'analista':
+          return 'Analista';
+        case 'proprietario':
+        case 'proprietário':
+          return 'Proprietário';
+        default:
+          return 'Sistema';
+      }
+    };
+
+    return (
+      <View style={[styles.container, isCellPhone && styles.containerCellPhone, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color="#2685BF" />
+        <Text style={styles.loadingText}>Redirecionando para {getNomeStack()}...</Text>
+      </View>
+    );
+  }
+
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={[styles.container, isCellPhone && styles.containerCellPhone]}>
 
-      {!isCellPhone && (
-        <View style={styles.containerLeft}>
-          <Image source={LogoHidroCvel} style={styles.LogoHidroCvel}></Image>
-        </View>
-      )}
+        {!isCellPhone && (
+          <View style={styles.containerLeft}>
+            <Image source={LogoHidroCvel} style={styles.LogoHidroCvel} />
+          </View>
+        )}
 
-      <View style={[styles.containerRight, isCellPhone && styles.containerRightCellPhone]}>
+        <View style={[styles.containerRight, isCellPhone && styles.containerRightCellPhone]}>
           <View style={[styles.topContainer]}>
             <Image
               source={ondaTopo}
               style={[styles.ondaTopo, isCellPhone && styles.ondaTopoCellPhone]}
               resizeMode="cover"
             />
-            <Text style={[styles.titleSobreImagem, isCellPhone && styles.titleSobreImagemCellPhone]}>Olá, vamos fazer login!</Text>
+            <Text style={[styles.titleSobreImagem, isCellPhone && styles.titleSobreImagemCellPhone]}>
+              Olá, vamos fazer login!
+            </Text>
           </View>
 
           <View style={[styles.content]}>
@@ -126,6 +202,8 @@ const Login = ({ navigation }) => {
                   placeholder="Digite seu e-mail"
                   keyboardType="email-address"
                   style={{ width: "100%" }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
                 {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
               </View>
@@ -138,6 +216,8 @@ const Login = ({ navigation }) => {
                   placeholder="Digite sua senha"
                   secureTextEntry
                   style={{ width: "100%" }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
                 />
                 {errors.senha && <Text style={styles.errorText}>{errors.senha}</Text>}
               </View>
@@ -158,7 +238,7 @@ const Login = ({ navigation }) => {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <ActivityIndicator color="#fff" size="small" />
                 ) : (
                   <Text style={styles.textoBotao}>Entrar</Text>
                 )}
@@ -179,8 +259,8 @@ const Login = ({ navigation }) => {
   );
 };
 
+// ... (mantenha os mesmos estilos do código anterior)
 const styles = StyleSheet.create({
-  // ... (Estilos container, containerLeft, containerRight e Logo permanecem os mesmos)
   container: {
     flex: 1,
     flexDirection: "row",
@@ -211,35 +291,30 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
   },
-  
-  // ESTILOS PADRÃO (DESKTOP)
   ondaTopo: {
     width: "100%",
-    height: 140, // Altura maior para desktop
+    height: 140,
   },
   titleSobreImagem: {
-    marginTop: 30, // Margem maior para desktop
-    fontSize: 25, // Fonte maior para desktop
+    marginTop: 30,
+    fontSize: 25,
     color: "#2685BF",
+    fontWeight: "bold",
   },
   ondaBaixo: {
     width: "100%",
-    height: 140, // Defina uma altura padrão (opcional, mas bom para controle)
+    height: 140,
   },
-  
-  // NOVOS ESTILOS PARA CELULAR (MENORES)
   ondaTopoCellPhone: {
-    height: 100, // Altura reduzida para celular
+    height: 100,
   },
   titleSobreImagemCellPhone: {
-    marginTop: 70, // Margem reduzida para celular
-    fontSize: 20, // Fonte reduzida para celular
+    marginTop: 70,
+    fontSize: 20,
   },
   ondaBaixoCellPhone: {
-    height: 100, // Altura reduzida para celular
+    height: 100,
   },
-  
-  // ... (Restante dos estilos permanecem os mesmos)
   content: {
     flex: 1,
     justifyContent: "space-between",
@@ -261,10 +336,18 @@ const styles = StyleSheet.create({
   botao: {
     marginTop: 20,
     backgroundColor: "#2685BF",
-    paddingVertical: 12,
+    paddingVertical: 15,
     borderRadius: 8,
     width: "50%",
     alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   botaoDisabled: {
     backgroundColor: "#ccc",
@@ -278,12 +361,22 @@ const styles = StyleSheet.create({
     color: "#2685BF",
     marginTop: 5,
     textDecorationLine: 'underline',
+    fontSize: 14,
   },
   errorText: {
     color: 'red',
     fontSize: 12,
     marginTop: 5,
     marginLeft: 5,
+  },
+  loadingContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#2685BF',
   },
 });
 
