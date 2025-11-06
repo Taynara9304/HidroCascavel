@@ -11,9 +11,6 @@ import Card from "../componentes/Card";
 import { collection, query, onSnapshot, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 
-// 1. Define uma imagem padrão (fallback)
-const fallbackImage = require("../assets/img1Poco.png");
-
 const Avaliacoes = () => {
   const { width } = useWindowDimensions();
   const isMobile = width < 600;
@@ -39,8 +36,6 @@ const Avaliacoes = () => {
           name: data.userName,
           rating: data.rating,
           comment: data.comment,
-          // 2. Usa a imagem estática de fallback
-          image: fallbackImage, 
         });
       });
       setAvaliacoes(list);
