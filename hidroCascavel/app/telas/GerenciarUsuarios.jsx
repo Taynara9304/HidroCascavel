@@ -28,7 +28,6 @@ const GerenciarUsuarios = () => {
 
   console.log('🔐 GerenciarUsuarios: Tipo de usuário:', userData?.tipoUsuario);
 
-  // ✅ PROTEÇÃO DE ACESSO - Somente administradores
   if (!userData || userData.tipoUsuario !== 'administrador') {
     return (
       <View style={styles.accessDeniedContainer}>
@@ -43,7 +42,6 @@ const GerenciarUsuarios = () => {
     );
   }
 
-  // ✅ Função para editar usuário
   const handleEditarUsuario = async (user) => {
     console.log('✏️ GerenciarUsuarios: Editando usuário:', user.id, user.nome);
     
@@ -59,7 +57,6 @@ const GerenciarUsuarios = () => {
     }
   };
 
-  // ✅ Função para deletar usuário com confirmação
   const handleDeletarUsuario = async (user) => {
     console.log('🗑️ GerenciarUsuarios: Solicitando exclusão do usuário:', user.id, user.nome);
     
@@ -113,7 +110,7 @@ const GerenciarUsuarios = () => {
   if (error) {
     return (
       <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>❌ Erro ao Carregar</Text>
+        <Text style={styles.errorTitle}> Erro ao Carregar</Text>
         <Text style={styles.errorText}>{error}</Text>
         <Text style={styles.errorSubtext}>
           Verifique sua conexão com a internet e tente novamente.
@@ -124,26 +121,11 @@ const GerenciarUsuarios = () => {
 
   return (
     <View style={styles.container}>
-      {/* ✅ HEADER INFORMATIVO */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>👥 Gerenciar Usuários</Text>
+        <Text style={styles.headerTitle}> Gerenciar Usuários</Text>
         <Text style={styles.headerSubtitle}>
           {users.length} usuário(s) cadastrado(s) no sistema
         </Text>
-        
-        {/* ✅ BOTÃO DE TESTE TEMPORÁRIO */}
-        <TouchableOpacity 
-          style={styles.testeButton}
-          onPress={() => {
-            console.log('🧪 TESTE: Verificando funções...');
-            console.log('🧪 deleteUser disponível:', typeof deleteUser);
-            console.log('🧪 editUser disponível:', typeof editUser);
-            console.log('🧪 users carregados:', users.length);
-            Alert.alert('Teste', `Funções disponíveis!\nUsuários: ${users.length}`);
-          }}
-        >
-          <Text style={styles.testeButtonText}>🧪 Testar Funções</Text>
-        </TouchableOpacity>
       </View>
 
       <ScrollView 
@@ -162,7 +144,6 @@ const GerenciarUsuarios = () => {
           />
         </View>
 
-        {/* ✅ CARD INFORMATIVO */}
         <View style={styles.infoCard}>
           <Text style={styles.infoCardTitle}>💡 Informações</Text>
           <Text style={styles.infoCardText}>
@@ -183,7 +164,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f8f9fa',
   },
-  // HEADER
   header: {
     backgroundColor: 'white',
     padding: 20,
@@ -206,7 +186,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#6c757d',
   },
-  // SCROLL VIEW
   scrollView: {
     flex: 1,
   },
@@ -218,7 +197,6 @@ const styles = StyleSheet.create({
     margin: 16,
     marginBottom: 8,
   },
-  // CARD INFORMATIVO
   infoCard: {
     backgroundColor: '#E3F2FD',
     margin: 16,
@@ -239,7 +217,6 @@ const styles = StyleSheet.create({
     color: '#495057',
     lineHeight: 20,
   },
-  // BOTÃO DE TESTE
   testeButton: {
     backgroundColor: '#FF6B6B',
     padding: 10,
@@ -251,7 +228,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  // ESTADOS DE CARREGAMENTO E ERRO
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -290,7 +266,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  // ACESSO NEGADO
   accessDeniedContainer: {
     flex: 1,
     justifyContent: 'center',

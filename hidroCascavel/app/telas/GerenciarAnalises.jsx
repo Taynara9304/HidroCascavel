@@ -42,21 +42,31 @@ const GerenciarAnalises = ({ navigation }) => {
     }
   }, [user, userType]);
 
-  // ✅ FUNÇÃO PARA DETECTAR O TIPO REAL DO USUÁRIO
   const getTipoUsuarioReal = () => {
-    // Prioridade: userType do contexto > userData.tipoUsuario > padrão 'analista'
+    let tipo = '';
+    
     if (userType) {
       console.log('🎯 Usando userType do contexto:', userType);
-      return userType;
-    }
-    
-    if (userData?.tipoUsuario) {
+      tipo = userType;
+    } else if (userData?.tipoUsuario) {
       console.log('🎯 Usando userData.tipoUsuario:', userData.tipoUsuario);
-      return userData.tipoUsuario;
+      tipo = userData.tipoUsuario;
+    } else {
+      console.log('⚠️ Tipo de usuário não detectado, usando padrão: analista');
+      tipo = 'analista';
     }
     
-    console.log('⚠️ Tipo de usuário não detectado, usando padrão: analista');
-    return 'analista'; // Padrão mais seguro para evitar admin
+    if (tipo === 'administrador') {
+      return 'admin';
+    }
+    if (tipo === 'analista') {
+      return 'analista';
+    }
+    if (tipo === 'proprietario') {
+      return 'proprietario';
+    }
+    
+    return tipo;
   };
 
   const carregarAnalises = async () => {
@@ -292,10 +302,6 @@ const GerenciarAnalises = ({ navigation }) => {
     if (tipoUsuarioReal === 'admin') {
       return (
         <View style={styles.formularioContainer}>
-          <Text style={styles.formularioTitle}>📋 Cadastrar Nova Análise (Direto)</Text>
-          <Text style={styles.formularioSubtitle}>
-            Como administrador, você pode cadastrar análises diretamente no banco de dados.
-          </Text>
           <AddAnalisesAdmin 
             onAdicionarAnalise={handleCadastroDiretoAdmin}
             pocos={pocos}
