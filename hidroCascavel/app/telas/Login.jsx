@@ -1,4 +1,4 @@
-// telas/Login.js - VERSÃO CORRIGIDA PARA A ESTRUTURA DE STACKS
+// telas/Login.js - VERSÃO ATUALIZADA
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -47,25 +47,24 @@ const Login = ({ navigation }) => {
     }
   }, [user, userData, navigation]);
 
-  // ✅ NOVA FUNÇÃO: Redirecionar para o Stack correto baseado no tipo de usuário
+  // ✅ FUNÇÃO: Redirecionar para o Stack correto
   const redirecionarParaStackCorreto = (tipoUsuario) => {
     console.log('🎯 Redirecionando para Stack do tipo:', tipoUsuario);
     
-    // ✅ CORREÇÃO: Usar os nomes exatos dos Stacks definidos no App.js
     switch (tipoUsuario) {
       case 'administrador':
       case 'admin':
         console.log('🚀 Redirecionando para AdministradorStack');
-        navigation.replace('AdministradorStack'); // Nome exato do Stack
+        navigation.replace('AdministradorStack');
         break;
       case 'analista':
         console.log('🔬 Redirecionando para AnalistaStack');
-        navigation.replace('AnalistaStack'); // Nome exato do Stack
+        navigation.replace('AnalistaStack');
         break;
       case 'proprietario':
       case 'proprietário':
         console.log('🏠 Redirecionando para ProprietarioStack');
-        navigation.replace('ProprietarioStack'); // Nome exato do Stack
+        navigation.replace('ProprietarioStack');
         break;
       default:
         console.log('❌ Tipo de usuário desconhecido:', tipoUsuario);
@@ -116,8 +115,7 @@ const Login = ({ navigation }) => {
         text2: 'Login realizado com sucesso!'
       });
 
-      // ✅ O redirecionamento agora é automático pelo useEffect acima
-      // O AuthProvider vai atualizar o estado 'user' e 'userData' e o useEffect vai redirecionar
+      // ✅ O redirecionamento agora é automático pelo useEffect
       
     } catch (error) {
       console.error('❌ Erro no login:', error);
@@ -214,7 +212,7 @@ const Login = ({ navigation }) => {
                   value={senha}
                   onChangeText={setSenha}
                   placeholder="Digite sua senha"
-                  secureTextEntry
+                  secureTextEntry={true} // ✅ Agora com olho para mostrar/ocultar
                   style={{ width: "100%" }}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -259,7 +257,6 @@ const Login = ({ navigation }) => {
   );
 };
 
-// ... (mantenha os mesmos estilos do código anterior)
 const styles = StyleSheet.create({
   container: {
     flex: 1,

@@ -1,4 +1,4 @@
-// componentes/TabelaVisitas.js - VERSÃO TABELA ÚLTIMAS 5 VISITAS
+// componentes/TabelaVisitas.js - VERSÃO RESPONSIVA PARA CELULAR
 import React, { useState, useEffect } from 'react';
 import { 
   View, 
@@ -7,17 +7,20 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  RefreshControl
+  RefreshControl,
+  Dimensions
 } from 'react-native';
 import { collection, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
+
+const { width } = Dimensions.get('window');
+const isMobile = width < 768;
 
 const TabelaVisitas = () => {
   const [visits, setVisits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Buscar últimas 5 visitas do Firebase
   useEffect(() => {
     const fetchLastVisits = () => {
       setLoading(true);
@@ -60,13 +63,10 @@ const TabelaVisitas = () => {
     return unsubscribe;
   }, []);
 
-  // Função para atualizar os dados
   const onRefresh = () => {
     setRefreshing(true);
-    // A atualização é automática pelo onSnapshot
   };
 
-  // Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return '--/--/----';
     
@@ -82,7 +82,6 @@ const TabelaVisitas = () => {
     }
   };
 
-  // Função para formatar hora
   const formatarHora = (dataString) => {
     if (!dataString) return '--:--';
     
@@ -97,18 +96,16 @@ const TabelaVisitas = () => {
     }
   };
 
-  // Função para obter cor do status
   const getCorStatus = (situacao, status) => {
     if (situacao?.toLowerCase() === 'concluida') {
-      return '#4CAF50'; // Verde para concluída
+      return '#4CAF50';
     }
     if (status?.toLowerCase() === 'aprovada') {
-      return '#2196F3'; // Azul para aprovada
+      return '#2196F3';
     }
-    return '#FF9800'; // Laranja para agendada/pendente
+    return '#FF9800';
   };
 
-  // Função para obter texto do status
   const getTextoStatus = (situacao, status) => {
     if (situacao?.toLowerCase() === 'concluida') {
       return 'Concluída';
@@ -117,6 +114,161 @@ const TabelaVisitas = () => {
       return 'Aprovada';
     }
     return 'Agendada';
+  };
+
+  const renderMobileView = () => {
+    return (
+      <ScrollView 
+        style={styles.mobileContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#2685BF']}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+      >
+        {visits.map((visit, index) => (
+          <View key={visit.id} style={styles.mobileCard}>
+            <View style={styles.mobileCardHeader}>
+              <Text style={styles.mobilePocoNome} numberOfLines={1}>
+                {visit.pocoNome || 'Poço não informado'}
+              </Text>
+              <View style={[
+                styles.mobileStatusBadge,
+                { backgroundColor: getCorStatus(visit.situacao, visit.status) }
+              ]}>
+                <Text style={styles.mobileStatusTexto}>
+                  {getTextoStatus(visit.situacao, visit.status)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.mobileInfoContainer}>
+              <View style={styles.mobileInfoRow}>
+                <Text style={styles.mobileInfoLabel}>Proprietário:</Text>
+                <Text style={styles.mobileInfoValue} numberOfLines={1}>
+                  {visit.proprietario || 'N/I'}
+                </Text>
+              </View>
+
+              <View style={styles.mobileInfoRow}>
+                <Text style={styles.mobileInfoLabel}>Analista:</Text>
+                <Text style={styles.mobileInfoValue} numberOfLines={1}>
+                  {visit.analistaNome || 'N/I'}
+                </Text>
+              </View>
+
+              <View style={styles.mobileInfoRow}>
+                <Text style={styles.mobileInfoLabel}>Data:</Text>
+                <Text style={styles.mobileInfoValue}>
+                  {formatarData(visit.dataVisita)}
+                </Text>
+              </View>
+
+              <View style={styles.mobileInfoRow}>
+                <Text style={styles.mobileInfoLabel}>Hora:</Text>
+                <Text style={styles.mobileInfoValue}>
+                  {formatarHora(visit.dataVisita)}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.mobileCardFooter}>
+              <Text style={styles.mobileCardIndex}>
+                {index + 1} de {visits.length}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
+  };
+
+  const renderDesktopView = () => {
+    return (
+      <ScrollView 
+        style={styles.tabelaContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#2685BF']}
+          />
+        }
+      >
+        {/* Cabeçalho da Tabela */}
+        <View style={styles.linhaCabecalho}>
+          <Text style={[styles.celulaCabecalho, styles.celulaPoco]}>Poço</Text>
+          <Text style={[styles.celulaCabecalho, styles.celulaProprietario]}>Proprietário</Text>
+          <Text style={[styles.celulaCabecalho, styles.celulaData]}>Data</Text>
+          <Text style={[styles.celulaCabecalho, styles.celulaHora]}>Hora</Text>
+          <Text style={[styles.celulaCabecalho, styles.celulaStatus]}>Status</Text>
+          <Text style={[styles.celulaCabecalho, styles.celulaAnalista]}>Analista</Text>
+        </View>
+
+        {/* Linhas da Tabela */}
+        {visits.map((visit, index) => (
+          <View 
+            key={visit.id} 
+            style={[
+              styles.linha,
+              index % 2 === 0 ? styles.linhaPar : styles.linhaImpar
+            ]}
+          >
+            {/* Poço */}
+            <View style={[styles.celula, styles.celulaPoco]}>
+              <Text style={styles.celulaTexto} numberOfLines={2}>
+                {visit.pocoNome || 'N/I'}
+              </Text>
+            </View>
+
+            {/* Proprietário */}
+            <View style={[styles.celula, styles.celulaProprietario]}>
+              <Text style={styles.celulaTexto} numberOfLines={2}>
+                {visit.proprietario || 'N/I'}
+              </Text>
+            </View>
+
+            {/* Data */}
+            <View style={[styles.celula, styles.celulaData]}>
+              <Text style={styles.celulaTexto}>
+                {formatarData(visit.dataVisita)}
+              </Text>
+            </View>
+
+            {/* Hora */}
+            <View style={[styles.celula, styles.celulaHora]}>
+              <Text style={styles.celulaTexto}>
+                {formatarHora(visit.dataVisita)}
+              </Text>
+            </View>
+
+            {/* Status */}
+            <View style={[styles.celula, styles.celulaStatus]}>
+              <View 
+                style={[
+                  styles.statusBadge,
+                  { backgroundColor: getCorStatus(visit.situacao, visit.status) }
+                ]}
+              >
+                <Text style={styles.statusTexto}>
+                  {getTextoStatus(visit.situacao, visit.status)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Analista */}
+            <View style={[styles.celula, styles.celulaAnalista]}>
+              <Text style={styles.celulaTexto} numberOfLines={2}>
+                {visit.analistaNome || 'N/I'}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </ScrollView>
+    );
   };
 
   // Loading state
@@ -142,86 +294,7 @@ const TabelaVisitas = () => {
       </View>
 
       {visits.length > 0 ? (
-        <ScrollView 
-          style={styles.tabelaContainer}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={['#2685BF']}
-            />
-          }
-        >
-          {/* Cabeçalho da Tabela */}
-          <View style={styles.linhaCabecalho}>
-            <Text style={[styles.celulaCabecalho, styles.celulaPoco]}>Poço</Text>
-            <Text style={[styles.celulaCabecalho, styles.celulaProprietario]}>Proprietário</Text>
-            <Text style={[styles.celulaCabecalho, styles.celulaData]}>Data</Text>
-            <Text style={[styles.celulaCabecalho, styles.celulaHora]}>Hora</Text>
-            <Text style={[styles.celulaCabecalho, styles.celulaStatus]}>Status</Text>
-            <Text style={[styles.celulaCabecalho, styles.celulaAnalista]}>Analista</Text>
-          </View>
-
-          {/* Linhas da Tabela */}
-          {visits.map((visit, index) => (
-            <View 
-              key={visit.id} 
-              style={[
-                styles.linha,
-                index % 2 === 0 ? styles.linhaPar : styles.linhaImpar
-              ]}
-            >
-              {/* Poço */}
-              <View style={[styles.celula, styles.celulaPoco]}>
-                <Text style={styles.celulaTexto} numberOfLines={2}>
-                  {visit.pocoNome || 'N/I'}
-                </Text>
-              </View>
-
-              {/* Proprietário */}
-              <View style={[styles.celula, styles.celulaProprietario]}>
-                <Text style={styles.celulaTexto} numberOfLines={2}>
-                  {visit.proprietario || 'N/I'}
-                </Text>
-              </View>
-
-              {/* Data */}
-              <View style={[styles.celula, styles.celulaData]}>
-                <Text style={styles.celulaTexto}>
-                  {formatarData(visit.dataVisita)}
-                </Text>
-              </View>
-
-              {/* Hora */}
-              <View style={[styles.celula, styles.celulaHora]}>
-                <Text style={styles.celulaTexto}>
-                  {formatarHora(visit.dataVisita)}
-                </Text>
-              </View>
-
-              {/* Status */}
-              <View style={[styles.celula, styles.celulaStatus]}>
-                <View 
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: getCorStatus(visit.situacao, visit.status) }
-                  ]}
-                >
-                  <Text style={styles.statusTexto}>
-                    {getTextoStatus(visit.situacao, visit.status)}
-                  </Text>
-                </View>
-              </View>
-
-              {/* Analista */}
-              <View style={[styles.celula, styles.celulaAnalista]}>
-                <Text style={styles.celulaTexto} numberOfLines={2}>
-                  {visit.analistaNome || 'N/I'}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+        isMobile ? renderMobileView() : renderDesktopView()
       ) : (
         <View style={styles.semDadosContainer}>
           <Text style={styles.semDados}>📭 Nenhuma visita encontrada</Text>
@@ -231,7 +304,6 @@ const TabelaVisitas = () => {
         </View>
       )}
 
-      {/* Rodapé com contador */}
       <View style={styles.rodape}>
         <Text style={styles.rodapeTexto}>
           Mostrando {visits.length} visita{visits.length !== 1 ? 's' : ''}
@@ -290,10 +362,11 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
   },
+  
+  // ESTILOS PARA DESKTOP (Tabela)
   tabelaContainer: {
     flex: 1,
   },
-  // Cabeçalho da tabela
   linhaCabecalho: {
     flexDirection: 'row',
     backgroundColor: '#2685BF',
@@ -308,7 +381,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
   },
-  // Linhas da tabela
   linha: {
     flexDirection: 'row',
     paddingVertical: 12,
@@ -324,7 +396,6 @@ const styles = StyleSheet.create({
   linhaImpar: {
     backgroundColor: '#ffffff',
   },
-  // Células
   celula: {
     justifyContent: 'center',
     paddingHorizontal: 4,
@@ -337,25 +408,24 @@ const styles = StyleSheet.create({
   },
   // Larguras das colunas
   celulaPoco: {
-    flex: 1.5, // Poço - maior largura
+    flex: 1.5,
   },
   celulaProprietario: {
-    flex: 1.5, // Proprietário - maior largura
+    flex: 1.5,
   },
   celulaData: {
-    flex: 1, // Data
+    flex: 1,
   },
   celulaHora: {
-    flex: 0.8, // Hora
+    flex: 0.8,
   },
   celulaStatus: {
-    flex: 1.2, // Status - espaço para o badge
+    flex: 1.2,
     alignItems: 'center',
   },
   celulaAnalista: {
-    flex: 1.2, // Analista
+    flex: 1.2,
   },
-  // Status badge
   statusBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -369,7 +439,87 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'capitalize',
   },
-  // Sem dados
+
+  // ✅ ESTILOS PARA MOBILE (Cards)
+  mobileContainer: {
+    flex: 1,
+  },
+  mobileCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#f0f0f0',
+  },
+  mobileCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  mobilePocoNome: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    flex: 1,
+    marginRight: 8,
+  },
+  mobileStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    minWidth: 80,
+  },
+  mobileStatusTexto: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  mobileInfoContainer: {
+    gap: 8,
+  },
+  mobileInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mobileInfoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    flex: 1,
+  },
+  mobileInfoValue: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: '500',
+    flex: 1.5,
+    textAlign: 'right',
+  },
+  mobileCardFooter: {
+    marginTop: 12,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    alignItems: 'center',
+  },
+  mobileCardIndex: {
+    fontSize: 12,
+    color: '#999',
+    fontWeight: '500',
+  },
+
+  // Estilos compartilhados
   semDadosContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -389,7 +539,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 16,
   },
-  // Rodapé
   rodape: {
     marginTop: 12,
     paddingTop: 12,

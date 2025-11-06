@@ -1,3 +1,4 @@
+// componentes/Input.js - VERSÃO COM OLHO PARA SENHA
 import React, { useRef, useState } from 'react';
 import { StyleSheet, TouchableWithoutFeedback } from 'react-native';
 import { TextInput } from 'react-native-paper';
@@ -10,14 +11,35 @@ const Input = ({
   keyboardType = 'default',
   secureTextEntry = false,
   style,
+  ...props
 }) => {
   const inputRef = useRef(null);
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleContainerPress = () => {
     if (inputRef.current) {
       inputRef.current.focus();
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const getRightIcon = () => {
+    if (secureTextEntry) {
+      return {
+        right: (
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off' : 'eye'}
+            onPress={togglePasswordVisibility}
+            color="#666"
+          />
+        )
+      };
+    }
+    return {};
   };
 
   return (
@@ -30,7 +52,7 @@ const Input = ({
         onChangeText={onChangeText}
         placeholder={placeholder}
         keyboardType={keyboardType}
-        secureTextEntry={secureTextEntry}
+        secureTextEntry={secureTextEntry && !showPassword}
         outlineColor="#2685BF"
         activeOutlineColor="#2685BF"
         style={[styles.input, style]}
@@ -38,6 +60,8 @@ const Input = ({
         onBlur={() => setIsFocused(false)}
         dense={false}
         selectionColor="#2685BF"
+        {...getRightIcon()}
+        {...props}
       />
     </TouchableWithoutFeedback>
   );
