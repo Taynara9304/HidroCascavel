@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { View, ScrollView, StyleSheet, Alert, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
 import VisitasContainer from '../componentes/VisitasContainer';
-import GerenciarSolicitacoesVisitas from '../componentes/GerenciarSolicitacoesVisitas'; // ✅ NOVO COMPONENTE
+import GerenciarSolicitacoesVisitas from '../componentes/GerenciarSolicitacoesVisitas';
 import useVisitas from '../hooks/useTabelaVisitas';
 import { useAuth } from '../contexts/authContext';
 

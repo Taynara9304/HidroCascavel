@@ -21,7 +21,7 @@ import {
   query, 
   where, 
   orderBy, 
-  onSnapshot  // ✅ ADICIONAR ESTAS IMPORTAÇÕES
+  onSnapshot
 } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
@@ -88,13 +88,13 @@ const AddVisitasProprietario = ({ onAdicionarVisita }) => {
           setCarregandoPocos(false);
           
           if (pocosData.length === 0) {
-            console.log('ℹ️ Proprietário não tem poços cadastrados para visitas');
+            console.log('ℹProprietário não tem poços cadastrados para visitas');
           } else {
-            console.log(`✅ ${pocosData.length} poços carregados para seleção`);
+            console.log(`${pocosData.length} poços carregados para seleção`);
           }
         },
         (error) => {
-          console.error('❌ Erro ao carregar poços:', error);
+          console.error('Erro ao carregar poços:', error);
           Alert.alert('Erro', 'Não foi possível carregar seus poços');
           setCarregandoPocos(false);
         }
@@ -102,13 +102,11 @@ const AddVisitasProprietario = ({ onAdicionarVisita }) => {
 
       return () => unsubscribe();
     } catch (error) {
-      console.error('❌ Erro na configuração da query:', error);
+      console.error('Erro na configuração da query:', error);
       setCarregandoPocos(false);
     }
   }, [user]);
 
-  // ✅ FUNÇÃO CORRIGIDA PARA GERAR MENSAGEM WHATSAPP
-  // ✅ FUNÇÃO ATUALIZADA PARA OBSERVAÇÕES OPCIONAIS
   const gerarMensagemWhatsApp = () => {
     const nomeProprietario = userData?.nome || 'Proprietário';
     const telefoneProprietario = userData?.telefone || 'Número não cadastrado';
@@ -129,7 +127,7 @@ const AddVisitasProprietario = ({ onAdicionarVisita }) => {
       minute: '2-digit'
     });
 
-    // ✅ TRATAR OBSERVAÇÕES OPCIONAIS
+    // TRATAR OBSERVAÇÕES OPCIONAIS
     const observacoesTexto = formData.observacoes.trim() 
       ? `\nGostaria de observar que: ${formData.observacoes}`
       : '';
@@ -143,13 +141,12 @@ Gostaria que a visita seja ${dataHoraFormatada}
 É possível nesse dia e horário?${observacoesTexto}`;
   };
 
-  // ✅ FUNÇÃO CORRIGIDA PARA ABRIR WHATSAPP
+  // FUNÇÃO CORRIGIDA PARA ABRIR WHATSAPP
   const abrirWhatsApp = async (mensagem) => {
-    // Número do administrador - SUBSTITUA pelo número real com DDI e DDD
-    const TELEFONE_ADM = "5545999215446"; // Exemplo: +55 (44) 99999-9999 (sem espaços, parênteses ou traços)
+    const TELEFONE_ADM = "5545999215446"; 
     
     try {
-      // ✅ CORREÇÃO: Usar esquema específico para app nativo
+      // CORREÇÃO: Usar esquema específico para app nativo
       let url;
       if (Platform.OS === 'android') {
         // Android: usar intent
@@ -159,16 +156,16 @@ Gostaria que a visita seja ${dataHoraFormatada}
         url = `https://wa.me/${TELEFONE_ADM}?text=${encodeURIComponent(mensagem)}`;
       }
       
-      console.log('🔗 Tentando abrir URL:', url);
+      console.log('Tentando abrir URL:', url);
       
       const canOpen = await Linking.canOpenURL(url);
-      console.log('📱 Pode abrir URL?', canOpen);
+      console.log('Pode abrir URL?', canOpen);
       
       if (canOpen) {
         await Linking.openURL(url);
         return true;
       } else {
-        // ✅ FALLBACK: Tentar abrir WhatsApp Web
+        //FALLBACK: Tentar abrir WhatsApp Web
         const webUrl = `https://web.whatsapp.com/send?phone=${TELEFONE_ADM}&text=${encodeURIComponent(mensagem)}`;
         const canOpenWeb = await Linking.canOpenURL(webUrl);
         
@@ -184,16 +181,16 @@ Gostaria que a visita seja ${dataHoraFormatada}
         }
       }
     } catch (error) {
-      console.error('❌ Erro ao abrir WhatsApp:', error);
+      console.error('Erro ao abrir WhatsApp:', error);
       Alert.alert('Erro', 'Não foi possível abrir o WhatsApp: ' + error.message);
       return false;
     }
   };
 
-  // ✅ FUNÇÃO CORRIGIDA PARA SALVAR NO FIREBASE PRIMEIRO
+  // FUNÇÃO CORRIGIDA PARA SALVAR NO FIREBASE PRIMEIRO
   const salvarSolicitacaoFirebase = async () => {
     try {
-      console.log('💾 Salvando solicitação no Firebase...');
+      console.log('Salvando solicitação no Firebase...');
 
       const visitData = {
         // Informações do poço
@@ -223,12 +220,12 @@ Gostaria que a visita seja ${dataHoraFormatada}
         canal: 'whatsapp',
         mensagemWhatsApp: gerarMensagemWhatsApp(),
         notificacaoEnviada: false,
-        whatsappEnviado: false // ✅ Novo campo para controle
+        whatsappEnviado: false // Novo campo para controle
       };
 
-      console.log('📤 Enviando dados para Firebase:', visitData);
+      console.log('Enviando dados para Firebase:', visitData);
 
-      // ✅ SALVAR DIRETAMENTE NO FIREBASE PRIMEIRO
+      // SALVAR DIRETAMENTE NO FIREBASE PRIMEIRO
       const visitsCollection = collection(db, 'visits');
       const docRef = await addDoc(visitsCollection, {
         ...visitData,
@@ -236,11 +233,11 @@ Gostaria que a visita seja ${dataHoraFormatada}
         updatedAt: serverTimestamp()
       });
 
-      console.log('✅ Solicitação salva no Firebase com ID:', docRef.id);
+      console.log('Solicitação salva no Firebase com ID:', docRef.id);
       return { success: true, id: docRef.id, data: visitData };
       
     } catch (error) {
-      console.error('❌ Erro ao salvar no Firebase:', error);
+      console.error('Erro ao salvar no Firebase:', error);
       return { success: false, error: error.message };
     }
   };
@@ -251,7 +248,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
       return;
     }
 
-    // ✅ VALIDAÇÃO DA DATA/HORA
+    // VALIDAÇÃO DA DATA/HORA
     if (!formData.dataHora || !(formData.dataHora instanceof Date)) {
       Alert.alert('Erro', 'Data/hora inválida');
       return;
@@ -266,23 +263,23 @@ Gostaria que a visita seja ${dataHoraFormatada}
     setEnviando(true);
 
     try {
-      // ✅ PRIMEIRO: Salvar no Firebase
+      // PRIMEIRO: Salvar no Firebase
       const resultadoFirebase = await salvarSolicitacaoFirebase();
       
       if (!resultadoFirebase.success) {
         throw new Error(resultadoFirebase.error);
       }
 
-      // ✅ SEGUNDO: Gerar mensagem
+      // SEGUNDO: Gerar mensagem
       const mensagem = gerarMensagemWhatsApp();
-      console.log('💬 Mensagem gerada:', mensagem);
+      console.log('Mensagem gerada:', mensagem);
 
-      // ✅ TERCEIRO: Abrir WhatsApp
+      // TERCEIRO: Abrir WhatsApp
       const whatsappAberto = await abrirWhatsApp(mensagem);
       
       if (whatsappAberto) {
         Alert.alert(
-          '✅ Solicitação Enviada!', 
+          'Solicitação Enviada!', 
           'Sua solicitação foi salva no sistema e o WhatsApp foi aberto. Envie a mensagem para o administrador.',
           [{ text: 'OK' }]
         );
@@ -294,7 +291,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
         );
       }
       
-      // ✅ Reset do formulário apenas se deu certo
+      // Reset do formulário apenas se deu certo
       setFormData({
         poco: null,
         dataHora: new Date(new Date().setHours(new Date().getHours() + 1)),
@@ -303,7 +300,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
       });
 
     } catch (error) {
-      console.error('❌ Erro no processo completo:', error);
+      console.error('Erro no processo completo:', error);
       Alert.alert(
         'Erro', 
         `Não foi possível completar a solicitação: ${error.message}\n\nSua solicitação pode não ter sido salva. Tente novamente.`
@@ -370,7 +367,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
                   />
                   {pocos.length === 0 && (
                     <Text style={styles.semPocosText}>
-                      💡 Você ainda não tem poços cadastrados. Cadastre um poço primeiro para solicitar visitas.
+                      Você ainda não tem poços cadastrados. Cadastre um poço primeiro para solicitar visitas.
                     </Text>
                   )}
                 </>

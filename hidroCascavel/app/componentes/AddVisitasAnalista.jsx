@@ -15,6 +15,7 @@ import SelecaoBuscaSeguro from './SelecaoBusca';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
+import DateTimePickerCompleto from './DateTimePickerCompleto';
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
@@ -35,7 +36,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
 
   // Analista pode ver TODOS os poços
   useEffect(() => {
-    console.log('📡 AddVisitasAnalista: Buscando TODOS os poços');
+    console.log('AddVisitasAnalista: Buscando TODOS os poços');
     
     const pocosCollection = collection(db, 'wells');
     const q = query(pocosCollection, orderBy('nomeProprietario'));
@@ -47,13 +48,13 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
           ...doc.data()
         }));
         
-        console.log('✅ Poços carregados:', pocosData.length);
-        console.log('🔍 Primeiro poço:', pocosData[0]); // Debug
+        console.log('Poços carregados:', pocosData.length);
+        console.log('Primeiro poço:', pocosData[0]); // Debug
         setPocos(pocosData);
         setCarregandoPocos(false);
       },
       (error) => {
-        console.error('❌ Erro ao carregar poços:', error);
+        console.error('Erro ao carregar poços:', error);
         Alert.alert('Erro', 'Não foi possível carregar os poços');
         setCarregandoPocos(false);
       }
@@ -76,7 +77,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
     try {
       setEnviando(true);
 
-      // ✅ CORREÇÃO: Garantir que todos os campos estejam definidos
+      // CORREÇÃO: Garantir que todos os campos estejam definidos
       const visitData = {
         // Dados do poço
         pocoId: formData.poco.id,
@@ -84,8 +85,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
         pocoLocalizacao: formData.poco.localizacao || 'Localização não informada',
         proprietario: formData.poco.nomeProprietario || formData.poco.proprietario || 'Proprietário não identificado',
         
-        // ✅ CORREÇÃO CRÍTICA: Garantir que userId existe
-        userId: formData.poco.userId || formData.poco.proprietarioId || 'unknown', // Fallback seguro
+        userId: formData.poco.userId || formData.poco.proprietarioId || 'unknown',
         
         // Dados da visita
         dataVisita: formData.dataHora.toISOString(),
@@ -104,11 +104,11 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
         criadoPor: user.uid
       };
 
-      console.log('📤 Enviando dados da visita:', visitData);
-      console.log('🔍 userId do poço:', formData.poco.userId);
-      console.log('🔍 Poço completo:', formData.poco);
+      console.log('Enviando dados da visita:', visitData);
+      console.log('userId do poço:', formData.poco.userId);
+      console.log('Poço completo:', formData.poco);
       
-      // ✅ USAR A NOVA FUNÇÃO de envio para aprovação
+      // USAR A NOVA FUNÇÃO de envio para aprovação
       await enviarVisitaParaAprovacao(visitData);
       
       // Limpar formulário
@@ -122,12 +122,12 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
       });
 
       Alert.alert(
-        '✅ Registro Enviado!', 
+        'Registro Enviado!', 
         'Sua visita técnica foi enviada para aprovação do administrador.\n\nVocê receberá uma notificação quando for aprovada.',
         [{ text: 'OK' }]
       );
     } catch (error) {
-      console.error('❌ Erro ao enviar registro:', error);
+      console.error('Erro ao enviar registro:', error);
       Alert.alert('Erro', 'Não foi possível enviar o registro de visita: ' + error.message);
     } finally {
       setEnviando(false);
@@ -144,7 +144,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
     nomeProprietario: poco.nomeProprietario,
     localizacao: poco.localizacao,
     proprietario: poco.nomeProprietario,
-    userId: poco.userId, // ✅ Garantir que este campo existe
+    userId: poco.userId, // Garantir que este campo existe
     ...poco
   }));
 
@@ -169,8 +169,8 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
                 <SelecaoBuscaSeguro
                   value={formData.poco}
                   onSelect={(poco) => {
-                    console.log('🎯 Poço selecionado:', poco);
-                    console.log('🔍 userId do poço selecionado:', poco?.userId);
+                    console.log('Poço selecionado:', poco);
+                    console.log('userId do poço selecionado:', poco?.userId);
                     updateFormData('poco', poco);
                   }}
                   options={opcoesPocos}
@@ -184,12 +184,15 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
           
           <View style={styles.column}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Data da Visita</Text>
-              <TouchableOpacity style={styles.dateButton}>
-                <Text style={styles.dateText}>
-                  {formData.dataHora.toLocaleString('pt-BR')}
-                </Text>
-              </TouchableOpacity>
+              <Text style={styles.label}>Data e Hora Desejada *</Text>
+              <DateTimePickerCompleto
+                value={formData.dataHora}
+                onChange={(dateTime) => updateFormData('dataHora', dateTime)}
+                placeholder="Selecione data e hora"
+              />
+              <Text style={styles.dateInfo}>
+                Selecionado: {formData.dataHora.toLocaleString('pt-BR')}
+              </Text>
             </View>
           </View>
         </View>
@@ -240,7 +243,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
         </View>
 
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>📋 Fluxo do Analista:</Text>
+          <Text style={styles.infoTitle}>Fluxo do Analista:</Text>
           <Text style={styles.infoText}>
             • Selecione QUALQUER poço do sistema{'\n'}
             • Preencha os dados da visita realizada{'\n'}
@@ -263,7 +266,7 @@ const AddVisitasAnalista = ({ onAdicionarVisita, enviarVisitaParaAprovacao }) =>
               <ActivityIndicator size="small" color="white" />
             ) : (
               <Text style={styles.submitButtonText}>
-                📤 ENVIAR PARA APROVAÇÃO
+                ENVIAR PARA APROVAÇÃO
               </Text>
             )}
           </TouchableOpacity>

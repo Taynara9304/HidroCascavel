@@ -278,7 +278,7 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
           <View style={styles.column}>
             {renderInput('pH', 'ph', 'Ex: 7.0', 'decimal-pad')}
-          </View>// ... (mantenha os mesmos estilos do AddAnalises original, apenas adicione estes)
+          </View>
 
           <View style={styles.column}>
             {renderInput('Alcalinidade (mg/L)', 'alcalinidade', 'Ex: 120', 'decimal-pad')}

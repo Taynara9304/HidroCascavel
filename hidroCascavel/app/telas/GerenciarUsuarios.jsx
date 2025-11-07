@@ -26,12 +26,12 @@ const GerenciarUsuarios = () => {
     deleteUser,
   } = useUsuarios();
 
-  console.log('🔐 GerenciarUsuarios: Tipo de usuário:', userData?.tipoUsuario);
+  console.log('GerenciarUsuarios: Tipo de usuário:', userData?.tipoUsuario);
 
   if (!userData || userData.tipoUsuario !== 'administrador') {
     return (
       <View style={styles.accessDeniedContainer}>
-        <Text style={styles.accessDeniedTitle}>🔐 Acesso Restrito</Text>
+        <Text style={styles.accessDeniedTitle}>Acesso Restrito</Text>
         <Text style={styles.accessDeniedText}>
           Esta funcionalidade está disponível apenas para administradores do sistema.
         </Text>
@@ -52,13 +52,13 @@ const GerenciarUsuarios = () => {
         [{ text: 'OK', style: 'default' }]
       );
     } catch (error) {
-      console.error('❌ GerenciarUsuarios: Erro ao editar usuário:', error);
+      console.error('GerenciarUsuarios: Erro ao editar usuário:', error);
       Alert.alert('Erro', `Não foi possível editar o usuário: ${error.message}`);
     }
   };
 
   const handleDeletarUsuario = async (user) => {
-    console.log('🗑️ GerenciarUsuarios: Solicitando exclusão do usuário:', user.id, user.nome);
+    console.log('GerenciarUsuarios: Solicitando exclusão do usuário:', user.id, user.nome);
     
     Alert.alert(
       'Confirmar Exclusão',
@@ -67,7 +67,7 @@ const GerenciarUsuarios = () => {
         { 
           text: 'Cancelar', 
           style: 'cancel',
-          onPress: () => console.log('❌ GerenciarUsuarios: Exclusão cancelada pelo usuário')
+          onPress: () => console.log('GerenciarUsuarios: Exclusão cancelada pelo usuário')
         },
         { 
           text: 'Excluir', 
@@ -78,7 +78,7 @@ const GerenciarUsuarios = () => {
               await deleteUser(user.id);
               Alert.alert('Sucesso', 'Usuário excluído com sucesso!');
             } catch (error) {
-              console.error('❌ GerenciarUsuarios: ERRO ao excluir usuário:', error);
+              console.error('GerenciarUsuarios: ERRO ao excluir usuário:', error);
               
               let mensagemErro = 'Não foi possível excluir o usuário.';
               
@@ -145,7 +145,7 @@ const GerenciarUsuarios = () => {
         </View>
 
         <View style={styles.infoCard}>
-          <Text style={styles.infoCardTitle}>💡 Informações</Text>
+          <Text style={styles.infoCardTitle}>Informações</Text>
           <Text style={styles.infoCardText}>
             • Apenas administradores podem gerenciar usuários{'\n'}
             • É possível filtrar e ordenar os usuários{'\n'}

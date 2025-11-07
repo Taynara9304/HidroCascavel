@@ -12,8 +12,8 @@ import TabelaVisitasProprietario from './TabelaVisitasProprietario';
 const VisitasContainer = ({ 
   onAdicionarVisita, 
   enviarVisitaParaAprovacao,
-  aprovarVisita, // ✅ NOVA PROP
-  rejeitarVisita, // ✅ NOVA PROP
+  aprovarVisita,
+  rejeitarVisita,
   visits, 
   loading, 
   error, 

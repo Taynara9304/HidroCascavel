@@ -33,9 +33,9 @@ const TabelaUsuarios = ({
   const [usuarioSelecionado, setUsuarioSelecionado] = useState(null);
   const flatListRef = useRef(null);
 
-  console.log('📊 TabelaUsuarios: users recebido =', users.length);
+  console.log('TabelaUsuarios: users recebido =', users.length);
 
-  // ✅ CORREÇÃO: Handlers para gestos
+  // CORREÇÃO: Handlers para gestos
   const handleScrollEndDrag = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
@@ -165,21 +165,21 @@ const TabelaUsuarios = ({
       {/* INFORMAÇÕES DO USUÁRIO */}
       <View style={styles.cardInfo}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📞 Telefone:</Text>
+          <Text style={styles.infoLabel}>Telefone:</Text>
           <Text style={styles.infoValue}>
             {user.telefone || 'Não informado'}
           </Text>
         </View>
         
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📅 Cadastro:</Text>
+          <Text style={styles.infoLabel}>Cadastro:</Text>
           <Text style={styles.infoValue}>
             {formatarData(user.dataCriacao)}
           </Text>
         </View>
         
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>🔐 Status:</Text>
+          <Text style={styles.infoLabel}>Status:</Text>
           <View style={[
             styles.statusIndicator,
             { backgroundColor: getStatusColor(user.status) }
@@ -197,21 +197,21 @@ const TabelaUsuarios = ({
           style={styles.botaoDetalhes}
           onPress={() => abrirDetalhes(user)}
         >
-          <Text style={styles.botaoTexto}>👁️ Detalhes</Text>
+          <Text style={styles.botaoTexto}>Detalhes</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.botaoEditar}
           onPress={() => onEdit(user)}
         >
-          <Text style={styles.botaoTexto}>✏️ Editar</Text>
+          <Text style={styles.botaoTexto}>Editar</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.botaoDeletar}
           onPress={() => handleDeletarUsuario(user)}
         >
-          <Text style={styles.botaoTexto}>🗑️ Excluir</Text>
+          <Text style={styles.botaoTexto}>Excluir</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -220,7 +220,7 @@ const TabelaUsuarios = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        👥 Usuários do Sistema ({usuariosFiltrados.length})
+        Usuários do Sistema ({usuariosFiltrados.length})
       </Text>
 
       {/* BARRA DE BUSCA E FILTROS */}
@@ -228,7 +228,7 @@ const TabelaUsuarios = ({
         <View style={styles.buscaInputContainer}>
           <TextInput
             style={styles.buscaInput}
-            placeholder="🔍 Buscar por nome ou email..."
+            placeholder="Buscar por nome ou email..."
             value={busca}
             onChangeText={setBusca}
           />
@@ -293,7 +293,6 @@ const TabelaUsuarios = ({
         </TouchableOpacity>
       </View>
 
-      {/* ✅ CORREÇÃO: Carrossel com gestos otimizados */}
       {usuariosFiltrados.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -307,11 +306,9 @@ const TabelaUsuarios = ({
             snapToInterval={null}
             snapToAlignment="center"
             decelerationRate="normal"
-            // ✅ Handlers para gestos
             onScrollBeginDrag={handleScrollBeginDrag}
             onScrollEndDrag={handleScrollEndDrag}
             onMomentumScrollEnd={handleScrollEndDrag}
-            // ✅ Configurações para melhor performance de gestos
             scrollEventThrottle={16}
             directionalLockEnabled={true}
             alwaysBounceHorizontal={true}
@@ -322,7 +319,6 @@ const TabelaUsuarios = ({
             style={styles.flatList}
           />
           
-          {/* INDICADORES DE PÁGINA */}
           {usuariosFiltrados.length > 1 && (
             <View style={styles.paginacaoContainer}>
               <Text style={styles.paginacaoTexto}>
@@ -350,8 +346,8 @@ const TabelaUsuarios = ({
         <View style={styles.semDadosContainer}>
           <Text style={styles.semDados}>
             {busca || filtroTipo !== 'todos' 
-              ? '🔍 Nenhum usuário encontrado' 
-              : '👥 Nenhum usuário cadastrado'
+              ? 'Nenhum usuário encontrado' 
+              : 'Nenhum usuário cadastrado'
             }
           </Text>
           {(busca || filtroTipo !== 'todos') && (
@@ -440,7 +436,7 @@ const TabelaUsuarios = ({
 
                 <ScrollView style={styles.detalhesScroll}>
                   <View style={styles.detalhesSection}>
-                    <Text style={styles.detalhesSectionTitle}>📋 Informações Pessoais</Text>
+                    <Text style={styles.detalhesSectionTitle}>Informações Pessoais</Text>
                     
                     <View style={styles.detalhesInfo}>
                       <Text style={styles.detalhesLabel}>Telefone:</Text>
@@ -475,7 +471,7 @@ const TabelaUsuarios = ({
                   </View>
 
                   <View style={styles.detalhesSection}>
-                    <Text style={styles.detalhesSectionTitle}>📅 Metadados</Text>
+                    <Text style={styles.detalhesSectionTitle}>Metadados</Text>
                     
                     <View style={styles.detalhesInfo}>
                       <Text style={styles.detalhesLabel}>Data de Cadastro:</Text>

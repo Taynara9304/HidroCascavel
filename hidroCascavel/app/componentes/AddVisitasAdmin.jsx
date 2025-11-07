@@ -15,6 +15,7 @@ import SelecaoBuscaSeguro from './SelecaoBusca';
 import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
+import DateTimePickerCompleto from './DateTimePickerCompleto';
 
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
@@ -51,7 +52,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         setCarregandoPocos(false);
       },
       (error) => {
-        console.error('❌ Erro ao carregar poços:', error);
+        console.error('Erro ao carregar poços:', error);
         Alert.alert('Erro', 'Não foi possível carregar os poços');
         setCarregandoPocos(false);
       }
@@ -60,9 +61,9 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
     return () => unsubscribe();
   }, []);
 
-  // ✅ Buscar apenas usuários do tipo "analista"
+  // Buscar apenas usuários do tipo "analista"
   useEffect(() => {
-    console.log('📡 AddVisitasAdmin: Buscando analistas cadastrados');
+    console.log('AddVisitasAdmin: Buscando analistas cadastrados');
     
     const usersCollection = collection(db, 'users');
     const q = query(
@@ -80,10 +81,10 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         
         setAnalistas(analistasData);
         setCarregandoAnalistas(false);
-        console.log(`✅ ${analistasData.length} analistas carregados`);
+        console.log(`${analistasData.length} analistas carregados`);
       },
       (error) => {
-        console.error('❌ Erro ao carregar analistas:', error);
+        console.error('Erro ao carregar analistas:', error);
         // Se der erro de índice, busca sem filtro e filtra localmente
         const allUsersQuery = query(usersCollection, orderBy('nome'));
         onSnapshot(allUsersQuery, 
@@ -97,10 +98,10 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
             );
             setAnalistas(analistasFiltrados);
             setCarregandoAnalistas(false);
-            console.log(`✅ ${analistasFiltrados.length} analistas carregados (filtro local)`);
+            console.log(`${analistasFiltrados.length} analistas carregados (filtro local)`);
           },
           (err) => {
-            console.error('❌ Erro ao carregar todos os usuários:', err);
+            console.error('Erro ao carregar todos os usuários:', err);
             Alert.alert('Aviso', 'Não foi possível carregar a lista de analistas');
             setCarregandoAnalistas(false);
           }
@@ -130,7 +131,6 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         pocoLocalizacao: formData.poco.localizacao,
         proprietario: formData.poco.nomeProprietario,
         
-        // ✅ Dados do analista selecionado
         analistaId: formData.analista.id,
         analistaNome: formData.analista.nome,
         analistaEmail: formData.analista.email,
@@ -140,14 +140,13 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         status: 'agendada',
         criadoPor: user.uid,
         tipoUsuario: userData?.tipoUsuario || 'administrador',
-        userId: formData.poco.userId, // ID do proprietário do poço
+        userId: formData.poco.userId,
         dataSolicitacao: new Date().toISOString()
       };
 
-      console.log('📤 AddVisitasAdmin: Enviando visita:', visitData);
+      console.log('AddVisitasAdmin: Enviando visita:', visitData);
       await onAdicionarVisita(visitData);
       
-      // Reset form
       setFormData({
         poco: null,
         analista: null,
@@ -162,7 +161,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         [{ text: 'OK' }]
       );
     } catch (error) {
-      console.error('❌ Erro ao agendar visita:', error);
+      console.error('Erro ao agendar visita:', error);
       Alert.alert('Erro', 'Não foi possível agendar a visita');
     }
   };
@@ -181,7 +180,6 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
     ...poco
   }));
 
-  // ✅ Opções de analistas para o selector
   const opcoesAnalistas = analistas.map(analista => ({
     id: analista.id,
     nome: analista.nome,
@@ -223,17 +221,19 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
           
           <View style={styles.column}>
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Data e Hora</Text>
-              <TouchableOpacity style={styles.dateButton}>
-                <Text style={styles.dateText}>
-                  {formData.dataHora.toLocaleString('pt-BR')}
-                </Text>
-              </TouchableOpacity>
+              <Text style={styles.label}>Data e Hora Desejada *</Text>
+              <DateTimePickerCompleto
+                value={formData.dataHora}
+                onChange={(dateTime) => updateFormData('dataHora', dateTime)}
+                placeholder="Selecione data e hora"
+              />
+              <Text style={styles.dateInfo}>
+                Selecionado: {formData.dataHora.toLocaleString('pt-BR')}
+              </Text>
             </View>
           </View>
         </View>
 
-        {/* ✅ Seleção de Analista em vez de campo de texto */}
         <View style={styles.fullWidth}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Analista Responsável *</Text>
@@ -254,7 +254,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
                 />
                 {analistas.length === 0 && (
                   <Text style={styles.semAnalistasText}>
-                    ⚠️ Nenhum analista cadastrado no sistema.
+                    Nenhum analista cadastrado no sistema.
                   </Text>
                 )}
               </>
@@ -278,7 +278,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
         </View>
 
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>ℹ️ Fluxo do Administrador:</Text>
+          <Text style={styles.infoTitle}>Fluxo do Administrador:</Text>
           <Text style={styles.infoText}>
             • Selecione QUALQUER poço do sistema{'\n'}
             • Escolha um ANALISTA cadastrado{'\n'}
@@ -298,7 +298,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
             disabled={!formData.poco || !formData.analista}
           >
             <Text style={styles.submitButtonText}>
-              ✅ AGENDAR VISITA
+              AGENDAR VISITA
             </Text>
           </TouchableOpacity>
         </View>
