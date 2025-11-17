@@ -1,4 +1,3 @@
-// componentes/Cadastro.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -135,13 +134,11 @@ const Cadastro = () => {
           text2: 'Cadastro realizado com sucesso!'
         });
 
-        // Redireciona para a home do proprietário
         navigation.reset({
           index: 0,
           routes: [{ name: 'HomeProprietario' }],
         });
       } catch (error) {
-        // ... tratamento de erro
       } finally {
         setLoading(false);
       }
@@ -166,7 +163,7 @@ const Cadastro = () => {
     };
 
     const navigateToTipoCadastro = () => {
-      navigation.navigate("TipoCadastro"); // Agora deve funcionar
+      navigation.navigate("TipoCadastro");
     };
 
     return(

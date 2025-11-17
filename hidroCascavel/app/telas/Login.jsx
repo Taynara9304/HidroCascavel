@@ -1,4 +1,3 @@
-// telas/Login.js - VERSÃO ATUALIZADA
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -30,15 +29,9 @@ const Login = ({ navigation }) => {
   const [errors, setErrors] = useState({});
   const { user, userData } = useAuth();
 
-  // ✅ CORREÇÃO: Redirecionamento automático para os Stacks corretos
   useEffect(() => {
-    console.log('🔍 Login - Estado do usuário:', user ? `Logado: ${user.uid}` : 'Deslogado');
-    console.log('📊 Dados do usuário:', userData);
-    
     if (user && userData) {
-      console.log('✅ Usuário logado com dados, redirecionando para o Stack correto...');
       
-      // Pequeno delay para garantir que tudo foi carregado
       const timer = setTimeout(() => {
         redirecionarParaStackCorreto(userData.tipoUsuario);
       }, 500);
@@ -47,27 +40,21 @@ const Login = ({ navigation }) => {
     }
   }, [user, userData, navigation]);
 
-  // ✅ FUNÇÃO: Redirecionar para o Stack correto
   const redirecionarParaStackCorreto = (tipoUsuario) => {
-    console.log('🎯 Redirecionando para Stack do tipo:', tipoUsuario);
     
     switch (tipoUsuario) {
       case 'administrador':
       case 'admin':
-        console.log('🚀 Redirecionando para AdministradorStack');
         navigation.replace('AdministradorStack');
         break;
       case 'analista':
-        console.log('🔬 Redirecionando para AnalistaStack');
         navigation.replace('AnalistaStack');
         break;
       case 'proprietario':
       case 'proprietário':
-        console.log('🏠 Redirecionando para ProprietarioStack');
         navigation.replace('ProprietarioStack');
         break;
       default:
-        console.log('❌ Tipo de usuário desconhecido:', tipoUsuario);
         Toast.show({
           type: 'error',
           text1: 'Erro',
@@ -102,12 +89,10 @@ const Login = ({ navigation }) => {
     setErrors({});
 
     try {
-      console.log('🔐 Tentando login com:', email);
       
       const userCredential = await signInWithEmailAndPassword(auth, email, senha);
       const userFirebase = userCredential.user;
 
-      console.log('✅ Usuário autenticado no Firebase:', userFirebase.uid);
 
       Toast.show({
         type: 'success',
@@ -115,10 +100,8 @@ const Login = ({ navigation }) => {
         text2: 'Login realizado com sucesso!'
       });
 
-      // ✅ O redirecionamento agora é automático pelo useEffect
       
     } catch (error) {
-      console.error('❌ Erro no login:', error);
       let errorMessage = 'Erro ao fazer login. Tente novamente.';
 
       if (error.code === 'auth/user-not-found') {
@@ -143,7 +126,6 @@ const Login = ({ navigation }) => {
     }
   };
 
-  // Se o usuário já estiver logado, mostrar loading
   if (user && userData) {
     const getNomeStack = () => {
       switch (userData.tipoUsuario) {
@@ -212,7 +194,7 @@ const Login = ({ navigation }) => {
                   value={senha}
                   onChangeText={setSenha}
                   placeholder="Digite sua senha"
-                  secureTextEntry={true} // ✅ Agora com olho para mostrar/ocultar
+                  secureTextEntry={true} 
                   style={{ width: "100%" }}
                   autoCapitalize="none"
                   autoCorrect={false}

@@ -1,4 +1,3 @@
-// componentes/Cadastro.jsx
 import React, { useState } from "react";
 import {
   View,
@@ -21,7 +20,7 @@ import Toast from 'react-native-toast-message';
 import { useNavigation } from "@react-navigation/native";
 import { USER_TYPES } from '../services/firebaseConfig';
 
-const Cadastro = () => {
+const CadastroAdm = () => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
 
@@ -513,4 +512,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Cadastro;
+export default CadastroAdm;
