@@ -65,6 +65,7 @@ const HomeAdm = () => {
             top: isMobile ? 20 : 0,
             width: '100%',
             height: 150,
+            zIndex: 1000,
         },
         containerPopUps: {
             top: isMobile ? -50 : 0,
@@ -75,6 +76,7 @@ const HomeAdm = () => {
             gap: 10,
             width: '100%',
             marginVertical: 10,
+            zIndex: 1,
         },
         containerItems: {
             top: isMobile ? -60 : 0,

@@ -1,4 +1,3 @@
-// /componentes/NavBar.js  (ESTA É A VERSÃO CORRIGIDA)
 import React, { useState } from "react";
 import {
   View,
@@ -16,13 +15,12 @@ import { useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
 import logo from '../assets/logoHidroCascavel.png';
 
-// Aceita as props de rolagem E a nova prop 'isDashboard'
 const NavBar = ({
   onScrollToApresentacao,
   onScrollToEducacao,
   onScrollToContato,
   onScrollToServicos,
-  isDashboard, // <-- Nova prop
+  isDashboard,
 }) => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
@@ -32,7 +30,6 @@ const NavBar = ({
 
   const isMobile = width <= 800;
 
-  // Função pública (sempre igual)
   const handlePressPublico = (scrollFunction) => {
     setMenuOpen(false);
     if (scrollFunction) {
@@ -42,19 +39,14 @@ const NavBar = ({
     }
   };
 
-  // === INÍCIO DAS MUDANÇAS ===
-
-  // ✅ CORREÇÃO 2: Lógica do botão "Home" (casinha)
   const handleHomePress = () => {
     setMenuOpen(false);
     
-    // Se 'isDashboard' for true (estamos na HomeAdm), vai para a TelaInicial
     if (isDashboard) {
       navigation.navigate("TelaInicial");
-      return; // Para a execução
+      return;
     }
     
-    // Senão (estamos na TelaInicial), vai para o dashboard correto
     if (userData?.tipoUsuario === 'administrador') {
       navigation.navigate("AdministradorStack"); 
     } else if (userData?.tipoUsuario === 'analista') {
@@ -64,15 +56,13 @@ const NavBar = ({
     }
   };
   
-  // ✅ CORREÇÃO 1: Navegação aninhada para "Notificações"
   const handleNotificacoesPress = () => {
     setMenuOpen(false);
     const tipo = userData?.tipoUsuario;
     
-    console.log('🔔 Navegando para Notificações...');
+    console.log('Navegando para Notificações...');
     
     if (tipo === 'administrador') {
-      // Sintaxe: navigation.navigate("StackPai", { screen: "TelaFilha" })
       navigation.navigate("AdministradorStack", { screen: "NotificacoesAdm" }); 
     } else if (tipo === 'analista') {
       navigation.navigate("AnalistaStack", { screen: "NotificacoesAnalista" }); 
@@ -81,14 +71,12 @@ const NavBar = ({
     }
   };
 
-  // ✅ CORREÇÃO 1: Navegação aninhada para "Perfil"
   const handlePerfilPress = () => {
     setMenuOpen(false);
     const tipo = userData?.tipoUsuario;
     
-    console.log('👤 Navegando para Perfil...');
+    console.log('Navegando para Perfil');
 
-    // Assumindo que a tela se chama "PerfilUsuario" em todos os stacks
     if (tipo === 'administrador') {
       navigation.navigate("AdministradorStack", { screen: "PerfilUsuario" });
     } else if (tipo === 'analista') {
@@ -98,10 +86,8 @@ const NavBar = ({
     }
   };
 
-  // === FIM DAS MUDANÇAS ===
 
   const handleDeslogar = async () => {
-    // ... (código original, está correto)
     try {
       await signOut(auth);
       Toast.show({ type: 'success', text1: 'Logout realizado' });
@@ -116,7 +102,6 @@ const NavBar = ({
     navigation.navigate("Login");
   };
 
-  // Componentes internos (Tooltip, IconButton)
   const Tooltip = ({ text, visible }) => {
     if (!visible) return null;
     return (
@@ -142,7 +127,6 @@ const NavBar = ({
     );
   };
 
-  // === ESTILOS CONDICIONAIS (sem mudanças) ===
   const navBarStyle = user ? styles.navBarLogado : styles.navBarDeslogado;
   const navTextStyle = user ? styles.navTextLogado : styles.navTextDeslogado;
   const iconColor = user ? "#fff" : "#2685BF";
@@ -150,12 +134,8 @@ const NavBar = ({
 
 
   return (
-    // O JSX (visual) não muda, apenas as funções que ele chama
     <View style={[styles.navBar, navBarStyle, isMobile ? styles.mobileNav : styles.desktopNav]}>
       {isMobile ? (
-        // ======================
-        // === MODO MOBILE ===
-        // ======================
         <>
           <TouchableOpacity onPress={() => setMenuOpen(!menuOpen)}>
             <MaterialIcons name="menu" size={30} color={iconColor} />
@@ -163,7 +143,6 @@ const NavBar = ({
 
           {menuOpen && (
             <View style={[styles.sideMenu, sideMenuColor]}>
-              {/* Links Públicos */}
               <TouchableOpacity style={styles.navItem} onPress={() => handlePressPublico(onScrollToApresentacao)}>
                 <Text style={navTextStyle}>Sobre</Text>
               </TouchableOpacity>
@@ -177,9 +156,7 @@ const NavBar = ({
                 <Text style={navTextStyle}>Contato</Text>
               </TouchableOpacity>
 
-              {/* Botões Condicionais */}
               {user ? (
-                // --- Se ESTIVER LOGADO (Mobile) ---
                 <View style={styles.mobileIconButtons}>
                   <TouchableOpacity style={[styles.mobileIconButton, styles.homeButton]} onPress={handleHomePress}>
                     <MaterialIcons name="home" size={20} color="#fff" />
@@ -199,7 +176,6 @@ const NavBar = ({
                   </TouchableOpacity>
                 </View>
               ) : (
-                // --- Se ESTIVER DESLOGADO (Mobile) ---
                 <TouchableOpacity style={[styles.navItem, styles.loginButton]} onPress={handleLoginPress}>
                   <MaterialIcons name="login" size={20} color="#2685BF" />
                   <Text style={styles.loginText}>Entrar</Text>
@@ -209,9 +185,6 @@ const NavBar = ({
           )}
         </>
       ) : (
-        // ======================
-        // === MODO DESKTOP ===
-        // ======================
         <View style={styles.navRow}>
           <Image source={logo} style={styles.logo} /> 
 
@@ -230,10 +203,8 @@ const NavBar = ({
             </TouchableOpacity>
           </View>
 
-          {/* Botões Condicionais */}
           <View style={styles.rightButtons}>
             {user ? (
-              // --- Se ESTIVER LOGADO (Desktop) ---
               <>
                 <IconButton icon="home" label="Home" onPress={handleHomePress} buttonStyle={styles.homeButton} />
                 <IconButton icon="notifications" label="Notificações" onPress={handleNotificacoesPress} buttonStyle={styles.notificacoesButton} />
@@ -241,7 +212,6 @@ const NavBar = ({
                 <IconButton icon="logout" label="Sair" onPress={handleDeslogar} buttonStyle={styles.logoutButton} />
               </>
             ) : (
-              // --- Se ESTIVER DESLOGADO (Desktop) ---
               <TouchableOpacity style={[styles.navItem, styles.loginButton]} onPress={handleLoginPress}>
                 <MaterialIcons name="login" size={20} color="#2685BF" />
                 <Text style={styles.loginText}>Entrar</Text>
@@ -256,7 +226,6 @@ const NavBar = ({
 
 export default NavBar;
 
-// === ESTILOS UNIFICADOS (sem mudanças) ===
 const styles = StyleSheet.create({
   navBar: {
     marginTop: 20,
@@ -271,7 +240,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
   },
-  // Estilo DESLOGADO (Fundo Branco)
   navBarDeslogado: {
     backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
@@ -282,9 +250,7 @@ const styles = StyleSheet.create({
   sideMenuDeslogado: {
     backgroundColor: "#fff",
   },
-  
-  // Estilo LOGADO (Fundo Azul)
-  navBarLogado: {
+    navBarLogado: {
     backgroundColor: "#2685BF",
   },
   navTextLogado: {
@@ -292,17 +258,15 @@ const styles = StyleSheet.create({
     color: "#fff",
   },
   sideMenuLogado: {
-    backgroundColor: "#3D9DD9", // Cor do menu mobile logado
+    backgroundColor: "#3D9DD9",
   },
-
-  // === Layout ===
   logo: { width: 80, height: 80 },
   mobileNav: {
     flexDirection: "row",
     justifyContent: "flex-start",
     paddingHorizontal: 16,
     alignItems: 'center',
-    height: 90, // Altura base
+    height: 90,
   },
   desktopNav: {
     flexDirection: "row",
@@ -329,14 +293,14 @@ const styles = StyleSheet.create({
   },
   sideMenu: {
     position: "absolute",
-    top: 90, // Abaixo do NavBar
+    top: 90,
     left: 0,
     width: "70%",
     paddingVertical: 20,
     paddingHorizontal: 10,
     borderRightWidth: 1,
     borderRightColor: "#ccc",
-    zIndex: 1001,
+    zIndex: 500,
     borderRadius: 8,
   },
   navItem: {
@@ -348,10 +312,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 6,
   },
-  
-  // === Botões Deslogado ===
   loginButton: {
-    // (estilo do nav deslogado)
   },
   loginText: {
     marginLeft: 4,
@@ -359,8 +320,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#2685BF",
   },
-
-  // === Botões Logado (Desktop) ===
   iconButtonContainer: { position: 'relative' },
   iconButton: {
     width: 44, height: 44, borderRadius: 22,
@@ -378,12 +337,10 @@ const styles = StyleSheet.create({
   tooltipText: {
     color: '#fff', fontSize: 12, fontWeight: '500',
   },
-  
-  // === Botões Logado (Mobile) ===
   mobileIconButtons: {
     marginTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#1a6fa3', // Cor do nav logado
+    borderTopColor: '#1a6fa3',
     paddingTop: 10,
   },
   mobileIconButton: {
@@ -393,10 +350,8 @@ const styles = StyleSheet.create({
   },
   mobileIconText: {
     marginLeft: 8, fontSize: 14,
-    fontWeight: "bold", color: "#fff", // Cor do nav logado
+    fontWeight: "bold", color: "#fff",
   },
-  
-  // === Cores Botões Logado ===
   homeButton: { backgroundColor: "#008000" },
   notificacoesButton: { backgroundColor: "#FF9800" },
   perfilButton: { backgroundColor: "#1a6fa3" },
