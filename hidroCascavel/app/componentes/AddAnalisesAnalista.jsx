@@ -1,4 +1,3 @@
-// componentes/AddAnalisesAnalista.js - CORREÇÃO PARA CARREGAR POÇOS
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -42,16 +41,8 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
   const [enviando, setEnviando] = useState(false);
   const [carregandoPocos, setCarregandoPocos] = useState(true);
 
-  console.log('🔍 AddAnalisesAnalista - Props recebidas:', {
-    pocosCount: pocos?.length || 0,
-    analistasCount: analistas?.length || 0,
-    userData: userData?.nome
-  });
-
-  // Preencher automaticamente o analista logado
   useEffect(() => {
     if (userData?.nome) {
-      console.log('👤 Preenchendo analista automaticamente:', userData.nome);
       setFormData(prev => ({
         ...prev,
         analista: {
@@ -63,15 +54,10 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
     }
   }, [userData, user]);
 
-  // Verificar quando os poços são carregados
   useEffect(() => {
     if (pocos && pocos.length > 0) {
-      console.log('✅ Poços carregados no componente:', pocos.length);
-      console.log('📋 Estrutura do primeiro poço:', pocos[0]);
-      console.log('👤 idProprietario disponível:', pocos[0].idProprietario);
       setCarregandoPocos(false);
     } else if (pocos && pocos.length === 0) {
-      console.log('⚠️ Nenhum poço carregado');
       setCarregandoPocos(false);
     }
   }, [pocos]);
@@ -87,13 +73,11 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
 
       const pocoSelecionado = formData.poco;
       
-      // Verificar se o poço tem idProprietario
       if (!pocoSelecionado.idProprietario) {
-        console.warn('⚠️ Poço sem idProprietario:', pocoSelecionado);
+        console.warn('Poço sem idProprietario:', pocoSelecionado);
         throw new Error('Poço selecionado não possui proprietário definido');
       }
 
-      // Preparar dados para a notificação
       const dadosAnalise = {
         pocoId: pocoSelecionado.id,
         pocoNome: pocoSelecionado.nomeProprietario || pocoSelecionado.nome,
@@ -104,7 +88,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
         analistaNome: userData.nome,
         dataAnalise: formData.dataAnalise.toISOString(),
         resultado: formData.resultado,
-        // Parâmetros da análise com valores padrão
         ph: formData.ph || '',
         turbidez: formData.turbidez || '',
         temperaturaAr: formData.temperaturaAr || '',
@@ -124,17 +107,13 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
         dataSolicitacao: new Date().toISOString()
       };
 
-      console.log('📤 Enviando solicitação de análise...', dadosAnalise);
 
-      // Enviar solicitação via notificação
       const notificationId = await AnalistaNotifications.solicitarCadastroAnalise(
         user,
         dadosAnalise
       );
 
-      console.log('✅ Solicitação de análise enviada com ID:', notificationId);
 
-      // Reset do formulário
       setFormData({
         poco: null,
         dataAnalise: new Date(),
@@ -156,13 +135,13 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
       });
 
       Alert.alert(
-        '✅ Solicitação Enviada!', 
+        'Solicitação Enviada!', 
         'Sua análise foi enviada para aprovação do administrador.',
         [{ text: 'OK' }]
       );
       
     } catch (error) {
-      console.error('❌ Erro ao enviar solicitação:', error);
+      console.error('Erro ao enviar solicitação:', error);
       Alert.alert(
         'Erro', 
         `Não foi possível enviar a solicitação: ${error.message}`,
@@ -174,7 +153,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
   };
 
   const updateFormData = (key, value) => {
-    console.log(`📝 Atualizando ${key}:`, value);
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
@@ -193,7 +171,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
     </View>
   );
 
-  // Preparar opções de poços
   const opcoesPocos = pocos?.map(poco => {
     const poçoFormatado = {
       id: poco.id,
@@ -203,11 +180,9 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
       idProprietario: poco.idProprietario,
       ...poco
     };
-    console.log('📝 Poço formatado:', poçoFormatado);
     return poçoFormatado;
   }) || [];
 
-  console.log('📋 Opções de poços preparadas:', opcoesPocos.length);
 
   if (carregandoPocos) {
     return (
@@ -233,7 +208,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </Text>
         </View>
 
-        {/* SEÇÃO INFORMAÇÕES BÁSICAS */}
         <Text style={styles.sectionTitle}>Informações Básicas</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -244,8 +218,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
                 <SelecaoBuscaSeguro
                   value={formData.poco}
                   onSelect={(poco) => {
-                    console.log('✅ Poço selecionado:', poco);
-                    console.log('🔍 idProprietario do poço:', poco.idProprietario);
                     updateFormData('poco', poco);
                   }}
                   options={opcoesPocos}
@@ -256,7 +228,7 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
               ) : (
                 <View style={styles.errorBox}>
                   <Text style={styles.errorText}>
-                    ❌ Nenhum poço disponível para seleção
+                    Nenhum poço disponível para seleção
                   </Text>
                   <Text style={styles.errorSubText}>
                     Verifique se existem poços cadastrados no sistema
@@ -279,7 +251,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* DATA E RESULTADO */}
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
           <View style={styles.column}>
             <View style={styles.inputGroup}>
@@ -347,7 +318,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* SEÇÃO PARÂMETROS QUÍMICOS */}
         <Text style={styles.sectionTitle}>Parâmetros Químicos</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -361,7 +331,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* SEÇÃO PARÂMETROS MICROBIOLÓGICOS */}
         <Text style={styles.sectionTitle}>Parâmetros Microbiológicos</Text>
         
         <View style={isDesktop ? styles.twoColumns : styles.oneColumn}>
@@ -373,7 +342,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </View>
         </View>
 
-        {/* DEBUG INFO */}
         <View style={styles.debugContainer}>
           <Text style={styles.debugText}>
             DEBUG: {opcoesPocos.length} poços disponíveis | 
@@ -382,7 +350,6 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
           </Text>
         </View>
 
-        {/* BOTÃO SOLICITAR */}
         <View style={styles.fullWidth}>
           <TouchableOpacity 
             style={[
@@ -396,7 +363,7 @@ const AddAnalisesAnalista = ({ onAdicionarAnalise, pocos, analistas }) => {
               <ActivityIndicator size="small" color="white" />
             ) : (
               <Text style={styles.submitButtonText}>
-                {opcoesPocos.length === 0 ? '❌ NENHUM POÇO DISPONÍVEL' : '📤 SOLICITAR CADASTRO DE ANÁLISE'}
+                {opcoesPocos.length === 0 ? 'NENHUM POÇO DISPONÍVEL' : 'SOLICITAR CADASTRO DE ANÁLISE'}
               </Text>
             )}
           </TouchableOpacity>

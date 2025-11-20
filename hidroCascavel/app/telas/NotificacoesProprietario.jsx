@@ -30,7 +30,6 @@ import { useNavigation } from '@react-navigation/native';
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
 
-// Cores do tema (mantendo as mesmas da tela de admin)
 const COLORS = {
   primary: '#2685BF',
   secondary: '#4CAF50',
@@ -56,7 +55,6 @@ const COLORS = {
   }
 };
 
-// Espaçamentos
 const SPACING = {
   xs: 4,
   sm: 8,
@@ -65,7 +63,6 @@ const SPACING = {
   xl: 32,
 };
 
-// Bordas
 const BORDER = {
   radius: {
     sm: 6,
@@ -79,7 +76,6 @@ const BORDER = {
   }
 };
 
-// Sombras
 const SHADOW = {
   light: {
     shadowColor: '#000',
@@ -165,14 +161,12 @@ const NotificacoesProprietario = () => {
   const applyFilters = () => {
     let filtered = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       filtered = filtered.filter(notificacao => 
         notificacao.status && notificacao.status.toLowerCase() === filterStatus.toLowerCase()
       );
     }
 
-    // Filtro por busca
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(notificacao => {
@@ -320,22 +314,20 @@ const NotificacoesProprietario = () => {
             <Text style={styles.buttonSecondaryText}>👁️ Detalhes</Text>
           </TouchableOpacity>
           
-          {/* Botão de avaliação - apenas para análises concluídas com avaliação pendente */}
           {item.tipoNotificacao === 'analise_concluida' && 
            item.statusAvaliacao === 'pendente' && (
             <TouchableOpacity 
               style={styles.buttonSuccess}
               onPress={() => handleAvaliarServico(item)}
             >
-              <Text style={styles.buttonText}>⭐ Avaliar</Text>
+              <Text style={styles.buttonText}>Avaliar</Text>
             </TouchableOpacity>
           )}
 
-          {/* Indicador de já avaliado */}
           {item.tipoNotificacao === 'analise_concluida' && 
            item.statusAvaliacao === 'concluida' && (
             <View style={styles.ratedBadge}>
-              <Text style={styles.ratedText}>✅ Avaliado</Text>
+              <Text style={styles.ratedText}>Avaliado</Text>
             </View>
           )}
         </View>
@@ -347,7 +339,6 @@ const NotificacoesProprietario = () => {
     <View style={styles.filterContainer}>
       <Text style={styles.sectionTitle}>Filtrar Notificações</Text>
       
-      {/* Barra de Busca */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -365,7 +356,6 @@ const NotificacoesProprietario = () => {
         )}
       </View>
 
-      {/* Filtros de Status */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterLabel}>Status:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -397,7 +387,6 @@ const NotificacoesProprietario = () => {
         </ScrollView>
       </View>
 
-      {/* Contadores e Limpar Filtros */}
       <View style={styles.filterFooter}>
         <Text style={styles.counterText}>
           Mostrando {filteredNotifications.length} de {notifications.length}
@@ -466,7 +455,6 @@ const NotificacoesProprietario = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Modal de Detalhes */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -523,7 +511,7 @@ const NotificacoesProprietario = () => {
                     </View>
                     {selectedNotification.dadosVisita.confirmada === false && (
                       <Text style={[styles.detailValue, styles.rejectionReason]}>
-                        ⚠️ O analista não pôde confirmar esta data.
+                         O analista não pôde confirmar esta data.
                       </Text>
                     )}
                   </>
@@ -538,21 +526,20 @@ const NotificacoesProprietario = () => {
                   </View>
                 )}
 
-                {/* Botão de Avaliação no Modal */}
                 {selectedNotification.tipoNotificacao === 'analise_concluida' && 
                  selectedNotification.statusAvaliacao === 'pendente' && (
                   <TouchableOpacity 
                     style={styles.evaluateButton}
                     onPress={() => handleAvaliarServico(selectedNotification)}
                   >
-                    <Text style={styles.evaluateButtonText}>⭐ Avaliar Serviço</Text>
+                    <Text style={styles.evaluateButtonText}> Avaliar Serviço</Text>
                   </TouchableOpacity>
                 )}
                 
                 {selectedNotification.tipoNotificacao === 'analise_concluida' && 
                  selectedNotification.statusAvaliacao === 'concluida' && (
                   <View style={styles.ratedBadge}>
-                    <Text style={styles.ratedText}>✅ Você já avaliou este serviço</Text>
+                    <Text style={styles.ratedText}> Você já avaliou este serviço</Text>
                   </View>
                 )}
 
@@ -581,7 +568,6 @@ const NotificacoesProprietario = () => {
 };
 
 const styles = StyleSheet.create({
-  // Layout
   container: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -597,7 +583,6 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
 
-  // Cabeçalho
   header: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -613,7 +598,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
 
-  // Filtros
   filterContainer: {
     backgroundColor: COLORS.white,
     padding: SPACING.md,
@@ -698,7 +682,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.light,
   },
 
-  // Cards de Notificação
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER.radius.md,
@@ -767,7 +750,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Botões
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -801,7 +783,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Badge de Avaliado
   ratedBadge: {
     backgroundColor: '#E8F5E8',
     paddingVertical: SPACING.xs,
@@ -814,7 +795,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  // Estados Vazios
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -835,7 +815,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Botões de Ação
   clearFiltersButton: {
     backgroundColor: COLORS.danger,
     paddingVertical: SPACING.xs,
@@ -849,7 +828,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -887,7 +865,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
 
-  // Conteúdo do Modal
   modalIconTitle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -904,7 +881,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Seções de Detalhes
   detailSection: {
     marginBottom: SPACING.md,
   },
@@ -928,7 +904,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
 
-  // Botão de Avaliação
   evaluateButton: {
     backgroundColor: '#FFA500',
     padding: SPACING.md,
@@ -942,13 +917,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Textos Especiais
   rejectionReason: {
     color: COLORS.danger,
     fontStyle: 'italic',
   },
 
-  // Ações do Modal
   modalActions: {
     marginTop: SPACING.lg,
   },
@@ -966,7 +939,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray[600],
   },
 
-  // Textos
   loadingText: {
     marginTop: SPACING.sm,
     color: COLORS.text.secondary,

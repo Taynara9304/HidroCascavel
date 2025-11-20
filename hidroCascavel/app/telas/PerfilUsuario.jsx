@@ -1,4 +1,3 @@
-// telas/PerfilUsuario.js
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -23,7 +22,6 @@ const PerfilUsuario = ({ navigation }) => {
   const [carregando, setCarregando] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Estados para os dados editáveis
   const [dados, setDados] = useState({
     nome: '',
     sobrenome: '',
@@ -31,7 +29,6 @@ const PerfilUsuario = ({ navigation }) => {
     email: ''
   });
 
-  // Estados para endereço
   const [endereco, setEndereco] = useState({
     rua: '',
     numero: '',
@@ -43,7 +40,6 @@ const PerfilUsuario = ({ navigation }) => {
     referencia: ''
   });
 
-  // Carrega os dados do usuário quando a tela abre
   useEffect(() => {
     if (userData) {
       setDados({
@@ -115,7 +111,6 @@ const PerfilUsuario = ({ navigation }) => {
         atualizadoEm: new Date()
       });
 
-      // Atualiza os dados no contexto
       await buscarDadosUsuario(user);
 
       Toast.show({
@@ -138,7 +133,6 @@ const PerfilUsuario = ({ navigation }) => {
   };
 
   const handleCancelar = () => {
-    // Restaura os dados originais
     setDados({
       nome: userData.nome || '',
       sobrenome: userData.sobrenome || '',
@@ -187,7 +181,6 @@ const PerfilUsuario = ({ navigation }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Cabeçalho */}
         <View style={styles.header}>
           <View style={styles.avatar}>
             <Text style={styles.avatarTexto}>
@@ -204,7 +197,6 @@ const PerfilUsuario = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* Botões de Ação */}
         <View style={styles.botoesAcao}>
           {!editando ? (
             <TouchableOpacity 
@@ -237,7 +229,6 @@ const PerfilUsuario = ({ navigation }) => {
           )}
         </View>
 
-        {/* Dados Pessoais */}
         <View style={styles.secao}>
           <Text style={styles.tituloSecao}>Dados Pessoais</Text>
           <View style={styles.linhaDivisoria} />
@@ -282,7 +273,6 @@ const PerfilUsuario = ({ navigation }) => {
           />
           <Text style={styles.textoAjuda}>E-mail não pode ser alterado</Text>
 
-          {/* Campos específicos por tipo de usuário */}
           {userData.matricula && (
             <Input
               label="Matrícula"
@@ -304,7 +294,6 @@ const PerfilUsuario = ({ navigation }) => {
           )}
         </View>
 
-        {/* Endereço */}
         <View style={styles.secao}>
           <Text style={styles.tituloSecao}>Endereço</Text>
           <View style={styles.linhaDivisoria} />
@@ -401,7 +390,6 @@ const PerfilUsuario = ({ navigation }) => {
           />
         </View>
 
-        {/* Botão de Logout */}
         <TouchableOpacity 
           style={styles.botaoLogout}
           onPress={confirmarLogout}

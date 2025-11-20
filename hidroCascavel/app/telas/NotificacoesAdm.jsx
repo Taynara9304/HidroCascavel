@@ -34,7 +34,6 @@ import DetalhesSolicitacaoVisita from '../componentes/DetalhesSolicitacaoVisita'
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
 
-// Cores do tema
 const COLORS = {
   primary: '#2685BF',
   secondary: '#4CAF50',
@@ -60,7 +59,6 @@ const COLORS = {
   }
 };
 
-// Espaçamentos
 const SPACING = {
   xs: 4,
   sm: 8,
@@ -69,7 +67,6 @@ const SPACING = {
   xl: 32,
 };
 
-// Bordas
 const BORDER = {
   radius: {
     sm: 6,
@@ -83,7 +80,6 @@ const BORDER = {
   }
 };
 
-// Sombras
 const SHADOW = {
   light: {
     shadowColor: '#000',
@@ -115,7 +111,6 @@ const NotificacoesAdm = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
 
-  // Calcular data de 30 dias atrás
   const getThirtyDaysAgo = () => {
     const date = new Date();
     date.setDate(date.getDate() - 30);
@@ -125,7 +120,6 @@ const NotificacoesAdm = () => {
   useEffect(() => {
     const unsubscribe = carregarNotificacoes();
     
-    // Limpar notificações antigas ao carregar o componente
     limparNotificacoesAntigas();
     
     return () => {
@@ -140,7 +134,7 @@ const NotificacoesAdm = () => {
   const carregarNotificacoes = async () => {
     try {
       setLoading(true);
-      console.log('📥 Carregando notificações dos últimos 30 dias...');
+      console.log('Carregando notificações dos últimos 30 dias...');
       
       const trintaDiasAtras = getThirtyDaysAgo();
       
@@ -161,14 +155,14 @@ const NotificacoesAdm = () => {
             });
           });
           
-          console.log('✅ Notificações carregadas:', notificacoesList.length);
+          console.log('Notificações carregadas:', notificacoesList.length);
           
           setNotifications(notificacoesList);
           setLoading(false);
           setRefreshing(false);
         }, 
         (error) => {
-          console.error('❌ Erro ao carregar notificações:', error);
+          console.error('Erro ao carregar notificações:', error);
           setLoading(false);
           setRefreshing(false);
           Alert.alert('Erro', 'Não foi possível carregar as notificações');
@@ -177,7 +171,7 @@ const NotificacoesAdm = () => {
 
       return unsubscribe;
     } catch (error) {
-      console.error('❌ Erro geral:', error);
+      console.error('Erro geral:', error);
       setLoading(false);
       setRefreshing(false);
       Alert.alert('Erro', 'Não foi possível carregar as notificações');
@@ -187,17 +181,14 @@ const NotificacoesAdm = () => {
   const aplicarFiltros = () => {
     let filtradas = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.status === filterStatus);
     }
 
-    // Filtro por tipo
     if (filterTipo !== 'todos') {
       filtradas = filtradas.filter(notificacao => notificacao.tipo === filterTipo);
     }
 
-    // Filtro por busca
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       filtradas = filtradas.filter(notificacao => {
@@ -215,7 +206,6 @@ const NotificacoesAdm = () => {
     setFilteredNotifications(filtradas);
   };
 
-  // 🔧 FUNÇÃO PARA LIMPAR NOTIFICAÇÕES ANTIGAS
   const limparNotificacoesAntigas = async () => {
     try {
       const trintaDiasAtras = getThirtyDaysAgo();
@@ -228,13 +218,12 @@ const NotificacoesAdm = () => {
       const deletarPromises = querySnapshot.docs.map(doc => deleteDoc(doc.ref));
       
       await Promise.all(deletarPromises);
-      console.log(`🗑️ ${deletarPromises.length} notificações antigas removidas`);
+      console.log(`${deletarPromises.length} notificações antigas removidas`);
     } catch (error) {
-      console.error('❌ Erro ao limpar notificações antigas:', error);
+      console.error('Erro ao limpar notificações antigas:', error);
     }
   };
 
-  // ✅ FUNÇÃO CORRIGIDA PARA ACEITAR ANÁLISE
   const handleAceitarAnalise = async (notification) => {
     if (carregandoId) return;
 
@@ -249,14 +238,12 @@ const NotificacoesAdm = () => {
 
       const dados = notification.dadosSolicitacao;
       
-      // Verificar dados essenciais
       if (!dados?.idProprietario || !dados?.idAnalista || !dados?.idPoco) {
         Alert.alert('Erro', 'Dados da análise incompletos.');
         setCarregandoId(null);
         return;
       }
 
-      // Criar análise na coleção 'analysis'
       const analiseAprovada = {
         idAnalista: dados.idAnalista,
         analistaNome: dados.analistaNome || 'Analista',
@@ -277,17 +264,15 @@ const NotificacoesAdm = () => {
 
       const docRef = await addDoc(collection(db, 'analysis'), analiseAprovada);
 
-      // Atualizar notificação
       await updateDoc(doc(db, 'notifications', notification.id), {
         status: 'aceita',
         dataResolucao: Timestamp.now(),
         resolvidoPor: user.uid
       });
 
-      // Notificar analista
       const notificacaoAnalista = {
         tipo: 'analise_aprovada',
-        titulo: '✅ Análise Aprovada',
+        titulo: 'Análise Aprovada',
         mensagem: `Sua solicitação de análise para o poço "${dados.pocoNome}" foi aprovada.`,
         userId: dados.idAnalista,
         status: 'nao_lida',
@@ -302,14 +287,13 @@ const NotificacoesAdm = () => {
       Alert.alert('Sucesso', 'Análise aceita com sucesso!');
       
     } catch (error) {
-      console.error('❌ Erro ao aceitar análise:', error);
+      console.error('Erro ao aceitar análise:', error);
       Alert.alert('Erro', `Não foi possível aceitar a análise: ${error.message}`);
     } finally {
       setCarregandoId(null);
     }
   };
 
-  // ✅ FUNÇÃO PARA REJEITAR ANÁLISE
   const handleRejeitarAnalise = async (notificationId, notification) => {
     if (!motivoRejeicao.trim()) {
       Alert.alert('Atenção', 'Por favor, informe o motivo da rejeição.');
@@ -326,11 +310,10 @@ const NotificacoesAdm = () => {
         motivoRejeicao: motivoRejeicao
       });
 
-      // Notificar analista
       const dados = notification.dadosSolicitacao;
       const notificacaoAnalista = {
         tipo: 'analise_rejeitada',
-        titulo: '❌ Análise Rejeitada',
+        titulo: 'Análise Rejeitada',
         mensagem: `Sua análise para o poço "${dados?.pocoNome}" foi rejeitada. Motivo: ${motivoRejeicao}`,
         userId: dados?.idAnalista,
         status: 'nao_lida',
@@ -344,14 +327,13 @@ const NotificacoesAdm = () => {
       setMotivoRejeicao('');
       
     } catch (error) {
-      console.error('❌ Erro ao rejeitar análise:', error);
+      console.error('Erro ao rejeitar análise:', error);
       Alert.alert('Erro', `Não foi possível rejeitar: ${error.message}`);
     } finally {
       setCarregandoId(null);
     }
   };
 
-  // ✅ FUNÇÃO: ACEITAR VISITA
   const handleAceitarVisita = async (notification) => {
     if (carregandoId) return;
 
@@ -403,7 +385,7 @@ const NotificacoesAdm = () => {
 
       const notificacaoAnalista = {
         tipo: 'visita_aprovada',
-        titulo: '✅ Visita Aprovada',
+        titulo: 'Visita Aprovada',
         mensagem: `Sua visita técnica no poço ${dados.pocoNome} foi aprovada.`,
         userId: dados.analistaId,
         status: 'nao_lida',
@@ -419,14 +401,13 @@ const NotificacoesAdm = () => {
       Alert.alert('Sucesso', 'Visita aprovada com sucesso!');
       
     } catch (error) {
-      console.error('❌ Erro ao aceitar visita:', error);
+      console.error('Erro ao aceitar visita:', error);
       Alert.alert('Erro', `Não foi possível aceitar a visita: ${error.message}`);
     } finally {
       setCarregandoId(null);
     }
   };
 
-  // ✅ FUNÇÃO: REJEITAR VISITA
   const handleRejeitarVisita = async (notification) => {
     if (!motivoRejeicao.trim()) {
       Alert.alert('Atenção', 'Por favor, informe o motivo da rejeição.');
@@ -447,7 +428,7 @@ const NotificacoesAdm = () => {
 
       const notificacaoAnalista = {
         tipo: 'visita_rejeitada',
-        titulo: '❌ Visita Rejeitada',
+        titulo: 'Visita Rejeitada',
         mensagem: `Sua visita técnica no poço ${dados.pocoNome} foi rejeitada. Motivo: ${motivoRejeicao}`,
         userId: dados.analistaId,
         status: 'nao_lida',
@@ -465,7 +446,7 @@ const NotificacoesAdm = () => {
       setMotivoRejeicao('');
       
     } catch (error) {
-      console.error('❌ Erro ao rejeitar visita:', error);
+      console.error('Erro ao rejeitar visita:', error);
       Alert.alert('Erro', `Não foi possível rejeitar a visita: ${error.message}`);
     } finally {
       setCarregandoId(null);
@@ -588,7 +569,7 @@ const NotificacoesAdm = () => {
               style={styles.buttonSecondary}
               onPress={() => verDetalhes(item)}
             >
-              <Text style={styles.buttonSecondaryText}>📋 Detalhes</Text>
+              <Text style={styles.buttonSecondaryText}>Detalhes</Text>
             </TouchableOpacity>
             
             <TouchableOpacity 
@@ -599,7 +580,7 @@ const NotificacoesAdm = () => {
               {carregandoId === item.id ? (
                 <ActivityIndicator size="small" color={COLORS.white} />
               ) : (
-                <Text style={styles.buttonText}>✅ Aceitar</Text>
+                <Text style={styles.buttonText}>Aceitar</Text>
               )}
             </TouchableOpacity>
             
@@ -608,7 +589,7 @@ const NotificacoesAdm = () => {
               onPress={() => verDetalhes(item)}
               disabled={carregandoId !== null}
             >
-              <Text style={styles.buttonText}>❌ Rejeitar</Text>
+              <Text style={styles.buttonText}>Rejeitar</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -616,7 +597,7 @@ const NotificacoesAdm = () => {
         {item.status !== 'pendente' && (
           <View style={styles.processedContainer}>
             <Text style={styles.processedText}>
-              {item.status === 'aceita' ? '✅ Processada - Aceita' : '❌ Processada - Rejeitada'}
+              {item.status === 'aceita' ? 'Processada - Aceita' : 'Processada - Rejeitada'}
             </Text>
             {item.dataResolucao && (
               <Text style={styles.processedDate}>
@@ -638,7 +619,6 @@ const NotificacoesAdm = () => {
     <View style={styles.filterContainer}>
       <Text style={styles.sectionTitle}>Filtrar Notificações</Text>
       
-      {/* Barra de Busca */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -656,7 +636,6 @@ const NotificacoesAdm = () => {
         )}
       </View>
 
-      {/* Filtros de Status */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterLabel}>Status:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -687,7 +666,6 @@ const NotificacoesAdm = () => {
         </ScrollView>
       </View>
 
-      {/* Filtros de Tipo */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterLabel}>Tipo:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -717,7 +695,6 @@ const NotificacoesAdm = () => {
         </ScrollView>
       </View>
 
-      {/* Contadores e Limpar Filtros */}
       <View style={styles.filterFooter}>
         <Text style={styles.counterText}>
           Mostrando {filteredNotifications.length} de {notifications.length}
@@ -896,7 +873,7 @@ const NotificacoesAdm = () => {
 };
 
 const styles = StyleSheet.create({
-  // Layout
+
   container: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -912,7 +889,6 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
 
-  // Cabeçalho
   header: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -928,7 +904,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
 
-  // Filtros
   filterContainer: {
     backgroundColor: COLORS.white,
     padding: SPACING.md,
@@ -1013,7 +988,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.light,
   },
 
-  // Cards de Notificação
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER.radius.md,
@@ -1082,7 +1056,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Botões
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -1121,7 +1094,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Estados Processados
   processedContainer: {
     marginTop: SPACING.sm,
     paddingTop: SPACING.sm,
@@ -1143,7 +1115,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  // Estados Vazios
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1164,7 +1135,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Botões de Ação
   clearFiltersButton: {
     backgroundColor: COLORS.danger,
     paddingVertical: SPACING.xs,
@@ -1178,7 +1148,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -1215,7 +1184,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
 
-  // Seção de Rejeição
   rejectionSection: {
     padding: SPACING.md,
     backgroundColor: COLORS.white,
@@ -1261,7 +1229,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray[400],
   },
 
-  // Textos
   loadingText: {
     marginTop: SPACING.sm,
     color: COLORS.text.secondary,

@@ -1,4 +1,3 @@
-// componentes/TabelaAnalises.jsx - VERSÃO COM FIX PARA WEB
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -120,7 +119,6 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
           {renderCampo('Status', solicitacao.status)}
         </View>
 
-        {/* Parâmetros Físico-Químicos */}
         <View style={styles.secao}>
           <Text style={styles.subtitulo}>Parâmetros Físico-Químicos</Text>
           <View style={styles.parametrosGrid}>
@@ -141,7 +139,7 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
 
         {(solicitacao.aluminio || solicitacao.arsenio || solicitacao.chumbo || solicitacao.cromo || solicitacao.mercurio) && (
           <View style={styles.secao}>
-            <Text style={styles.subtitulo}>⚠️ Metais Pesados (mg/L)</Text>
+            <Text style={styles.subtitulo}>Metais Pesados (mg/L)</Text>
             <View style={styles.parametrosGrid}>
               <View style={styles.coluna}>
                 {renderCampo('Alumínio', solicitacao.aluminio)}
@@ -186,7 +184,7 @@ const DetalhesSolicitacaoAnalise = ({ solicitacao, onClose }) => {
 
         {solicitacao.observacoes && solicitacao.observacoes !== '-' && (
           <View style={styles.secao}>
-            <Text style={styles.subtitulo}>📝 Observações</Text>
+            <Text style={styles.subtitulo}>Observações</Text>
             <Text style={styles.observacoesTexto}>{solicitacao.observacoes}</Text>
           </View>
         )}
@@ -210,9 +208,9 @@ const TabelaAnalises = ({
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [detalhesAnalise, setDetalhesAnalise] = useState(null);
-  const [inputFocado, setInputFocado] = useState(false); // ✅ Novo estado para foco
+  const [inputFocado, setInputFocado] = useState(false); 
   const flatListRef = useRef(null);
-  const buscaInputRef = useRef(null); // ✅ Ref para o input
+  const buscaInputRef = useRef(null);
 
   const handleScrollEndDrag = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
@@ -224,10 +222,8 @@ const TabelaAnalises = ({
   };
 
   const handleScrollBeginDrag = () => {
-    // Marca que o scroll horizontal começou
   };
 
-  // ✅ Função para forçar foco no input (especialmente para web)
   const handleContainerPress = () => {
     if (Platform.OS === 'web' && !inputFocado) {
       buscaInputRef.current?.focus();
@@ -538,7 +534,6 @@ const TabelaAnalises = ({
           Análises ({analisesFiltradas.length})
         </Text>
         
-        {/* ✅ Barra de Busca MELHORADA para Web */}
         <View style={styles.barraBuscaContainer}>
           <TouchableOpacity 
             style={styles.buscaInputContainer}
@@ -549,14 +544,13 @@ const TabelaAnalises = ({
               ref={buscaInputRef}
               style={[
                 styles.buscaInput,
-                inputFocado && styles.buscaInputFocado // ✅ Estilo quando focado
+                inputFocado && styles.buscaInputFocado 
               ]}
               placeholder="Buscar por poço, data ou observações..."
               value={busca}
               onChangeText={setBusca}
-              onFocus={() => setInputFocado(true)} // ✅ Controla estado de foco
-              onBlur={() => setInputFocado(false)} // ✅ Controla estado de foco
-              // ✅ Propriedades específicas para Web
+              onFocus={() => setInputFocado(true)} 
+              onBlur={() => setInputFocado(false)}
               selectTextOnFocus={Platform.OS === 'web'}
               autoFocus={Platform.OS === 'web' && false}
             />
@@ -581,20 +575,18 @@ const TabelaAnalises = ({
           </TouchableOpacity>
         </View>
 
-        {/* Resumo Rápido */}
         <View style={styles.resumoContainer}>
           <Text style={styles.resumoItem}>
-            ✅ Aprovadas: {analisesFiltradas.filter(a => a.resultado === 'Aprovada').length}
+            Aprovadas: {analisesFiltradas.filter(a => a.resultado === 'Aprovada').length}
           </Text>
           <Text style={styles.resumoItem}>
-            ❌ Reprovadas: {analisesFiltradas.filter(a => a.resultado === 'Reprovada').length}
+            Reprovadas: {analisesFiltradas.filter(a => a.resultado === 'Reprovada').length}
           </Text>
           <Text style={styles.resumoItem}>
-            ⏳ Pendentes: {analisesFiltradas.filter(a => a.status === 'pendente').length}
+            Pendentes: {analisesFiltradas.filter(a => a.status === 'pendente').length}
           </Text>
         </View>
 
-        {/* ✅ CORREÇÃO: Grid Horizontal com gestos otimizados */}
         {analisesFiltradas.length > 0 ? (
           <View style={styles.carouselContainer}>
             <FlatList
@@ -608,11 +600,9 @@ const TabelaAnalises = ({
               snapToInterval={null}
               snapToAlignment="center"
               decelerationRate="normal"
-              // ✅ Handlers para gestos
               onScrollBeginDrag={handleScrollBeginDrag}
               onScrollEndDrag={handleScrollEndDrag}
               onMomentumScrollEnd={handleScrollEndDrag}
-              // ✅ Configurações para melhor performance de gestos
               scrollEventThrottle={16}
               directionalLockEnabled={true}
               alwaysBounceHorizontal={true}
@@ -623,7 +613,6 @@ const TabelaAnalises = ({
               style={styles.flatList}
             />
             
-            {/* Indicadores de Página */}
             {analisesFiltradas.length > 1 && (
               <View style={styles.paginacaoContainer}>
                 <Text style={styles.paginacaoTexto}>
@@ -651,8 +640,8 @@ const TabelaAnalises = ({
           <View style={styles.semDadosContainer}>
             <Text style={styles.semDados}>
               {busca || filtroStatus !== 'todos' || filtroResultado !== 'todos' 
-                ? '🔍 Nenhuma análise encontrada' 
-                : '📭 Nenhuma análise cadastrada'}
+                ? 'Nenhuma análise encontrada' 
+                : 'Nenhuma análise cadastrada'}
             </Text>
             {(busca || filtroStatus !== 'todos' || filtroResultado !== 'todos') && (
               <TouchableOpacity 
@@ -669,7 +658,6 @@ const TabelaAnalises = ({
           </View>
         )}
 
-        {/* ✅ Modal de Detalhes Integrado */}
         <Modal
           visible={!!detalhesAnalise}
           animationType="slide"
@@ -685,7 +673,6 @@ const TabelaAnalises = ({
           </View>
         </Modal>
 
-        {/* Modal de Filtros */}
         <Modal
           visible={mostrarFiltros}
           animationType="slide"
@@ -815,7 +802,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   buscaInputFocado: {
-    borderColor: '#2685BF', // ✅ Borda azul quando focado
+    borderColor: '#2685BF', 
     shadowColor: '#2685BF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.3,
@@ -831,7 +818,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1, // ✅ Garante que fique acima do input
+    zIndex: 1, 
   },
   limparBuscaTexto: {
     color: 'white',
@@ -880,7 +867,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#666',
   },
-  // ✅ ESTILOS CORRIGIDOS PARA GESTOS
   carouselContainer: {
     flex: 1,
     minHeight: 300,
@@ -984,7 +970,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
-  // Paginação
   paginacaoContainer: {
     alignItems: 'center',
     marginTop: 16,
@@ -1010,7 +995,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#2685BF',
     width: 16,
   },
-  // Modal Overlay
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1023,7 +1007,6 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     overflow: 'hidden',
   },
-  // Estilos do Componente de Detalhes (mantidos iguais)
   detalhesContainer: {
     flex: 1,
     backgroundColor: 'white',
@@ -1114,7 +1097,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 20,
   },
-  // Estilos dos modais de filtro
   modalContent: {
     padding: 20,
   },
@@ -1165,7 +1147,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
-  // Estados vazios
   semDadosContainer: {
     flex: 1,
     justifyContent: 'center',

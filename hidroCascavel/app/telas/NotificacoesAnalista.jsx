@@ -30,7 +30,6 @@ import { useAuth } from '../contexts/authContext';
 const { width } = Dimensions.get('window');
 const isDesktop = width >= 768;
 
-// Cores do tema (mesmo sistema da tela anterior)
 const COLORS = {
   primary: '#2685BF',
   secondary: '#4CAF50',
@@ -56,7 +55,6 @@ const COLORS = {
   }
 };
 
-// Espaçamentos
 const SPACING = {
   xs: 4,
   sm: 8,
@@ -65,7 +63,6 @@ const SPACING = {
   xl: 32,
 };
 
-// Bordas
 const BORDER = {
   radius: {
     sm: 6,
@@ -79,7 +76,6 @@ const BORDER = {
   }
 };
 
-// Sombras
 const SHADOW = {
   light: {
     shadowColor: '#000',
@@ -247,12 +243,10 @@ const NotificacoesAnalista = () => {
   const applyFilters = () => {
     let filtered = [...notifications];
 
-    // Filtro por status
     if (filterStatus !== 'todos') {
       filtered = filtered.filter(notification => notification.status === filterStatus);
     }
 
-    // Filtro por tipo
     if (filterType === 'aprovadas') {
       filtered = filtered.filter(notification => 
         notification.tipo.includes('aprovada')
@@ -263,7 +257,6 @@ const NotificacoesAnalista = () => {
       );
     }
 
-    // Filtro por busca
     if (searchQuery.trim() !== '') {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(notification => {
@@ -363,7 +356,6 @@ const NotificacoesAnalista = () => {
     <View style={styles.filterContainer}>
       <Text style={styles.sectionTitle}>Filtrar Notificações</Text>
       
-      {/* Barra de Busca */}
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -381,10 +373,8 @@ const NotificacoesAnalista = () => {
         )}
       </View>
 
-      {/* Botão Marcar Todas como Lidas */}
       {renderMarkAllButton()}
 
-      {/* Filtros de Status */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterLabel}>Status:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -414,15 +404,14 @@ const NotificacoesAnalista = () => {
         </ScrollView>
       </View>
 
-      {/* Filtros de Tipo */}
       <View style={styles.filterGroup}>
         <Text style={styles.filterLabel}>Tipo:</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           <View style={styles.filterButtons}>
             {[
               { key: 'todos', label: 'Todos' },
-              { key: 'aprovadas', label: '✅ Aprovadas' },
-              { key: 'rejeitadas', label: '❌ Rejeitadas' }
+              { key: 'aprovadas', label: ' Aprovadas' },
+              { key: 'rejeitadas', label: ' Rejeitadas' }
             ].map(({ key, label }) => (
               <TouchableOpacity
                 key={key}
@@ -446,7 +435,6 @@ const NotificacoesAnalista = () => {
         </ScrollView>
       </View>
 
-      {/* Contadores e Limpar Filtros */}
       <View style={styles.filterFooter}>
         <Text style={styles.counterText}>
           Mostrando {filteredNotifications.length} de {notifications.length}
@@ -492,7 +480,6 @@ const NotificacoesAnalista = () => {
           {item.mensagem}
         </Text>
         
-        {/* Dados da análise */}
         {item.dadosAnalise && (
           <View style={styles.cardData}>
             <Text style={styles.dataText}>
@@ -506,7 +493,6 @@ const NotificacoesAnalista = () => {
           </View>
         )}
 
-        {/* Dados da visita */}
         {item.dadosVisita && (
           <View style={styles.cardData}>
             <Text style={styles.dataText}>
@@ -602,7 +588,6 @@ const NotificacoesAnalista = () => {
         contentContainerStyle={styles.listContent}
       />
 
-      {/* Modal de Detalhes */}
       <Modal
         visible={modalVisible}
         animationType="slide"
@@ -656,7 +641,6 @@ const NotificacoesAnalista = () => {
                   <Text style={styles.detailValue}>{selectedNotification.mensagem}</Text>
                 </View>
 
-                {/* Dados da análise */}
                 {selectedNotification.dadosAnalise && (
                   <View style={styles.detailSection}>
                     <Text style={styles.detailLabel}>Informações da Análise</Text>
@@ -675,7 +659,6 @@ const NotificacoesAnalista = () => {
                   </View>
                 )}
 
-                {/* Dados da visita */}
                 {selectedNotification.dadosVisita && (
                   <View style={styles.detailSection}>
                     <Text style={styles.detailLabel}>Informações da Visita</Text>
@@ -736,7 +719,6 @@ const NotificacoesAnalista = () => {
 };
 
 const styles = StyleSheet.create({
-  // Layout
   container: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -752,7 +734,6 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.lg,
   },
 
-  // Cabeçalho
   header: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -768,7 +749,6 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md,
   },
 
-  // Filtros
   filterContainer: {
     backgroundColor: COLORS.white,
     padding: SPACING.md,
@@ -871,7 +851,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.light,
   },
 
-  // Cards de Notificação
   card: {
     backgroundColor: COLORS.white,
     borderRadius: BORDER.radius.md,
@@ -948,7 +927,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
-  // Botões
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -982,7 +960,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 
-  // Estados Vazios
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -1003,7 +980,6 @@ const styles = StyleSheet.create({
     marginTop: SPACING.xs,
   },
 
-  // Botões de Ação
   clearFiltersButton: {
     backgroundColor: COLORS.danger,
     paddingVertical: SPACING.xs,
@@ -1017,7 +993,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Modal
   modalContainer: {
     flex: 1,
     backgroundColor: COLORS.light,
@@ -1055,7 +1030,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.secondary,
   },
 
-  // Conteúdo do Modal
   modalIconTitle: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1072,7 +1046,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Seções de Detalhes
   detailSection: {
     marginBottom: SPACING.md,
   },
@@ -1110,7 +1083,6 @@ const styles = StyleSheet.create({
     color: COLORS.text.primary,
   },
 
-  // Ações do Modal
   modalActions: {
     marginTop: SPACING.lg,
   },
@@ -1128,7 +1100,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.gray[600],
   },
 
-  // Textos
   loadingText: {
     marginTop: SPACING.sm,
     color: COLORS.text.secondary,

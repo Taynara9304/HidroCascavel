@@ -1,4 +1,3 @@
-// telas/GerenciarAnalises.jsx - CORREÇÃO COMPLETA
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -26,16 +25,7 @@ const GerenciarAnalises = ({ navigation }) => {
   const [analistas, setAnalistas] = useState([]);
   const { user, userType, userData } = useAuth();
 
-  console.log('🔍 GerenciarAnalises - Estado do usuário:', {
-    userId: user?.uid,
-    userType,
-    userData,
-    loadingAuth: loading
-  });
-
-  useEffect(() => {
-    console.log('🔄 useEffect disparado - user:', user?.uid, 'userType:', userType);
-    
+  useEffect(() => {    
     if (user) {
       carregarAnalises();
       carregarDadosFormulario();
@@ -46,13 +36,10 @@ const GerenciarAnalises = ({ navigation }) => {
     let tipo = '';
     
     if (userType) {
-      console.log('🎯 Usando userType do contexto:', userType);
       tipo = userType;
     } else if (userData?.tipoUsuario) {
-      console.log('🎯 Usando userData.tipoUsuario:', userData.tipoUsuario);
       tipo = userData.tipoUsuario;
     } else {
-      console.log('⚠️ Tipo de usuário não detectado, usando padrão: analista');
       tipo = 'analista';
     }
     
@@ -75,14 +62,8 @@ const GerenciarAnalises = ({ navigation }) => {
       
       const tipoUsuarioReal = getTipoUsuarioReal();
       
-      console.log('📊 Iniciando carregamento de análises...', {
-        uid: user?.uid,
-        userType: tipoUsuarioReal,
-        timestamp: new Date().toISOString()
-      });
 
       if (!user) {
-        console.log('❌ Usuário não autenticado - parando carregamento');
         setLoading(false);
         return;
       }
@@ -95,20 +76,17 @@ const GerenciarAnalises = ({ navigation }) => {
           where('idProprietario', '==', user.uid),
           orderBy('dataCriacao', 'desc')
         );
-        console.log('👤 Consulta: análises do proprietário', user.uid);
       
       } else {
         q = query(
           collection(db, 'analysis'),
           orderBy('dataCriacao', 'desc')
         );
-        console.log('👥 Consulta: TODAS as análises');
       }
 
       const unsubscribe = onSnapshot(q, 
         (querySnapshot) => {
           const analisesList = [];
-          console.log('📦 Snapshot recebido - documentos:', querySnapshot.size);
           
           querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -118,13 +96,11 @@ const GerenciarAnalises = ({ navigation }) => {
             });
           });
           
-          console.log('✅ Análises processadas:', analisesList.length);
           setAnalises(analisesList);
           setLoading(false);
           setRefreshing(false);
         }, 
         (error) => {
-          console.error('❌ Erro no snapshot:', error);
           Alert.alert('Erro', 'Não foi possível carregar as análises: ' + error.message);
           setLoading(false);
           setRefreshing(false);
@@ -133,7 +109,6 @@ const GerenciarAnalises = ({ navigation }) => {
 
       return unsubscribe;
     } catch (error) {
-      console.error('❌ Erro ao carregar análises:', error);
       Alert.alert('Erro', 'Não foi possível carregar as análises');
       setLoading(false);
       setRefreshing(false);
@@ -142,9 +117,7 @@ const GerenciarAnalises = ({ navigation }) => {
 
   const carregarDadosFormulario = async () => {
     try {
-      console.log('🔄 Carregando dados do formulário...');
       
-      console.log('🔍 Tentando acessar coleção: wells');
       
       const pocosSnapshot = await getDocs(collection(db, 'wells'));
       const pocosList = pocosSnapshot.docs.map(doc => ({
@@ -152,21 +125,13 @@ const GerenciarAnalises = ({ navigation }) => {
         ...doc.data()
       }));
       
-      console.log('✅ Poços carregados com SUCESSO:', pocosList.length);
-      if (pocosList.length > 0) {
-        console.log('📋 Primeiro poço:', pocosList[0]);
-        console.log('👤 idProprietario do primeiro poço:', pocosList[0].idProprietario);
-      }
-      
       setPocos(pocosList);
 
-      console.log('🔍 Tentando acessar coleção: users');
       const usersSnapshot = await getDocs(collection(db, 'users'));
       const analistasList = usersSnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
         .filter(user => user.tipoUsuario === 'analista' || user.tipoUsuario === 'admin');
       
-      console.log('Analistas carregados com SUCESSO:', analistasList.length);
       setAnalistas(analistasList);
 
     } catch (error) {
@@ -188,7 +153,6 @@ const GerenciarAnalises = ({ navigation }) => {
 
   const handleCadastroDiretoAdmin = async (analysisData) => {
     try {
-      console.log('Admin: Cadastrando análise diretamente...', analysisData);
       
       const docRef = await addDoc(collection(db, 'analysis'), {
         ...analysisData,
@@ -198,7 +162,6 @@ const GerenciarAnalises = ({ navigation }) => {
         criadoPor: user.uid
       });
 
-      console.log('Análise cadastrada com ID:', docRef.id);
       Alert.alert('Sucesso', 'Análise cadastrada diretamente no banco!');
       
       carregarAnalises();
@@ -211,14 +174,12 @@ const GerenciarAnalises = ({ navigation }) => {
 
   const handleSolicitacaoAnalista = async (analysisData) => {
     try {
-      console.log('Analista: Enviando solicitação de análise...', analysisData);
       
       const notificationId = await AnalistaNotifications.solicitarCadastroAnalise(
         user,
         analysisData
       );
 
-      console.log('Solicitação enviada com ID:', notificationId);
       Alert.alert(
         'Solicitação Enviada!', 
         'Sua análise foi enviada para aprovação do administrador.'
@@ -231,7 +192,6 @@ const GerenciarAnalises = ({ navigation }) => {
   };
 
   const onRefresh = () => {
-    console.log('Refresh manual acionado');
     setRefreshing(true);
     carregarAnalises();
     carregarDadosFormulario();
@@ -274,7 +234,6 @@ const GerenciarAnalises = ({ navigation }) => {
     }
   };
 
-  // ✅ CORREÇÃO: Badge do tipo de usuário
   const getUserTypeBadge = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
     switch (tipoUsuarioReal) {
@@ -296,9 +255,7 @@ const GerenciarAnalises = ({ navigation }) => {
 
   const renderFormulario = () => {
     const tipoUsuarioReal = getTipoUsuarioReal();
-    
-    console.log('Renderizando formulário para:', tipoUsuarioReal);
-    
+        
     if (tipoUsuarioReal === 'admin') {
       return (
         <View style={styles.formularioContainer}>
@@ -357,7 +314,7 @@ const GerenciarAnalises = ({ navigation }) => {
       </View>
 
       <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>ℹ️ Informações</Text>
+        <Text style={styles.infoTitle}>ℹInformações</Text>
         <Text style={styles.infoText}>
           {getInfoText()}
         </Text>
@@ -404,7 +361,7 @@ const GerenciarAnalises = ({ navigation }) => {
             style={styles.secondaryButton}
             onPress={navegarParaNotificacoes}
           >
-            <Text style={styles.secondaryButtonText}>🔔 Notificações</Text>
+            <Text style={styles.secondaryButtonText}>Notificações</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -412,7 +369,7 @@ const GerenciarAnalises = ({ navigation }) => {
       {analises.length > 0 ? (
         <View style={styles.tabelaContainer}>
           <Text style={styles.tabelaTitle}>
-            {getTipoUsuarioReal() === 'proprietario' ? '📊 Minhas Análises' : '📊 Todas as Análises'}
+            {getTipoUsuarioReal() === 'proprietario' ? 'Minhas Análises' : 'Todas as Análises'}
           </Text>
           <TabelaAnalises 
             analises={analises} 
