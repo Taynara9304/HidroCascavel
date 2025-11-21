@@ -10,8 +10,8 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
   const [loading, setLoading] = useState(false);
 
   const initialLocation = {
-    latitude: -14.2350,
-    longitude: -51.9253,
+    latitude: -24.9555,
+    longitude: -53.4552,
   };
 
   const handleLocationSelect = async (coordinate) => {
@@ -27,7 +27,7 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       
       setAddress(endereco);
       onLocationSelect(coordinate);
-      onAddressSelect(endereco); // CHAMA A PROP onAddressSelect
+      onAddressSelect(endereco);
       
     } catch (error) {
       console.error('Erro ao obter endereço:', error);
@@ -46,7 +46,7 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       
       setAddress(enderecoFallback);
       onLocationSelect(coordinate);
-      onAddressSelect(enderecoFallback); // CHAMA A PROP onAddressSelect
+      onAddressSelect(enderecoFallback);
       
       Alert.alert(
         'Informação', 
@@ -65,7 +65,7 @@ const LocationPicker = ({ onLocationSelect, onAddressSelect }) => {
       
       <MapPicker 
         onLocationSelect={handleLocationSelect}
-        onAddressSelect={onAddressSelect} // PASSA A PROP PARA O MapPicker
+        onAddressSelect={onAddressSelect}
         initialLocation={initialLocation}
       />
 

@@ -37,9 +37,8 @@ const MapaWebPocos = ({ markers = [], onLocationSelected }) => {
           mapInstance.current.remove();
         }
 
-        // Centro do Brasil como padrão
-        const centerLat = markers.length > 0 ? markers[0].latitude : -15.7797;
-        const centerLng = markers.length > 0 ? markers[0].longitude : -47.9297;
+        const centerLat = markers.length > 0 ? markers[0].latitude : -24.9555;
+        const centerLng = markers.length > 0 ? markers[0].longitude : -53.4552;
         const zoom = markers.length > 0 ? 6 : 4;
         
         const map = window.L.map(mapRef.current).setView([centerLat, centerLng], zoom);
@@ -49,7 +48,6 @@ const MapaWebPocos = ({ markers = [], onLocationSelected }) => {
           attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Adicionar marcadores
         markers.forEach(marker => {
           const customIcon = window.L.divIcon({
             className: 'custom-marker',

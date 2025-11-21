@@ -8,35 +8,28 @@ import { useWells } from '../hooks/useWells';
 const MapaUniversalPocos = ({ onLocationSelected }) => {
   const { wells, loading } = useWells();
 
-  console.log('🗺️ MapaUniversalPocos - Poços:', wells.length);
-  console.log('🗺️ MapaUniversalPocos - Loading:', loading);
+  console.log('MapaUniversalPocos - Poços:', wells.length);
+  console.log('MapaUniversalPocos - Loading:', loading);
 
-  // Converter poços para marcadores do mapa
   const markers = wells.map(well => {
-    // Extrair latitude e longitude do campo localizacao (GeoPoint)
     let latitude, longitude;
     
     if (well.localizacao && well.localizacao.latitude && well.localizacao.longitude) {
-      // Se for um GeoPoint do Firebase
       latitude = well.localizacao.latitude;
       longitude = well.localizacao.longitude;
     } else if (well.localizacao && well.localizacao._lat && well.localizacao._long) {
-      // Formato alternativo do GeoPoint
       latitude = well.localizacao._lat;
       longitude = well.localizacao._long;
     } else {
-      // Coordenadas padrão se não tiver localização
-      latitude = -15.7797; // Centro do Brasil
-      longitude = -47.9297;
+      latitude = -24.9555;
+      longitude = -53.4552;
     }
 
-    // Formatar data de cadastro
     const formatarData = (timestamp) => {
       if (!timestamp) return 'Data não informada';
       
       try {
         if (timestamp.toDate) {
-          // Se for um Timestamp do Firebase
           return timestamp.toDate().toLocaleDateString('pt-BR');
         } else if (timestamp instanceof Date) {
           return timestamp.toLocaleDateString('pt-BR');
@@ -59,18 +52,16 @@ const MapaUniversalPocos = ({ onLocationSelected }) => {
       proprietario: well.nomeProprietario || 'Proprietário não informado',
       observacoes: well.observacoes || '',
       tipoCadastro: well.tipoCadastro || 'solicitacao_analista',
-      // Dados completos do poço para usar no popup
       wellData: well
     };
   });
 
-  // Filtrar apenas poços com localização válida (não é a padrão)
   const validMarkers = markers.filter(marker => 
-    marker.latitude !== -15.7797 && marker.longitude !== -47.9297
+    marker.latitude !== -24.9555 && marker.longitude !== -53.4552
   );
 
-  console.log('🗺️ Marcadores válidos:', validMarkers.length);
-  console.log('🗺️ Primeiro marcador válido:', validMarkers[0]);
+  console.log('Marcadores válidos:', validMarkers.length);
+  console.log('Primeiro marcador válido:', validMarkers[0]);
 
   const handleMapClick = (event) => {
     if (onLocationSelected) {

@@ -10,7 +10,6 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Detectar se é dispositivo móvel
     const checkIfMobile = () => {
       return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
         navigator.userAgent
@@ -43,14 +42,13 @@ const WebMap = ({ onLocationSelect, initialLocation }) => {
 
       const mapInstance = window.L.map(mapContainerRef.current).setView(
         [initialLocation.latitude, initialLocation.longitude],
-        isMobile ? 12 : 10 // Zoom diferente para mobile
+        isMobile ? 12 : 10
       );
 
       window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(mapInstance);
 
-      // Configurações para mobile
       if (isMobile) {
         mapInstance.touchZoom.enable();
         mapInstance.doubleClickZoom.enable();

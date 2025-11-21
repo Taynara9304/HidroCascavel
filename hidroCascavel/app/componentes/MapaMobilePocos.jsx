@@ -28,8 +28,8 @@ const MapaMobilePocos = ({ markers = [] }) => {
       );
     `).join('');
 
-    const centerLat = markers.length > 0 ? markers[0].latitude : -23.5505;
-    const centerLng = markers.length > 0 ? markers[0].longitude : -46.6333;
+    const centerLat = markers.length > 0 ? markers[0].latitude : -24.9555;
+    const centerLng = markers.length > 0 ? markers[0].longitude : -53.4552;
     const zoom = markers.length > 0 ? 13 : 10;
 
     return `

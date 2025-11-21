@@ -12,7 +12,7 @@ export const getAddressFromCoordinates = async (latitude, longitude) => {
         signal: controller.signal,
         headers: {
           'Accept-Language': 'pt-BR,pt',
-          'User-Agent': 'HidroCascavelApp/1.0 (https://github.com/seu-usuario/hidrocascavel)',
+          'User-Agent': 'HidroCascavel/1.0 (https://github.com/Taynara9304/HidroCascavel)',
           'Referer': 'https://hidrocascavel.com.br'
         }
       }

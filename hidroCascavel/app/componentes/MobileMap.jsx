@@ -8,7 +8,6 @@ import { getAddressFromCoordinatesWithRetry } from '../services/geocodingService
 
 const { width, height } = Dimensions.get('window');
 
-// Coordenadas fixas do IFPR Cascavel
 const IFPR_CASCAVEL = {
   latitude: -24.943611,
   longitude: -53.495806
@@ -79,7 +78,6 @@ const MobileMap = ({
     }
   };
 
-  // FUNÇÃO htmlContent ADICIONADA DE VOLTA
   const htmlContent = (lat, lng, zoom) => `
 <!DOCTYPE html>
 <html>

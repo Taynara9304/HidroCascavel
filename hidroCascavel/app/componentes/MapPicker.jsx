@@ -15,7 +15,7 @@ const MapPicker = ({ onLocationSelect, onAddressSelect, initialLocation = IFPR_C
     return (
       <WebMap 
         onLocationSelect={onLocationSelect} 
-        onAddressSelect={onAddressSelect} // PASSA A PROP
+        onAddressSelect={onAddressSelect}
         initialLocation={initialLocation}
       />
     );
@@ -24,7 +24,7 @@ const MapPicker = ({ onLocationSelect, onAddressSelect, initialLocation = IFPR_C
   return (
     <MobileMap 
       onLocationSelect={onLocationSelect} 
-      onAddressSelect={onAddressSelect} // PASSA A PROP
+      onAddressSelect={onAddressSelect}
       initialLocation={initialLocation}
     />
   );

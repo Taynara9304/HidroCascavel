@@ -145,7 +145,6 @@ const HomeAdm = () => {
                 </View>
 
                 <View style={styles.containerItems}>
-                    {/* MapaUniversal gerencia seus próprios marcadores */}
                     <MapaUniversal onLocationSelect={handleLocationSelect} />
                 </View>
 
