@@ -36,7 +36,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
 
   // Admin pode ver TODOS os poços
   useEffect(() => {
-    console.log('📡 AddVisitasAdmin: Buscando TODOS os poços');
+    console.log('AddVisitasAdmin: Buscando TODOS os poços');
     
     const pocosCollection = collection(db, 'wells');
     const q = query(pocosCollection, orderBy('nomeProprietario'));
@@ -189,7 +189,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
   }));
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>Agendar Visita Técnica</Text>
       <Text style={styles.subtitle}>Administrador</Text>
       
@@ -303,7 +303,7 @@ const AddVisitasAdmin = ({ onAdicionarVisita }) => {
           </TouchableOpacity>
         </View>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 

@@ -37,9 +37,9 @@ const TabelaPocos = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const [editandoPoço, setEditandoPoço] = useState(null);
   const [observacoesEdit, setObservacoesEdit] = useState('');
-  const [inputFocado, setInputFocado] = useState(false); // ✅ Novo estado para foco
+  const [inputFocado, setInputFocado] = useState(false);
   const flatListRef = useRef(null);
-  const buscaInputRef = useRef(null); // ✅ Ref para o input
+  const buscaInputRef = useRef(null);
 
   const wellsSeguro = wells || [];
 
@@ -72,7 +72,6 @@ const TabelaPocos = ({
     return filtrados;
   }, [wellsSeguro, busca, filtroProprietario]);
 
-  // ✅ Função para forçar foco no input (especialmente para web)
   const handleContainerPress = () => {
     if (Platform.OS === 'web' && !inputFocado) {
       buscaInputRef.current?.focus();
@@ -120,7 +119,6 @@ const TabelaPocos = ({
 
   const renderItem = ({ item: well }) => (
     <View style={styles.card}>
-      {/* ... (mantenha o mesmo código do card) ... */}
       <View style={styles.cardHeader}>
         <Text style={styles.proprietarioNome} numberOfLines={1}>
           {well.nomeProprietario || 'Sem nome'}
@@ -131,7 +129,6 @@ const TabelaPocos = ({
       </View>
       
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>📍</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           {well.localizacao ? 
             `${well.localizacao.latitude?.toFixed(4) || 'N/A'}° S, ${well.localizacao.longitude?.toFixed(4) || 'N/A'}° W` 
@@ -141,7 +138,6 @@ const TabelaPocos = ({
       </View>
       
       <View style={styles.cardInfo}>
-        <Text style={styles.infoLabel}>👤</Text>
         <Text style={styles.infoValue} numberOfLines={1}>
           {well.idProprietario ? `ID: ${well.idProprietario}` : 'N/A'}
         </Text>
@@ -149,7 +145,6 @@ const TabelaPocos = ({
       
       {well.observacoes && (
         <View style={styles.cardInfo}>
-          <Text style={styles.infoLabel}>📝</Text>
           <Text style={styles.infoValue} numberOfLines={2}>
             {well.observacoes}
           </Text>
@@ -161,14 +156,14 @@ const TabelaPocos = ({
           style={styles.botaoEditar}
           onPress={() => handleEditar(well)}
         >
-          <Text style={styles.botaoTexto}>✏️ Editar</Text>
+          <Text style={styles.botaoTexto}>Editar</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.botaoDeletar}
           onPress={() => onDelete(well.id)}
         >
-          <Text style={styles.botaoTexto}>🗑️ Deletar</Text>
+          <Text style={styles.botaoTexto}>Deletar</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -190,7 +185,6 @@ const TabelaPocos = ({
           Poços ({poçosFiltrados.length})
         </Text>
         
-        {/* ✅ Barra de Busca MELHORADA para Web */}
         <View style={styles.barraBuscaContainer}>
           <TouchableOpacity 
             style={styles.buscaInputContainer}
@@ -201,14 +195,13 @@ const TabelaPocos = ({
               ref={buscaInputRef}
               style={[
                 styles.buscaInput,
-                inputFocado && styles.buscaInputFocado // ✅ Estilo quando focado
+                inputFocado && styles.buscaInputFocado
               ]}
-              placeholder="🔍 Buscar..."
+              placeholder="Buscar..."
               value={busca}
               onChangeText={setBusca}
-              onFocus={() => setInputFocado(true)} // ✅ Controla estado de foco
-              onBlur={() => setInputFocado(false)} // ✅ Controla estado de foco
-              // ✅ Propriedades específicas para Web
+              onFocus={() => setInputFocado(true)}
+              onBlur={() => setInputFocado(false)}
               selectTextOnFocus={Platform.OS === 'web'}
               autoFocus={Platform.OS === 'web' && false}
             />
@@ -309,7 +302,7 @@ const TabelaPocos = ({
         ) : (
           <View style={styles.semDadosContainer}>
             <Text style={styles.semDados}>
-              {busca || filtroProprietario !== 'todos' ? '🔍 Nenhum poço encontrado' : '📭 Nenhum poço cadastrado'}
+              {busca || filtroProprietario !== 'todos' ? 'Nenhum poço encontrado' : 'Nenhum poço cadastrado'}
             </Text>
             {(busca || filtroProprietario !== 'todos') && (
               <TouchableOpacity 
@@ -334,7 +327,7 @@ const TabelaPocos = ({
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitulo}>
-                ✏️ Editar Poço
+                Editar Poço
               </Text>
               
               <Text style={styles.modalSubtitulo}>

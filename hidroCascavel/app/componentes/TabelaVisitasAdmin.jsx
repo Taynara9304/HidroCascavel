@@ -32,7 +32,6 @@ const TabelaVisitasAdmin = ({
   const [dadosEdicao, setDadosEdicao] = useState({});
   const flatListRef = useRef(null);
 
-  // ✅ CORREÇÃO: Handlers para gestos
   const handleScrollEndDrag = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
@@ -46,7 +45,6 @@ const TabelaVisitasAdmin = ({
     // Marca que o scroll horizontal começou
   };
 
-  // Função para formatar data
   const formatarData = (dataString) => {
     if (!dataString) return 'Data não informada';
     try {
@@ -63,7 +61,6 @@ const TabelaVisitasAdmin = ({
     }
   };
 
-  // Função para obter cor do status
   const getCorStatus = (situacao) => {
     switch (situacao?.toLowerCase()) {
       case 'concluida':
@@ -156,14 +153,14 @@ const TabelaVisitasAdmin = ({
       {/* Informações da Visita */}
       <View style={styles.cardContent}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>👤 Proprietário:</Text>
+          <Text style={styles.infoLabel}>Proprietário:</Text>
           <Text style={styles.infoValue}>
             {visit.proprietarioNome || visit.proprietario || 'Não informado'}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📋 Tipo:</Text>
+          <Text style={styles.infoLabel}>Tipo:</Text>
           <Text style={styles.infoValue}>
             {visit.tipo === 'solicitacao_proprietario_whatsapp' ? 'WhatsApp' : 
              visit.tipo === 'solicitacao_analista' ? 'Analista' : 'Administrador'}
@@ -172,7 +169,7 @@ const TabelaVisitasAdmin = ({
 
         {visit.observacoes && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>📝 Observações:</Text>
+            <Text style={styles.observacoesLabel}>Observações:</Text>
             <Text style={styles.observacoesText} numberOfLines={3}>
               {visit.observacoes}
             </Text>
@@ -181,7 +178,7 @@ const TabelaVisitasAdmin = ({
 
         {visit.resultado && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>🔍 Resultados:</Text>
+            <Text style={styles.observacoesLabel}>Resultados:</Text>
             <Text style={styles.observacoesText} numberOfLines={3}>
               {visit.resultado}
             </Text>
@@ -195,14 +192,14 @@ const TabelaVisitasAdmin = ({
           style={styles.botaoEditar}
           onPress={() => abrirEdicao(visit)}
         >
-          <Text style={styles.botaoTexto}>✏️ Editar</Text>
+          <Text style={styles.botaoTexto}>Editar</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.botaoDeletar}
           onPress={() => confirmarExclusao(visit)}
         >
-          <Text style={styles.botaoTexto}>🗑️ Excluir</Text>
+          <Text style={styles.botaoTexto}>Excluir</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -220,7 +217,7 @@ const TabelaVisitasAdmin = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        📊 Gestão de Visitas ({visits.length})
+        Gestão de Visitas ({visits.length})
       </Text>
       
       {/* Ordenação */}
@@ -251,7 +248,6 @@ const TabelaVisitasAdmin = ({
         </TouchableOpacity>
       </View>
 
-      {/* ✅ CORREÇÃO: Carousel com gestos otimizados */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -265,11 +261,9 @@ const TabelaVisitasAdmin = ({
             snapToInterval={null}
             snapToAlignment="center"
             decelerationRate="normal"
-            // ✅ Handlers para gestos
             onScrollBeginDrag={handleScrollBeginDrag}
             onScrollEndDrag={handleScrollEndDrag}
             onMomentumScrollEnd={handleScrollEndDrag}
-            // ✅ Configurações para melhor performance de gestos
             scrollEventThrottle={16}
             directionalLockEnabled={true}
             alwaysBounceHorizontal={true}
@@ -305,11 +299,10 @@ const TabelaVisitasAdmin = ({
         </View>
       ) : (
         <View style={styles.semDadosContainer}>
-          <Text style={styles.semDados}>📭 Nenhuma visita cadastrada</Text>
+          <Text style={styles.semDados}>Nenhuma visita cadastrada</Text>
         </View>
       )}
 
-      {/* Modal de Edição (mantido igual) */}
       <Modal
         visible={!!editandoVisita}
         animationType="slide"
@@ -317,7 +310,7 @@ const TabelaVisitasAdmin = ({
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitulo}>✏️ Editar Visita</Text>
+            <Text style={styles.modalTitulo}>Editar Visita</Text>
             
             <Text style={styles.modalSubtitulo}>
               {editandoVisita?.pocoNome}
@@ -460,6 +453,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    height: 400,
   },
   cardHeader: {
     flexDirection: 'row',

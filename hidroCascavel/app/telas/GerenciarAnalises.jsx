@@ -306,19 +306,6 @@ const GerenciarAnalises = ({ navigation }) => {
       }
     >
       <Text style={styles.title}>{getTitulo()}</Text>
-      
-      <View style={[styles.userTypeBadge, { backgroundColor: userBadge.color + '20' }]}>
-        <Text style={[styles.userTypeText, { color: userBadge.color }]}>
-          {userBadge.text}
-        </Text>
-      </View>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>ℹInformações</Text>
-        <Text style={styles.infoText}>
-          {getInfoText()}
-        </Text>
-      </View>
 
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
@@ -394,12 +381,6 @@ const GerenciarAnalises = ({ navigation }) => {
       )}
 
       {deveMostrarFormulario() && renderFormulario()}
-
-      <View style={styles.debugContainer}>
-        <Text style={styles.debugText}>
-          DEBUG: UserID: {user?.uid} | UserType: {getTipoUsuarioReal()} | Análises: {analises.length}
-        </Text>
-      </View>
     </ScrollView>
   );
 };

@@ -37,7 +37,7 @@ const GerenciarVisitas = () => {
 
   const handleAdicionarVisita = async (novaVisita) => {
     try {
-      console.log('🎯 GerenciarVisitas: Recebendo nova visita', novaVisita);
+      console.log('GerenciarVisitas: Recebendo nova visita', novaVisita);
       
       if (userData?.tipoUsuario === 'analista') {
         await enviarVisitaParaAprovacao(novaVisita);
@@ -47,7 +47,7 @@ const GerenciarVisitas = () => {
         Alert.alert('Sucesso', 'Visita cadastrada com sucesso!');
       }
     } catch (error) {
-      console.error('❌ GerenciarVisitas: Erro:', error);
+      console.error('GerenciarVisitas: Erro:', error);
       Alert.alert('Erro', `Não foi possível processar a visita: ${error.message}`);
     }
   };
@@ -64,16 +64,7 @@ const GerenciarVisitas = () => {
           onPress={() => setAbaAtiva('visitas')}
         >
           <Text style={[styles.abaTexto, abaAtiva === 'visitas' && styles.abaTextoAtivo]}>
-            📋 Todas as Visitas
-          </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={[styles.aba, abaAtiva === 'solicitacoes' && styles.abaAtiva]}
-          onPress={() => setAbaAtiva('solicitacoes')}
-        >
-          <Text style={[styles.abaTexto, abaAtiva === 'solicitacoes' && styles.abaTextoAtivo]}>
-            Solicitações
+            Todas as Visitas
           </Text>
         </TouchableOpacity>
       </View>
@@ -125,7 +116,6 @@ const GerenciarVisitas = () => {
 
   return (
     <View style={styles.container}>
-      {renderAbas()}
       <ScrollView 
         style={styles.scrollView}
         contentContainerStyle={styles.contentContainer}

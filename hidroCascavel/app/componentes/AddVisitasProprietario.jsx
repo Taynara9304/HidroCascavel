@@ -50,7 +50,7 @@ const AddVisitasProprietario = ({ onAdicionarVisita }) => {
       return;
     }
 
-    console.log('📡 AddVisitasProprietario: Buscando poços do proprietário:', user.uid);
+    console.log('AddVisitasProprietario: Buscando poços do proprietário:', user.uid);
     
     try {
       const pocosCollection = collection(db, 'wells');
@@ -88,7 +88,7 @@ const AddVisitasProprietario = ({ onAdicionarVisita }) => {
           setCarregandoPocos(false);
           
           if (pocosData.length === 0) {
-            console.log('ℹProprietário não tem poços cadastrados para visitas');
+            console.log('Proprietário não tem poços cadastrados para visitas');
           } else {
             console.log(`${pocosData.length} poços carregados para seleção`);
           }
@@ -285,7 +285,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
         );
       } else {
         Alert.alert(
-          '⚠️ Solicitação Salva', 
+          'Solicitação Salva', 
           'Sua solicitação foi salva no sistema. Abra o WhatsApp manualmente para enviar a mensagem.',
           [{ text: 'OK' }]
         );
@@ -413,14 +413,14 @@ Gostaria que a visita seja ${dataHoraFormatada}
           </Text>
           {!userData?.telefone && (
             <Text style={styles.warningText}>
-              ⚠️ Seu telefone não está cadastrado. Atualize seu perfil.
+              Seu telefone não está cadastrado. Atualize seu perfil.
             </Text>
           )}
         </View>
 
         {formData.poco && formData.observacoes && (
           <View style={styles.previewBox}>
-            <Text style={styles.previewTitle}>📋 Prévia da Mensagem WhatsApp:</Text>
+            <Text style={styles.previewTitle}>Prévia da Mensagem WhatsApp:</Text>
             <ScrollView style={styles.previewScroll}>
               <Text style={styles.previewText}>
                 {gerarMensagemWhatsApp()}
@@ -430,7 +430,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
         )}
 
         <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>📱 Como Funciona:</Text>
+          <Text style={styles.infoTitle}>Como Funciona:</Text>
           <Text style={styles.infoText}>
             1. Preencha os dados acima{'\n'}
             2. Clique no botão verde{'\n'}
@@ -459,7 +459,7 @@ Gostaria que a visita seja ${dataHoraFormatada}
           </TouchableOpacity>
           
           <Text style={styles.helpText}>
-            💡 Dica: Se o WhatsApp não abrir, copie a mensagem acima e envie manualmente.
+            Dica: Se o WhatsApp não abrir, copie a mensagem acima e envie manualmente.
           </Text>
         </View>
       </View>

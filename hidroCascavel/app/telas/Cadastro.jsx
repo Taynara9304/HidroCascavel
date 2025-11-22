@@ -8,7 +8,8 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   ActivityIndicator,
-  Platform
+  Platform,
+  StatusBar,
 } from "react-native";
 import ondaTopo from "../assets/ondaTopo.png";
 import Input from "../componentes/Input";
@@ -19,10 +20,13 @@ import { auth, db } from '../services/firebaseConfig';
 import Toast from 'react-native-toast-message';
 import { useNavigation } from "@react-navigation/native";
 import { USER_TYPES } from '../services/firebaseConfig';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const Cadastro = () => {
     const { width } = useWindowDimensions();
     const contentWidth = width < 800 ? width : width * 0.6;
+    const insets = useSafeAreaInsets();
+    const isMobile = width < 800;
 
     const [email, setEmail] = useState("");
     const [nome, setNome] = useState("");
@@ -169,20 +173,42 @@ const Cadastro = () => {
     return(
         <ScrollView style={styles.scrollView}>
             <View style={styles.container}>
-                <View style={[styles.topContainer, { width: contentWidth }]}>
-                    <Image
+                <View style={[
+                  styles.topContainer, 
+                  { 
+                    width: contentWidth,
+                    marginTop: -insets.top,
+                    paddingTop: insets.top,
+                  }
+                ]}>
+                  <Image
                     source={ondaTopo}
-                    style={[styles.image, { width: contentWidth }]}
-                    resizeMode="contain"
-                    />
+                    style={[
+                      styles.image, 
+                      { 
+                        width: contentWidth,
+                        height: isMobile ? 100 : 120,
+                      }
+                    ]}
+                    resizeMode="cover"
+                  />
 
-                    <TouchableOpacity style={styles.setaSobreImagem}
-                      onPress={navigateToLogin}
-                    >
-                        ←
-                    </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[
+                      styles.setaSobreImagem,
+                      { top: insets.top + 15 }
+                    ]}
+                    onPress={navigateToLogin}
+                  >
+                    <Text style={styles.setaText}>←</Text>
+                  </TouchableOpacity>
 
-                    <Text style={styles.titleSobreImagem}>Cadastre-se!</Text>
+                  <Text style={[
+                    styles.titleSobreImagem,
+                    { top: insets.top + 18 }
+                  ]}>
+                    Cadastre-se!
+                  </Text>
                 </View>
 
                 <View style={[styles.content, { width: contentWidth }]}>
@@ -389,32 +415,30 @@ const styles = StyleSheet.create({
     position: "relative",
     alignItems: "center",
     marginBottom: 10,
-  },
-  link: {
-    color: '#2685BF',
-    textDecorationLine: 'underline',
+    overflow: 'hidden',
   },
   image: {
-    alignSelf: "center",
-    marginTop: -35,
+    width: '100%',
   },
   setaSobreImagem: {
     position: "absolute",
-    top: "20%",
-    left: "20%",
-    transform: [{ translateX: -100 }, { translateY: -10 }],
+    left: 20,
+    zIndex: 2,
+  },
+  setaText: {
     color: "#fff",
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
   },
   titleSobreImagem: {
     position: "absolute",
-    top: "20%",
-    left: "23%",
-    transform: [{ translateX: -100 }, { translateY: -10 }],
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     color: "#fff",
     fontSize: 20,
     fontWeight: "bold",
+    zIndex: 2,
   },
   content: {
     alignItems: "center",

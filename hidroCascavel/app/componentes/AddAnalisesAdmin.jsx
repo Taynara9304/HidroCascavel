@@ -169,18 +169,8 @@ const AddAnalisesAdmin = ({ onAdicionarAnalise, pocos, analistas }) => {
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Cadastrar Análise</Text>
-      <Text style={styles.subtitle}>Administrador</Text>
       
       <View style={styles.form}>
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>Cadastro Direto:</Text>
-          <Text style={styles.infoText}>
-            • Cadastre análises diretamente{'\n'}
-            • Não precisa de aprovação{'\n'}
-            • Análise fica disponível imediatamente{'\n'}
-            • Você é registrado como analista responsável
-          </Text>
-        </View>
 
         <Text style={styles.sectionTitle}>Informações Básicas</Text>
         

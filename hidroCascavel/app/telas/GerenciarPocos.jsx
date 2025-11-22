@@ -70,14 +70,6 @@ const GerenciarPocos = () => {
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.debugContainer}>
-          <Text style={styles.debugText}>
-            Debug: {pocos?.length || 0} poços | Usuário: {userData?.tipoUsuario || 'não definido'}
-          </Text>
-          <Text style={styles.debugSubtext}>
-            Ordenação: {sortField} {sortDirection}
-          </Text>
-        </View>
         
         <TabelaPocos
           wells={pocos}

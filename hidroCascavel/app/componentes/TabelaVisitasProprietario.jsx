@@ -25,7 +25,6 @@ const TabelaVisitasProprietario = ({
   const [paginaAtual, setPaginaAtual] = useState(0);
   const flatListRef = useRef(null);
 
-  // ✅ CORREÇÃO: Handlers para gestos
   const handleScrollEndDrag = (event) => {
     const offsetX = event.nativeEvent.contentOffset.x;
     const newIndex = Math.round(offsetX / (CARD_WIDTH + CARD_MARGIN * 2));
@@ -103,26 +102,26 @@ const TabelaVisitasProprietario = ({
       {/* Informações da Visita */}
       <View style={styles.cardContent}>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📋 Status:</Text>
+          <Text style={styles.infoLabel}>Status:</Text>
           <Text style={styles.infoValue}>
-            {visit.situacao === 'pendente' ? '🕒 Aguardando aprovação' :
-             visit.situacao === 'aprovada' ? '✅ Visita aprovada' :
-             visit.situacao === 'concluida' ? '🎉 Visita concluída' :
-             visit.situacao === 'cancelada' ? '❌ Visita cancelada' :
-             '📋 Em análise'}
+            {visit.situacao === 'pendente' ? 'Aguardando aprovação' :
+             visit.situacao === 'aprovada' ? 'Visita aprovada' :
+             visit.situacao === 'concluida' ? 'Visita concluída' :
+             visit.situacao === 'cancelada' ? 'Visita cancelada' :
+             'Em análise'}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>📱 Canal:</Text>
+          <Text style={styles.infoLabel}>Canal:</Text>
           <Text style={styles.infoValue}>
-            {visit.canal === 'whatsapp' ? '💬 Solicitação via WhatsApp' : '📋 Solicitação via Sistema'}
+            {visit.canal === 'whatsapp' ? 'Solicitação via WhatsApp' : 'Solicitação via Sistema'}
           </Text>
         </View>
 
         {visit.observacoes && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>📝 Minhas Observações:</Text>
+            <Text style={styles.observacoesLabel}>Minhas Observações:</Text>
             <Text style={styles.observacoesText} numberOfLines={4}>
               {visit.observacoes}
             </Text>
@@ -131,7 +130,7 @@ const TabelaVisitasProprietario = ({
 
         {visit.resultado && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>🔍 Resultados da Visita:</Text>
+            <Text style={styles.observacoesLabel}>Resultados da Visita:</Text>
             <Text style={styles.observacoesText} numberOfLines={4}>
               {visit.resultado}
             </Text>
@@ -140,7 +139,7 @@ const TabelaVisitasProprietario = ({
 
         {visit.recomendacoes && (
           <View style={styles.observacoesContainer}>
-            <Text style={styles.observacoesLabel}>💡 Recomendações:</Text>
+            <Text style={styles.observacoesLabel}>Recomendações:</Text>
             <Text style={styles.observacoesText} numberOfLines={4}>
               {visit.recomendacoes}
             </Text>
@@ -150,7 +149,7 @@ const TabelaVisitasProprietario = ({
         {visit.situacao === 'pendente' && (
           <View style={styles.infoAguardando}>
             <Text style={styles.infoAguardandoText}>
-              ⏳ Sua solicitação está em análise pelo administrador
+              Sua solicitação está em análise pelo administrador
             </Text>
           </View>
         )}
@@ -170,7 +169,7 @@ const TabelaVisitasProprietario = ({
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>
-        🏠 Minhas Visitas ({visits.length})
+        Minhas Visitas ({visits.length})
       </Text>
       
       <View style={styles.ordenacaoContainer}>
@@ -200,7 +199,6 @@ const TabelaVisitasProprietario = ({
         </TouchableOpacity>
       </View>
 
-      {/* ✅ CORREÇÃO: Carousel com gestos otimizados */}
       {visits.length > 0 ? (
         <View style={styles.carouselContainer}>
           <FlatList
@@ -214,11 +212,9 @@ const TabelaVisitasProprietario = ({
             snapToInterval={null}
             snapToAlignment="center"
             decelerationRate="normal"
-            // ✅ Handlers para gestos
             onScrollBeginDrag={handleScrollBeginDrag}
             onScrollEndDrag={handleScrollEndDrag}
             onMomentumScrollEnd={handleScrollEndDrag}
-            // ✅ Configurações para melhor performance de gestos
             scrollEventThrottle={16}
             directionalLockEnabled={true}
             alwaysBounceHorizontal={true}
@@ -254,7 +250,7 @@ const TabelaVisitasProprietario = ({
         </View>
       ) : (
         <View style={styles.semDadosContainer}>
-          <Text style={styles.semDados}>📭 Nenhuma visita solicitada</Text>
+          <Text style={styles.semDados}>Nenhuma visita solicitada</Text>
           <Text style={styles.semDadosSubtexto}>
             Use o formulário abaixo para solicitar sua primeira visita técnica
           </Text>

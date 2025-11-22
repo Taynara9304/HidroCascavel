@@ -9,7 +9,7 @@ import AddPocosAdmin from './AddPocosAdmin';
 const PocosContainer = ({ onAdicionarPoco }) => {
   const { userData, loading } = useAuth();
 
-  console.log('🎯 PocosContainer: userData completo:', userData);
+  console.log('PocosContainer: userData completo:', userData);
 
   if (loading) {
     return (
@@ -20,24 +20,23 @@ const PocosContainer = ({ onAdicionarPoco }) => {
     );
   }
 
-  // ✅ Use tipoUsuario com fallback seguro
   const userType = userData?.tipoUsuario || 'proprietario';
   
-  console.log('🎯 PocosContainer: Tipo de usuário detectado:', userType);
+  console.log('PocosContainer: Tipo de usuário detectado:', userType);
 
   const renderFormByUserType = () => {
     switch (userType) {
       case 'administrador':
-        console.log('🎯 Renderizando formulário do ADMIN para poços');
+        console.log('Renderizando formulário do ADMIN para poços');
         return <AddPocosAdmin onAdicionarPoco={onAdicionarPoco} />;
       
       case 'analista':
-        console.log('🎯 Renderizando formulário do ANALISTA para poços');
+        console.log('Renderizando formulário do ANALISTA para poços');
         return <AddPocosAnalista onAdicionarPoco={onAdicionarPoco} />;
       
       case 'proprietario':
       default:
-        console.log('🎯 Renderizando formulário do PROPRIETÁRIO para poços');
+        console.log('Renderizando formulário do PROPRIETÁRIO para poços');
         return <AddPocosProprietario onAdicionarPoco={onAdicionarPoco} />;
     }
   };

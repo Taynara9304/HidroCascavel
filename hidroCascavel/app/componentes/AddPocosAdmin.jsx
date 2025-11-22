@@ -44,10 +44,10 @@ const AddPocosAdmin = ({ onAdicionarPoco }) => {
                 
                 setUsuarios(usuariosData);
                 setCarregandoUsuarios(false);
-                console.log(`✅ ${usuariosData.length} usuários carregados`);
+                console.log(`${usuariosData.length} usuários carregados`);
             },
             (error) => {
-                console.error('❌ Erro ao carregar usuários:', error);
+                console.error('Erro ao carregar usuários:', error);
                 Alert.alert('Erro', 'Não foi possível carregar a lista de usuários');
                 setCarregandoUsuarios(false);
             }
@@ -119,15 +119,6 @@ const AddPocosAdmin = ({ onAdicionarPoco }) => {
             <Text style={styles.subtitle}>Administrador</Text>
 
             <View style={styles.formContainer}>
-                <View style={styles.infoBox}>
-                    <Text style={styles.infoTitle}>ℹ️ Cadastro Direto:</Text>
-                    <Text style={styles.infoText}>
-                        • Selecione QUALQUER usuário como proprietário{'\n'}
-                        • Cadastro é realizado diretamente{'\n'}
-                        • Não precisa de aprovação{'\n'}
-                        • Poço fica disponível imediatamente
-                    </Text>
-                </View>
 
                 {/* Input de Localização com Mapa */}
                 <View style={styles.inputGroup}>
@@ -182,7 +173,7 @@ const AddPocosAdmin = ({ onAdicionarPoco }) => {
                     onPress={handleCadastrar}
                     disabled={!localizacao || !proprietario}
                 >
-                    <Text style={styles.cadastrarButtonText}>✅ CADASTRAR POÇO</Text>
+                    <Text style={styles.cadastrarButtonText}>CADASTRAR POÇO</Text>
                 </TouchableOpacity>
             </View>
         </ScrollView>
