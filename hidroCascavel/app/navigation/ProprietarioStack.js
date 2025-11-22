@@ -6,8 +6,6 @@ import MeusDados from '../telas/MeusDados';
 import MinhasVisitas from '../telas/MinhasVisitas';
 import PerfilUsuario from '../telas/PerfilUsuario';
 import NotificacoesProprietario from '../telas/NotificacoesProprietario';
-
-// ✅ ADICIONE ESTAS IMPORTACÕES
 import GerenciarPocos from '../telas/GerenciarPocos';
 import GerenciarVisitas from '../telas/GerenciarVisitas';
 
@@ -48,7 +46,6 @@ const ProprietarioStack = () => {
         }}
       />
       
-      {/* ✅ ADICIONE ESTAS NOVAS ROTAS */}
       <Stack.Screen 
         name="GerenciarPocos" 
         component={GerenciarPocos}

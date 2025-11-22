@@ -12,7 +12,6 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [initializing, setInitializing] = useState(true);
 
-  // Função para buscar dados do usuário no Firestore
   const buscarDadosUsuario = async (userFirebase) => {
     try {
       if (userFirebase) {
@@ -21,47 +20,44 @@ export const AuthProvider = ({ children }) => {
         
         if (userDoc.exists()) {
           const userDataFromFirestore = userDoc.data();
-          console.log('✅ Dados encontrados:', userDataFromFirestore);
+          console.log('Dados encontrados:', userDataFromFirestore);
           setUserData(userDataFromFirestore);
           return userDataFromFirestore;
         } else {
-          console.log('❌ Documento do usuário não encontrado no Firestore');
+          console.log('Documento do usuário não encontrado no Firestore');
           setUserData(null);
           return null;
         }
       }
       return null;
     } catch (error) {
-      console.error('❌ Erro ao buscar dados do usuário:', error);
+      console.error('Erro ao buscar dados do usuário:', error);
       setUserData(null);
       return null;
     }
   };
 
-  // Função para atualizar dados do usuário (para ser usada após login)
   const atualizarDadosUsuario = async (userFirebase) => {
     const dados = await buscarDadosUsuario(userFirebase);
     return dados;
   };
 
-  // Observador de estado de autenticação
   useEffect(() => {
-    console.log('🔄 Iniciando observador de autenticação...');
+    console.log('Iniciando observador de autenticação...');
     
     const unsubscribe = onAuthStateChanged(auth, async (userFirebase) => {
-      console.log('🎯 Estado de autenticação mudou:', userFirebase ? `Usuário logado: ${userFirebase.uid}` : 'Usuário deslogado');
+      console.log('Estado de autenticação mudou:', userFirebase ? `Usuário logado: ${userFirebase.uid}` : 'Usuário deslogado');
       
       if (userFirebase) {
-        console.log('👤 Definindo usuário no estado...');
+        console.log('Definindo usuário no estado...');
         setUser(userFirebase);
         await buscarDadosUsuario(userFirebase);
       } else {
-        console.log('🚪 Usuário deslogado - limpando estado');
+        console.log('Usuário deslogado - limpando estado');
         setUser(null);
         setUserData(null);
       }
       
-      // Marcar como não carregando apenas após a primeira inicialização
       if (initializing) {
         setInitializing(false);
       }
@@ -88,7 +84,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  console.log('🔄 AuthProvider renderizado - Estado:', { 
+  console.log('AuthProvider renderizado - Estado:', { 
     user: user?.uid, 
     userData: userData?.tipoUsuario,
     loading,

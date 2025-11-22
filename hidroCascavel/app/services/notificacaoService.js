@@ -15,7 +15,7 @@ import {
 export class AnalistaNotifications {
   static async solicitarCadastroAnalise(user, dadosAnalise) {
     try {
-      console.log('📤 Criando solicitação de análise...');
+      console.log('Criando solicitação de análise...');
       
       const dadosNotificacao = {
         tipo: 'solicitacao_cadastro_analise',
@@ -29,15 +29,14 @@ export class AnalistaNotifications {
       };
 
       const docRef = await addDoc(collection(db, 'notifications'), dadosNotificacao);
-      console.log('✅ Solicitação criada com ID:', docRef.id);
+      console.log('Solicitação criada com ID:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('❌ Erro ao criar notificação:', error);
+      console.error('Erro ao criar notificação:', error);
       throw error;
     }
   }
 
-  // ✅ CORREÇÃO: Verificar se já existe análise para evitar duplicação
   static async verificarAnaliseExistente(pocoId, dataAnalise, analistaId) {
     try {
       const q = query(
@@ -70,9 +69,8 @@ export class AnalistaNotifications {
 
   static async salvarAnaliseAprovada(dadosSolicitacao) {
     try {
-      console.log('💾 Salvando análise na coleção analysis...');
+      console.log('Salvando análise na coleção analysis...');
       
-      // ✅ CORREÇÃO: Verificar se análise já existe
       const analiseExistente = await this.verificarAnaliseExistente(
         dadosSolicitacao.pocoId,
         dadosSolicitacao.dataAnalise,
@@ -84,7 +82,6 @@ export class AnalistaNotifications {
       }
 
       const analiseData = {
-        // Informações básicas
         pocoId: dadosSolicitacao.pocoId,
         pocoNome: dadosSolicitacao.pocoNome,
         localizacaoPoco: dadosSolicitacao.pocoLocalizacao,
@@ -93,17 +90,14 @@ export class AnalistaNotifications {
         idAnalista: dadosSolicitacao.analistaId,
         nomeAnalista: dadosSolicitacao.analistaNome,
         
-        // Datas
         dataAnalise: this.converterData(dadosSolicitacao.dataAnalise),
         dataCriacao: Timestamp.now(),
         
-        // Resultado e status
         resultado: dadosSolicitacao.resultado,
         status: 'ativa',
         tipoCadastro: 'solicitacao_analista',
         criadoPor: dadosSolicitacao.analistaId,
         
-        // Parâmetros da análise
         temperaturaAr: this.convertToNumber(dadosSolicitacao.temperaturaAr),
         temperaturaAmostra: this.convertToNumber(dadosSolicitacao.temperaturaAmostra),
         ph: this.convertToNumber(dadosSolicitacao.ph),
@@ -123,19 +117,18 @@ export class AnalistaNotifications {
       console.log('📝 Dados formatados para analysis:', analiseData);
       
       const docRef = await addDoc(collection(db, 'analysis'), analiseData);
-      console.log('✅ Análise salva com ID:', docRef.id);
+      console.log('Análise salva com ID:', docRef.id);
       
       return docRef.id;
     } catch (error) {
-      console.error('❌ Erro ao salvar análise aprovada:', error);
+      console.error('Erro ao salvar análise aprovada:', error);
       throw error;
     }
   }
 
-  // ✅ NOVO: Método para criar notificação do analista de forma robusta
   static async criarNotificacaoAnalista(analistaId, tipo, dados) {
     try {
-      console.log('📨 Criando notificação para analista:', analistaId);
+      console.log('Criando notificação para analista:', analistaId);
       
       const notificacaoData = {
         tipo: tipo,
@@ -148,11 +141,10 @@ export class AnalistaNotifications {
       };
 
       const docRef = await addDoc(collection(db, 'notifications_analista'), notificacaoData);
-      console.log('✅ Notificação criada para analista:', docRef.id);
+      console.log('Notificação criada para analista:', docRef.id);
       return docRef.id;
     } catch (error) {
-      console.error('❌ Erro ao criar notificação para analista:', error);
-      // Não lançar erro para não quebrar o fluxo principal
+      console.error('Erro ao criar notificação para analista:', error);
       return null;
     }
   }
@@ -214,12 +206,11 @@ export class AdminNotifications {
     }
   }
 
-  // ✅ CORREÇÃO: Método aceitar com transação e verificações
   static async aceitarSolicitacaoAnalise(notificationId, notificationData) {
     const batch = writeBatch(db);
     
     try {
-      console.log('✅ Iniciando aceitação da solicitação:', notificationId);
+      console.log('Iniciando aceitação da solicitação:', notificationId);
       
       if (!notificationData.dadosSolicitacao) {
         throw new Error('Dados da solicitação não encontrados');
@@ -227,7 +218,6 @@ export class AdminNotifications {
       
       const dadosSolicitacao = notificationData.dadosSolicitacao;
       
-      // ✅ VERIFICAÇÃO: Verificar se notificação já foi processada
       const notificationRef = doc(db, 'notifications', notificationId);
       const notificationDoc = await getDocs(query(
         collection(db, 'notifications'), 
@@ -239,12 +229,10 @@ export class AdminNotifications {
         throw new Error('Notificação já foi processada ou não existe');
       }
 
-      // ✅ PRIMEIRO: Salvar a análise na coleção analysis
-      console.log('💾 Salvando análise...');
+      console.log('Salvando análise...');
       const analysisId = await AnalistaNotifications.salvarAnaliseAprovada(dadosSolicitacao);
       
-      // ✅ SEGUNDO: Atualizar o status da notificação
-      console.log('📝 Atualizando notificação...');
+      console.log('Atualizando notificação...');
       batch.update(notificationRef, {
         status: 'aceita',
         dataResolucao: Timestamp.now(),
@@ -252,13 +240,12 @@ export class AdminNotifications {
         analysisId: analysisId
       });
 
-      // ✅ TERCEIRO: Criar notificação para o analista
-      console.log('📨 Notificando analista...');
+      console.log('Notificando analista...');
       await AnalistaNotifications.criarNotificacaoAnalista(
         dadosSolicitacao.analistaId,
         'analise_aprovada',
         {
-          titulo: '✅ Análise Aprovada!',
+          titulo: 'Análise Aprovada!',
           mensagem: `Sua análise para o poço "${dadosSolicitacao.pocoNome}" foi aprovada e já está disponível no sistema.`,
           dadosAnalise: {
             analysisId: analysisId,
@@ -269,32 +256,28 @@ export class AdminNotifications {
         }
       );
 
-      // ✅ Executar batch
       await batch.commit();
       
-      console.log('🎉 Processo completo: Notificação aceita, análise salva e analista notificado!');
+      console.log('Processo completo: Notificação aceita, análise salva e analista notificado!');
       
     } catch (error) {
-      console.error('❌ Erro ao aceitar solicitação:', error);
+      console.error('Erro ao aceitar solicitação:', error);
       
-      // Reverter operações em caso de erro
       batch.delete(doc(db, 'notifications', notificationId));
       
       throw error;
     }
   }
 
-  // ✅ CORREÇÃO: Método rejeitar com transação
   static async rejeitarSolicitacaoAnalise(notificationId, notificationData) {
     const batch = writeBatch(db);
     
     try {
-      console.log('❌ Iniciando rejeição da solicitação:', notificationId);
+      console.log('Iniciando rejeição da solicitação:', notificationId);
       
       const dadosSolicitacao = notificationData.dadosSolicitacao;
       const notificationRef = doc(db, 'notifications', notificationId);
       
-      // ✅ VERIFICAÇÃO: Verificar se notificação já foi processada
       const notificationDoc = await getDocs(query(
         collection(db, 'notifications'), 
         where('__name__', '==', notificationId),
@@ -305,7 +288,6 @@ export class AdminNotifications {
         throw new Error('Notificação já foi processada ou não existe');
       }
 
-      // ✅ PRIMEIRO: Atualizar o status da notificação
       batch.update(notificationRef, {
         status: 'rejeitada',
         dataResolucao: Timestamp.now(),
@@ -313,12 +295,11 @@ export class AdminNotifications {
         motivoRejeicao: 'Solicitação rejeitada pelo administrador'
       });
 
-      // ✅ SEGUNDO: Criar notificação para o analista
       await AnalistaNotifications.criarNotificacaoAnalista(
         dadosSolicitacao.analistaId,
         'analise_rejeitada',
         {
-          titulo: '❌ Análise Rejeitada',
+          titulo: 'Análise Rejeitada',
           mensagem: `Sua análise para o poço "${dadosSolicitacao.pocoNome}" foi rejeitada pelo administrador. Entre em contato para mais informações.`,
           dadosAnalise: {
             pocoNome: dadosSolicitacao.pocoNome,
@@ -328,13 +309,12 @@ export class AdminNotifications {
         }
       );
 
-      // ✅ Executar batch
       await batch.commit();
       
-      console.log('✅ Notificação rejeitada e analista notificado!');
+      console.log('Notificação rejeitada e analista notificado!');
       
     } catch (error) {
-      console.error('❌ Erro ao rejeitar solicitação:', error);
+      console.error('Erro ao rejeitar solicitação:', error);
       throw error;
     }
   }

@@ -22,12 +22,10 @@ const HomeAdm = () => {
     const navigation = useNavigation();
     const { stats, loading } = useDashboardStats();
 
-    // Função simples para lidar com seleção de localização (se necessário)
     const handleLocationSelect = (location) => {
         console.log('Localização selecionada:', location);
     };
 
-    // Funções de navegação
     const navigateToGerenciarPocos = () => {
         navigation.navigate("GerenciarPocos");
     };
@@ -62,13 +60,13 @@ const HomeAdm = () => {
             padding: 10,
         },
         containerNavBar: {
-            top: isMobile ? 20 : 0,
+            top: isMobile ? 10 : 0,
             width: '100%',
             height: 150,
             zIndex: 1000,
         },
         containerPopUps: {
-            top: isMobile ? -50 : 0,
+            top: isMobile ? -10 : 0,
             display: 'flex',
             justifyContent: "center",
             flexDirection: "row",
@@ -77,6 +75,7 @@ const HomeAdm = () => {
             width: '100%',
             marginVertical: 10,
             zIndex: 1,
+            paddingBottom: isMobile ? 65 : 0,
         },
         containerItems: {
             top: isMobile ? -60 : 0,
@@ -178,7 +177,6 @@ const HomeAdm = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* BOTÃO GERAR RELATÓRIOS ATUALIZADO */}
                 <View style={styles.containerBotaoRelatorio}>
                     <TouchableOpacity
                         onPress={navigateToGerenciarRelatorios}

@@ -1,7 +1,5 @@
-// === MUDANÇA AQUI ===
 import React, { useRef, useState, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-// === MUDANÇA AQUI ===
 import { useRoute } from '@react-navigation/native'; 
 
 import CarosselInicial from '../secoes/CarosselInicial';
@@ -16,8 +14,7 @@ const TelaInicial = () => {
   const contentWidth = width < 800 ? width : width * 0.6;
   const scrollViewRef = useRef(null);
   
-  // === MUDANÇA AQUI ===
-  const route = useRoute(); // Pega os parâmetros da navegação
+  const route = useRoute();
 
   const [layoutY, setLayoutY] = useState({
     apresentacao: 0,
@@ -26,7 +23,6 @@ const TelaInicial = () => {
     contato: 0,
   });
 
-  // Funções de rolagem dinâmicas (originais)
   const scrollToApresentacao = () => {
     scrollViewRef.current?.scrollTo({ y: layoutY.apresentacao, animated: true });
   };
@@ -43,23 +39,16 @@ const TelaInicial = () => {
     scrollViewRef.current?.scrollTo({ y: layoutY.contato, animated: true });
   };
 
-  // Função genérica para medir (original)
   const onLayout = (key) => (event) => {
     const { y } = event.nativeEvent.layout;
     setLayoutY((prev) => ({ ...prev, [key]: y - 20 })); 
   };
 
-  // === MUDANÇA AQUI ===
-  // Este Effect "ouve" o parâmetro 'scrollTo' da rota
   useEffect(() => {
-    // Pega o parâmetro 'scrollTo'
     const section = route.params?.scrollTo;
     
-    // Se não houver parâmetro, não faz nada
     if (!section) return;
 
-    // Precisamos esperar um pouco para o 'layoutY' ser preenchido
-    // 300ms é geralmente seguro
     const timer = setTimeout(() => {
       console.log(`Tentando rolar para: ${section}`);
       if (section === 'sobre' || section === 'servicos') {
@@ -69,21 +58,11 @@ const TelaInicial = () => {
       } else if (section === 'contato') {
         scrollToContato();
       }
-      // Limpa o parâmetro para não rolar de novo se o usuário
-      // sair e voltar para a tela
-      // (Isso depende de como seu navigator está configurado, 
-      // mas é uma boa prática)
-      // navigation.setParams({ scrollTo: null }); 
-      // Nota: para usar setParams, você precisaria do useNavigation() aqui.
-      // Por enquanto, vamos deixar sem, é mais simples.
 
-    }, 300); // Ajuste o tempo se necessário
+    }, 300);
 
-    // Limpa o timer se o componente for desmontado
     return () => clearTimeout(timer);
 
-    // Roda o efeito se o parâmetro 'scrollTo' mudar,
-    // ou se as posições de layoutY forem atualizadas.
   }, [route.params?.scrollTo, layoutY]);
 
 
@@ -100,7 +79,7 @@ const TelaInicial = () => {
             onScrollToApresentacao={scrollToApresentacao}
             onScrollToEducacao={scrollToEducacao}
             onScrollToContato={scrollToContato}
-            onScrollToServicos={scrollToApresentacao} // "Serviços" leva para "Apresentação"
+            onScrollToServicos={scrollToApresentacao}
           />
           
           <CarosselInicial 
@@ -108,7 +87,6 @@ const TelaInicial = () => {
             onScrollToAvaliacoes={scrollToAvaliacoes}
           />
 
-          {/* O resto do seu código está correto */}
           <View onLayout={onLayout('apresentacao')} style={{ width: '100%' }}>
             <Apresentacao />
           </View>
@@ -130,7 +108,6 @@ const TelaInicial = () => {
   );
 };
 
-// ... (Seus estilos originais)
 const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
@@ -138,12 +115,12 @@ const styles = StyleSheet.create({
   containerApp: {
     flex: 1,
     backgroundColor: '#fff',
-    alignItems: 'center', // Isso centraliza o 'contentContainer'
+    alignItems: 'center',
     justifyContent: 'flex-start',
     paddingTop: 0,
   },
   contentContainer: {
-    alignItems: 'center', // Isso centraliza os filhos (e causa o problema de largura)
+    alignItems: 'center',
   },
 });
 

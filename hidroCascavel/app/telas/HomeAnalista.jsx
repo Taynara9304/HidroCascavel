@@ -62,12 +62,12 @@ const HomeAnalista = () => {
             padding: 10,
         },
         containerNavBar: {
-            top: isMobile ? 20 : 0,
+            top: isMobile ? 10 : 0,
             width: '100%',
             height: 150,
         },
         containerPopUps: {
-            top: isMobile ? -50 : 0,
+            top: isMobile ? -10 : 0,
             display: 'flex',
             justifyContent: "center",
             flexDirection: "row",
@@ -75,6 +75,7 @@ const HomeAnalista = () => {
             gap: 10,
             width: '100%',
             marginVertical: 10,
+            paddingBottom: isMobile ? 65 : 0,
         },
         containerItems: {
             top: isMobile ? -60 : 0,

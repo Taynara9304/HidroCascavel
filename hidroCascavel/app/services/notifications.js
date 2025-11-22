@@ -4,11 +4,11 @@ import { db } from './firebaseConfig';
 
 export const enviarNotificacaoSolicitacaoWhatsApp = async (solicitacaoData) => {
   try {
-    console.log('📢 Enviando notificação para ADM:', solicitacaoData);
+    console.log('Enviando notificação para ADM:', solicitacaoData);
     
     const notificationRef = await addDoc(collection(db, 'notifications'), {
       tipo: 'solicitacao_whatsapp',
-      titulo: '📱 Nova solicitação via WhatsApp',
+      titulo: 'Nova solicitação via WhatsApp',
       mensagem: `${solicitacaoData.proprietarioNome} solicitou visita para o poço ${solicitacaoData.pocoNome}`,
       data: new Date(),
       lida: false,
@@ -23,10 +23,10 @@ export const enviarNotificacaoSolicitacaoWhatsApp = async (solicitacaoData) => {
       }
     });
     
-    console.log('✅ Notificação enviada com ID:', notificationRef.id);
+    console.log('Notificação enviada com ID:', notificationRef.id);
     return notificationRef.id;
   } catch (error) {
-    console.error('❌ Erro ao enviar notificação:', error);
+    console.error('Erro ao enviar notificação:', error);
     throw error;
   }
 };

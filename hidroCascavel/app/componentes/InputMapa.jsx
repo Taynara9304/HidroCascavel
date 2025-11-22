@@ -6,10 +6,8 @@ const InputMapa = ({ label, value, onChange, placeholder }) => {
   const [modalVisible, setModalVisible] = useState(false);
   
   const handleLocationSelect = (location) => {
-    console.log('Localização selecionada:', location); // Debug
+    console.log('Localização selecionada:', location);
     onChange(location);
-    // REMOVIDO: Não fechar automaticamente
-    // setModalVisible(false);
   };
 
   const handleConfirmAndClose = () => {
@@ -65,8 +63,8 @@ const InputMapa = ({ label, value, onChange, placeholder }) => {
           <View style={styles.modalFooter}>
             <Text style={styles.footerText}>
               {value 
-                ? `✅ Localização selecionada: ${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`
-                : '👆 Selecione um ponto no mapa ou use sua localização atual'
+                ? `Localização selecionada: ${value.latitude.toFixed(6)}, ${value.longitude.toFixed(6)}`
+                : 'Selecione um ponto no mapa ou use sua localização atual'
               }
             </Text>
             <View style={styles.footerButtons}>

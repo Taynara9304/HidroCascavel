@@ -46,9 +46,10 @@ const HomeProprietario = () => {
             padding: 10,
         },
         containerNavBar: {
-            top: isMobile ? 20 : 0,
+            top: isMobile ? 10 : 0,
             width: '100%',
             height: 150,
+            marginBottom: isMobile ? 40 : 0,
         },
         containerPopUps: {
             top: isMobile ? -50 : 0,

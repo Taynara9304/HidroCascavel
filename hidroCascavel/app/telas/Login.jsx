@@ -18,6 +18,7 @@ import { auth } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
 import LogoHidroCvel from '../assets/logoHidroCascavel.png';
+import { Ionicons } from '@expo/vector-icons'; // Ou use outro ícone de sua preferência
 
 const Login = ({ navigation }) => {
   let { width } = useWindowDimensions();
@@ -126,6 +127,11 @@ const Login = ({ navigation }) => {
     }
   };
 
+  // Função para voltar à tela inicial
+  const handleVoltarTelaInicial = () => {
+    navigation.navigate('TelaInicial');
+  };
+
   if (user && userData) {
     const getNomeStack = () => {
       switch (userData.tipoUsuario) {
@@ -153,6 +159,18 @@ const Login = ({ navigation }) => {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
       <View style={[styles.container, isCellPhone && styles.containerCellPhone]}>
+
+        {/* Botão Voltar - Posicionado absolutamente */}
+        <TouchableOpacity 
+          style={[
+            styles.botaoVoltar,
+            isCellPhone && styles.botaoVoltarCellPhone
+          ]} 
+          onPress={handleVoltarTelaInicial}
+        >
+          <Ionicons name="arrow-back" size={24} color="#2685BF" />
+          <Text style={styles.textoBotaoVoltar}>Voltar</Text>
+        </TouchableOpacity>
 
         {!isCellPhone && (
           <View style={styles.containerLeft}>
@@ -356,6 +374,37 @@ const styles = StyleSheet.create({
     marginTop: 10,
     fontSize: 16,
     color: '#2685BF',
+  },
+  // Novos estilos para o botão voltar
+  botaoVoltar: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    zIndex: 1000,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  botaoVoltarCellPhone: {
+    top: 20,
+    left: 10,
+  },
+  textoBotaoVoltar: {
+    color: "#2685BF",
+    fontSize: 14,
+    fontWeight: "bold",
+    marginLeft: 5,
   },
 });
 
