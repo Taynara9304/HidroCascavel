@@ -17,7 +17,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext';
 import Toast from 'react-native-toast-message';
-import LogoHidroCvel from '../assets/logoHidroCascavel.png';
+import LogoHidroCvel from '../assets/logoHidrocascavel.png';
 import { Ionicons } from '@expo/vector-icons'; // Ou use outro ícone de sua preferência
 
 const Login = ({ navigation }) => {

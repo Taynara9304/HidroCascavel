@@ -13,7 +13,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '../services/firebaseConfig';
 import { useAuth } from '../contexts/authContext'; 
 import Toast from 'react-native-toast-message';
-import logo from '../assets/logoHidroCascavel.png';
+import logo from '../assets/logoHidrocascavel.png';
 
 const NavBar = ({
   onScrollToApresentacao,
